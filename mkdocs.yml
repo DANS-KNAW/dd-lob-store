@@ -31,6 +31,9 @@ nav:
   - Development:
       - Overview: dev.md
 
+extra:
+  surf_data_archive: https://dans-knaw.github.io/dans-datastation-architecture/data-archive/
+
 plugins:
   - markdownextradata
   - search
