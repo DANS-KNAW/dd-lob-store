@@ -53,13 +53,11 @@
             <groupId>org.projectlombok</groupId>
             <artifactId>lombok</artifactId>
         </dependency>
-        <!-- START >> Uncomment after building the API module
         <dependency>
             <groupId>nl.knaw.dans</groupId>
             <artifactId>dd-lob-store-api</artifactId>
             <version>${dd-lob-store-api.version}</version>
         </dependency>
-        END << Uncomment after building the API module -->
     </dependencies>
 
     <build>
@@ -81,7 +79,6 @@
                     </annotationProcessorPaths>
                 </configuration>
             </plugin>
-            <!-- START >>> Uncomment after building the API module
             <plugin>
                 <groupId>org.apache.maven.plugins</groupId>
                 <artifactId>maven-dependency-plugin</artifactId>
@@ -125,7 +122,6 @@
                     </execution>
                 </executions>
             </plugin>
-            END <<< Uncomment after building the API module -->
         </plugins>
     </build>
 
