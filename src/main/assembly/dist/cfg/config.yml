@@ -29,7 +29,7 @@ dataStations:
 
 transfer:
   download:
-    requireRangeRequests: true
+    chunkSize: 1G
     baseDir: /data/lob-transfer/download
     minimalBucketSize: 1G
   package:
