@@ -1,0 +1,15 @@
+[Unit]
+Description=Dd Lob Store Service
+
+[Service]
+ExecStart=/opt/dans.knaw.nl/dd-lob-store/bin/dd-lob-store server /etc/opt/dans.knaw.nl/dd-lob-store/config.yml
+# Java returns 143 even if the SIGTERM was handled correctly.
+SuccessExitStatus=143
+Environment="JAVA_OPTS=-Xms64m"
+Environment="LC_ALL=en_US.UTF-8"
+
+User=dd-lob-store
+Group=dd-lob-store
+
+[Install]
+WantedBy=multi-user.target

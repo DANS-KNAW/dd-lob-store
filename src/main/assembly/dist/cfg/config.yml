@@ -1,0 +1,38 @@
+#
+# dd-lob-store configuration file
+#
+server:
+  applicationContextPath: /
+  adminContextPath: /
+  applicationConnectors:
+    - type: http
+      # Replace with port number unique for this service
+      port: 20000 # TODO: Replace with unique port number
+  adminConnectors:
+    - type: http
+      # Replace with port number unique for this service
+      port: 20001 # TODO: Replace with unique port number
+  # Logs the requests to the Jetty http server
+  requestLog:
+    appenders:
+      - type: file
+        archive: false
+        timeZone: system
+        currentLogFilename: /var/opt/dans.knaw.nl/log/dd-lob-store/request.log
+
+
+#
+# See https://www.dropwizard.io/en/latest/manual/configuration.html#logging
+#
+logging:
+  level: INFO
+  appenders:
+    - type: file
+      archive: false
+      timeZone: system
+      currentLogFilename: /var/opt/dans.knaw.nl/log/dd-lob-store/dd-lob-store.log
+    - type:  console
+      # Used in combination with journald, which already adds the timestamp
+      logFormat: "%-5p %c{0}: %m%n%dwREx"
+  loggers:
+      'org.hibernate.engine.internal.StatisticalLoggingSessionEventListener': 'OFF'
