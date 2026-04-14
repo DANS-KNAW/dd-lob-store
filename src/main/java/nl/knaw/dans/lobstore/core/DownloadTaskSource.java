@@ -21,16 +21,17 @@ import nl.knaw.dans.lobstore.api.JobStatusDto;
 import nl.knaw.dans.lobstore.db.JobDao;
 
 import java.util.List;
+import java.util.UUID;
 
 /**
  * TaskSource that provides the next file to be downloaded.
  */
 @RequiredArgsConstructor
-public class DownloadTaskSource implements TaskSource<Job> {
+public class DownloadTaskSource implements TaskSource<UUID> {
     private final JobDao jobDao;
 
     @Override
-    public List<Job> nextInputs() {
-        return jobDao.findByStatus(JobStatusDto.PENDING);
+    public List<UUID> nextInputs() {
+        return jobDao.findByStatus(JobStatusDto.PENDING).stream().map(Job::getId).toList();
     }
 }

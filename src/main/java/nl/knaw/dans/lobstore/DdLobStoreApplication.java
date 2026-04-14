@@ -101,12 +101,12 @@ public class DdLobStoreApplication extends Application<DdLobStoreConfig> {
         //                environment));
     }
 
-    private Managed createPollingTaskExecutor(String name, ExecutorServiceFactory queueConfig, TaskSource<Job> source, TaskFactory<Job> factory, UnitOfWorkAwareProxyFactory proxyFactory,
+    private <T> Managed createPollingTaskExecutor(String name, ExecutorServiceFactory queueConfig, TaskSource<T> source, TaskFactory<T> factory, UnitOfWorkAwareProxyFactory proxyFactory,
         Environment environment) {
         ScheduledExecutorService scheduledExecutorService = environment.lifecycle().scheduledExecutorService(name + "-scheduler").build();
         TaskScheduler taskScheduler = new ExecutorServiceTaskScheduler(queueConfig.build(environment), proxyFactory);
 
-        PollingTaskExecutor<Job> executor = new PollingTaskExecutor<>(
+        PollingTaskExecutor<T> executor = new PollingTaskExecutor<>(
             name,
             scheduledExecutorService,
             Duration.ofSeconds(10), // polling interval

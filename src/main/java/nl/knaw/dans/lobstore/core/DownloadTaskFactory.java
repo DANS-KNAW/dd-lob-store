@@ -22,9 +22,10 @@ import nl.knaw.dans.lobstore.db.JobDao;
 import javax.ws.rs.client.Client;
 import java.nio.file.Path;
 import java.util.List;
+import java.util.UUID;
 
 @RequiredArgsConstructor
-public class DownloadTaskFactory implements TaskFactory<Job> {
+public class DownloadTaskFactory implements TaskFactory<UUID> {
     private final JobDao jobDao;
     private final Client httpClient;
     private final Path downloadDir;
@@ -32,7 +33,7 @@ public class DownloadTaskFactory implements TaskFactory<Job> {
     private final DiskQuotaManager diskQuotaManager;
 
     @Override
-    public Runnable create(List<Job> records) {
-        return new DownloadTask(records.get(0).getId(), jobDao, httpClient, downloadDir, chunkSize, diskQuotaManager);
+    public Runnable create(List<UUID> records) {
+        return new DownloadTask(records.get(0), jobDao, httpClient, downloadDir, chunkSize, diskQuotaManager);
     }
 }
