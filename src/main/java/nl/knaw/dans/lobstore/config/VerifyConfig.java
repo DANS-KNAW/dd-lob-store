@@ -18,6 +18,7 @@ package nl.knaw.dans.lobstore.config;
 
 import javax.validation.constraints.NotNull;
 import lombok.Data;
+import nl.knaw.dans.lib.util.ExecutorServiceFactory;
 
 @Data
 public class VerifyConfig {
@@ -26,5 +27,5 @@ public class VerifyConfig {
     @NotNull
     private String sshCommand = "ssh";
     @NotNull
-    private TaskQueueConfig taskQueue;
+    private ExecutorServiceFactory taskQueue;
 }

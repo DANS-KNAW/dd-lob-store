@@ -20,6 +20,7 @@ import io.dropwizard.util.DataSize;
 import java.nio.file.Path;
 import javax.validation.constraints.NotNull;
 import lombok.Data;
+import nl.knaw.dans.lib.util.ExecutorServiceFactory;
 
 @Data
 public class DownloadConfig {
@@ -32,5 +33,5 @@ public class DownloadConfig {
     @NotNull
     private DataSize quota;
     @NotNull
-    private TaskQueueConfig taskQueue;
+    private ExecutorServiceFactory taskQueue;
 }

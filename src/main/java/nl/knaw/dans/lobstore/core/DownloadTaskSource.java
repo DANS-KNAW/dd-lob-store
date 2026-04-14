@@ -22,6 +22,9 @@ import nl.knaw.dans.lobstore.db.JobDao;
 
 import java.util.List;
 
+/**
+ * TaskSource that provides the next file to be downloaded.
+ */
 @RequiredArgsConstructor
 public class DownloadTaskSource implements TaskSource<Job> {
     private final JobDao jobDao;
