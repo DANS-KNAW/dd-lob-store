@@ -1,15 +1,74 @@
-
+#
+# dd-lob-store configuration file
+#
 server:
   applicationContextPath: /
   adminContextPath: /
   applicationConnectors:
     - type: http
-      # Replace with port number unique for this service
-      port: 20000
+      port: 20385
   adminConnectors:
     - type: http
-      # Replace with port number unique for this service
-      port: 20001
+      port: 20386
+  # Logs the requests to the Jetty http server
+  requestLog:
+    appenders:
+      - type: file
+        archive: false
+        timeZone: system
+        currentLogFilename: /var/opt/dans.knaw.nl/log/dd-lob-store/request.log
+
+dataStations:
+  - name: archaeology
+    baseUrl: https://dev.archaeology.datastations.nl
+    apiKey: changeme
+    lobStore:
+      user: changeme
+      host: archive.surfsara.nl
+      path: archive/data-vault/archaelogy.lobs
+
+database:
+  driverClass: org.postgresql.Driver
+  user: dd_lob_store
+  password: dd_lob_store
+  url: jdbc:postgresql://localhost:5432/dd_lob_store
+  properties:
+    charSet: UTF-8
+    hibernate.dialect: org.hibernate.dialect.PostgreSQLDialect
+  maxSize: 8
+  minSize: 2
+  checkConnectionWhileIdle: false
+  evictionInterval: 10s
+  minIdleTime: 1 minute
+
+httpClient:
+  timeout: 500ms
+  connectionTimeout: 500ms
+  connectionRequestTimeout: 500ms
+  timeToLive: 1h
+  cookiesEnabled: false
+  maxConnections: 1024
+  maxConnectionsPerRoute: 1024
+  keepAlive: 0s
+  userAgent: dd-lob-store
+
+transfer:
+  download:
+    chunkSize: 1G
+    baseDir: data/download
+    minimalBucketSize: 1G
+    quota: 100G
+  packageConfig:
+    baseDir: data/upload
+    packageCommand: /usr/local/bin/package.sh
+    verifyCommand: /usr/local/bin/verify-package.sh
+    quota: 100G
+  transferJob:
+    transferCommand: /usr/local/bin/transfer.sh
+    destination: /data/vault
+  verify:
+    verifyCommand: /usr/local/bin/verify-transfer.sh
+    sshCommand: ssh
 
 #
 # See https://www.dropwizard.io/en/latest/manual/configuration.html#logging
@@ -17,12 +76,12 @@ server:
 logging:
   level: INFO
   appenders:
-    - type: console
-      logFormat: "%-5p [%d{ISO8601}] [%t] %c: %m%n%rEx"
-
     - type: file
       archive: false
-      currentLogFilename: data/dd-lob-store.log
+      timeZone: system
+      currentLogFilename: /var/opt/dans.knaw.nl/log/dd-lob-store/dd-lob-store.log
+    - type: console
+      # Used in combination with journald, which already adds the timestamp
+      logFormat: "%-5p %c{0}: %m%n%dwREx"
   loggers:
-    'nl.knaw.dans': DEBUG
     'org.hibernate.engine.internal.StatisticalLoggingSessionEventListener': 'OFF'

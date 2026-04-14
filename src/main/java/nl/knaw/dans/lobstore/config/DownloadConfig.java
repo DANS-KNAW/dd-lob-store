@@ -16,30 +16,19 @@
 
 package nl.knaw.dans.lobstore.config;
 
-import io.dropwizard.core.Configuration;
-import io.dropwizard.db.DataSourceFactory;
-import io.dropwizard.client.JerseyClientConfiguration;
 import io.dropwizard.util.DataSize;
-
 import java.nio.file.Path;
-import javax.validation.Valid;
 import javax.validation.constraints.NotNull;
 import lombok.Data;
-import lombok.EqualsAndHashCode;
 
 @Data
-@EqualsAndHashCode(callSuper = true)
-public class DdLobStoreConfig extends Configuration {
-
-    @Valid
+public class DownloadConfig {
     @NotNull
-    private DataSourceFactory database = new DataSourceFactory();
-
-    @Valid
+    private DataSize chunkSize;
     @NotNull
-    private JerseyClientConfiguration httpClient = new JerseyClientConfiguration();
-
-    @Valid
+    private Path baseDir;
     @NotNull
-    private TransferConfig transfer;
+    private DataSize minimalBucketSize;
+    @NotNull
+    private DataSize quota;
 }
