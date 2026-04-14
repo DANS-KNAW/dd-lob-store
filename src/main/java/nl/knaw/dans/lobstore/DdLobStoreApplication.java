@@ -25,10 +25,23 @@ import io.dropwizard.client.JerseyClientBuilder;
 import io.dropwizard.lifecycle.Managed;
 import nl.knaw.dans.lobstore.config.DdLobStoreConfig;
 import nl.knaw.dans.lobstore.core.DiskQuotaManager;
+import nl.knaw.dans.lobstore.core.Job;
 import nl.knaw.dans.lobstore.core.DownloadTask;
+import nl.knaw.dans.lobstore.core.DownloadTaskFactory;
+import nl.knaw.dans.lobstore.core.DownloadTaskSource;
 import nl.knaw.dans.lobstore.core.PackageTask;
+import nl.knaw.dans.lobstore.core.PackageTaskFactory;
+import nl.knaw.dans.lobstore.core.PackageTaskSource;
 import nl.knaw.dans.lobstore.core.TransferTask;
+import nl.knaw.dans.lobstore.core.TransferTaskFactory;
+import nl.knaw.dans.lobstore.core.TransferTaskSource;
 import nl.knaw.dans.lobstore.core.VerificationTask;
+import nl.knaw.dans.lobstore.core.VerificationTaskFactory;
+import nl.knaw.dans.lobstore.core.VerificationTaskSource;
+import nl.knaw.dans.lib.util.pollingtaskexec.PollingTaskExecutor;
+import nl.knaw.dans.lib.util.pollingtaskexec.TaskSource;
+import nl.knaw.dans.lib.util.pollingtaskexec.TaskFactory;
+import nl.knaw.dans.lobstore.config.TaskQueueConfig;
 import nl.knaw.dans.lobstore.db.DiskClaimDao;
 import nl.knaw.dans.lobstore.db.JobDao;
 import nl.knaw.dans.lobstore.resources.JobsResource;
@@ -82,35 +95,27 @@ public class DdLobStoreApplication extends Application<DdLobStoreConfig> {
         // Background tasks
         UnitOfWorkAwareProxyFactory proxyFactory = new UnitOfWorkAwareProxyFactory(hibernateBundle);
         
-        DownloadTask downloadTask = proxyFactory.create(DownloadTask.class, 
-                new Class[]{JobDao.class, Client.class, Path.class, long.class, DiskQuotaManager.class},
-                new Object[]{jobDao, httpClient, config.getTransfer().getDownload().getBaseDir(), config.getTransfer().getDownload().getChunkSize().toBytes(), diskQuotaManager});
-        
-        PackageTask packageTask = proxyFactory.create(PackageTask.class,
-                new Class[]{JobDao.class, Path.class, long.class, String.class, DiskQuotaManager.class},
-                new Object[]{jobDao, config.getTransfer().getPackageConfig().getBaseDir(), config.getTransfer().getDownload().getMinimalBucketSize().toBytes(), config.getTransfer().getPackageConfig().getPackageCommand(), diskQuotaManager});
-        
-        TransferTask transferTask = proxyFactory.create(TransferTask.class,
-                new Class[]{JobDao.class, Path.class, String.class, String.class},
-                new Object[]{jobDao, config.getTransfer().getPackageConfig().getBaseDir(), config.getTransfer().getTransferJob().getTransferCommand(), config.getTransfer().getTransferJob().getDestination()});
-        
-        VerificationTask verificationTask = proxyFactory.create(VerificationTask.class,
-                new Class[]{JobDao.class, Path.class, Path.class, String.class, String.class, String.class, DiskQuotaManager.class},
-                new Object[]{jobDao, config.getTransfer().getDownload().getBaseDir(), config.getTransfer().getPackageConfig().getBaseDir(), config.getTransfer().getVerify().getSshCommand(), config.getTransfer().getVerify().getVerifyCommand(), config.getTransfer().getTransferJob().getDestination(), diskQuotaManager});
+        DownloadTask downloadTask = new DownloadTask(jobDao, httpClient, config.getTransfer().getDownload().getBaseDir(), config.getTransfer().getDownload().getChunkSize().toBytes(), diskQuotaManager);
+        PackageTask packageTask = new PackageTask(jobDao, config.getTransfer().getPackageConfig().getBaseDir(), config.getTransfer().getDownload().getMinimalBucketSize().toBytes(), config.getTransfer().getPackageConfig().getPackageCommand(), diskQuotaManager);
+        TransferTask transferTask = new TransferTask(jobDao, config.getTransfer().getPackageConfig().getBaseDir(), config.getTransfer().getTransferJob().getTransferCommand(), config.getTransfer().getTransferJob().getDestination());
+        VerificationTask verificationTask = new VerificationTask(jobDao, config.getTransfer().getDownload().getBaseDir(), config.getTransfer().getPackageConfig().getBaseDir(), config.getTransfer().getVerify().getSshCommand(), config.getTransfer().getVerify().getVerifyCommand(), config.getTransfer().getTransferJob().getDestination(), diskQuotaManager);
 
-        ScheduledExecutorService scheduler = Executors.newScheduledThreadPool(4);
-        scheduler.scheduleAtFixedRate(downloadTask, 0, 10000L, TimeUnit.MILLISECONDS);
-        scheduler.scheduleAtFixedRate(packageTask, 0, 10000L, TimeUnit.MILLISECONDS);
-        scheduler.scheduleAtFixedRate(transferTask, 0, 10000L, TimeUnit.MILLISECONDS);
-        scheduler.scheduleAtFixedRate(verificationTask, 0, 10000L, TimeUnit.MILLISECONDS);
-        
-        environment.lifecycle().manage(new ManagedExecutorService(scheduler));
+        environment.lifecycle().manage(createPollingTaskExecutor("Download", config.getTransfer().getDownload().getTaskQueue(), new DownloadTaskSource(jobDao), new DownloadTaskFactory(downloadTask), proxyFactory, environment));
+        environment.lifecycle().manage(createPollingTaskExecutor("Package", config.getTransfer().getPackageConfig().getTaskQueue(), new PackageTaskSource(jobDao), new PackageTaskFactory(packageTask), proxyFactory, environment));
+        environment.lifecycle().manage(createPollingTaskExecutor("Transfer", config.getTransfer().getTransferJob().getTaskQueue(), new TransferTaskSource(jobDao), new TransferTaskFactory(transferTask), proxyFactory, environment));
+        environment.lifecycle().manage(createPollingTaskExecutor("Verify", config.getTransfer().getVerify().getTaskQueue(), new VerificationTaskSource(jobDao), new VerificationTaskFactory(verificationTask), proxyFactory, environment));
     }
 
-    private static class ManagedExecutorService implements Managed {
-        private final ScheduledExecutorService scheduler;
-        ManagedExecutorService(ScheduledExecutorService scheduler) { this.scheduler = scheduler; }
-        @Override public void start() {}
-        @Override public void stop() { scheduler.shutdown(); }
+    private Managed createPollingTaskExecutor(String name, TaskQueueConfig queueConfig, nl.knaw.dans.lib.util.pollingtaskexec.TaskSource<Job> source, nl.knaw.dans.lib.util.pollingtaskexec.TaskFactory<Job> factory, UnitOfWorkAwareProxyFactory proxyFactory, Environment environment) {
+        ScheduledExecutorService taskScheduler = environment.lifecycle().scheduledExecutorService(name + "-scheduler").build();
+        
+        PollingTaskExecutor<Job> executor = new PollingTaskExecutor<>(
+                name,
+                taskScheduler,
+                java.time.Duration.ofSeconds(10), // polling interval
+                source,
+                factory
+        );
+        return proxyFactory.create(PollingTaskExecutor.class, new Class[]{PollingTaskExecutor.class}, new Object[]{executor});
     }
 }

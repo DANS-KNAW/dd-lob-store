@@ -31,4 +31,6 @@ public class PackageConfig {
     private String verifyCommand;
     @NotNull
     private DataSize quota;
+    @NotNull
+    private TaskQueueConfig taskQueue;
 }

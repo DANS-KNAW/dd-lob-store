@@ -34,30 +34,14 @@ import java.util.stream.Collectors;
 
 @Slf4j
 @AllArgsConstructor
-public class PackageTask implements Runnable {
+public class PackageTask {
     private final JobDao jobDao;
     private final Path uploadFolder;
     private final long minBucketSize;
     private final String dmftarCommand;
     private final DiskQuotaManager diskQuotaManager;
 
-    @Override
-    @UnitOfWork
-    public void run() {
-        List<Job> downloadedJobs = jobDao.findByStatus(JobStatusDto.PACKAGING);
-        if (downloadedJobs.isEmpty()) {
-            return;
-        }
-
-        Map<String, List<Job>> byDatastation = downloadedJobs.stream()
-                .collect(Collectors.groupingBy(Job::getDatastation));
-
-        for (Map.Entry<String, List<Job>> entry : byDatastation.entrySet()) {
-            processDatastation(entry.getKey(), entry.getValue());
-        }
-    }
-
-    private void processDatastation(String datastation, List<Job> jobs) {
+    public void processDatastation(String datastation, List<Job> jobs) {
         long totalSize = jobs.stream().mapToLong(Job::getFileSize).sum();
         if (totalSize < minBucketSize) {
             log.debug("Datastation {} bucket size {} below minBucketSize {}, waiting", datastation, totalSize, minBucketSize);

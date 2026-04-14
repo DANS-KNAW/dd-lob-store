@@ -32,29 +32,13 @@ import java.util.stream.Collectors;
 
 @Slf4j
 @AllArgsConstructor
-public class TransferTask implements Runnable {
+public class TransferTask {
     private final JobDao jobDao;
     private final Path uploadFolder;
     private final String rsyncCommand;
     private final String transferDestination;
 
-    @Override
-    @UnitOfWork
-    public void run() {
-        List<Job> packagedJobs = jobDao.findByStatus(JobStatusDto.TRANSFERRING);
-        if (packagedJobs.isEmpty()) {
-            return;
-        }
-
-        Map<String, List<Job>> byBucket = packagedJobs.stream()
-                .collect(Collectors.groupingBy(Job::getBucketId));
-
-        for (Map.Entry<String, List<Job>> entry : byBucket.entrySet()) {
-            processBucket(entry.getKey(), entry.getValue());
-        }
-    }
-
-    private void processBucket(String bucketId, List<Job> jobs) {
+    public void processBucket(String bucketId, List<Job> jobs) {
         log.info("Transferring bucket {} for {} jobs", bucketId, jobs.size());
         Path bucketPath = uploadFolder.resolve(bucketId + ".tar");
 

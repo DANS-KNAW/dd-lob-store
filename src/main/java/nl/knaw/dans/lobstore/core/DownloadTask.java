@@ -36,79 +36,65 @@ import java.util.List;
 
 @Slf4j
 @AllArgsConstructor
-public class DownloadTask implements Runnable {
+public class DownloadTask {
     private final JobDao jobDao;
     private final Client httpClient;
     private final Path downloadFolder;
     private final long chunkSize;
     private final DiskQuotaManager diskQuotaManager;
 
-    @Override
-    @UnitOfWork
-    public void run() {
-        List<Job> jobs = jobDao.findByStatus(JobStatusDto.PENDING);
-        for (Job job : jobs) {
-            try {
-                processJob(job);
-            } catch (Exception e) {
-                log.error("Error processing job {}", job.getId(), e);
-                job.setStatus(JobStatusDto.FAILED);
-                job.setErrorMessage(e.getMessage());
-                job.setModificationTimestamp(OffsetDateTime.now());
-                jobDao.create(job);
-            }
-        }
-    }
+    public void processJob(Job job) {
+        try {
+            log.info("Downloading job {}", job.getId());
+            job.setStatus(JobStatusDto.DOWNLOADING);
+            job.setModificationTimestamp(OffsetDateTime.now());
+            jobDao.create(job);
 
-    private void processJob(Job job) throws IOException {
-        log.info("Downloading job {}", job.getId());
-        job.setStatus(JobStatusDto.DOWNLOADING);
-        job.setModificationTimestamp(OffsetDateTime.now());
-        jobDao.create(job);
+            Path jobPath = downloadFolder.resolve(job.getId().toString());
+            Files.createDirectories(jobPath);
+            Path outputFile = jobPath.resolve("data");
 
-        // For simplicity, we assume we know the size or just download until done
-        // Actually the description says "downloads chunks and concatenates them"
-        // If it's a simple URL, we just download it.
-        
-        Path jobPath = downloadFolder.resolve(job.getId().toString());
-        Files.createDirectories(jobPath);
-        Path outputFile = jobPath.resolve("data");
+            long totalRead = 0;
+            try (Response response = httpClient.target(job.getUrl()).request().get()) {
+                if (response.getStatus() != 200) {
+                    throw new IOException("Failed to download: " + response.getStatus());
+                }
 
-        long totalRead = 0;
-        try (Response response = httpClient.target(job.getUrl()).request().get()) {
-            if (response.getStatus() != 200) {
-                throw new IOException("Failed to download: " + response.getStatus());
-            }
+                Long contentLength = response.getLength() != -1 ? (long) response.getLength() : null;
+                if (contentLength != null && !diskQuotaManager.claim(job.getId(), "download", 2 * contentLength)) {
+                    throw new IOException("Insufficient disk quota");
+                }
 
-            Long contentLength = response.getLength() != -1 ? (long) response.getLength() : null;
-            if (contentLength != null && !diskQuotaManager.claim(job.getId(), "download", 2 * contentLength)) {
-                throw new IOException("Insufficient disk quota");
-            }
-
-            try (InputStream is = response.readEntity(InputStream.class);
-                 OutputStream os = new BufferedOutputStream(Files.newOutputStream(outputFile, StandardOpenOption.CREATE, StandardOpenOption.TRUNCATE_EXISTING))) {
-                byte[] buffer = new byte[8192];
-                int read;
-                while ((read = is.read(buffer)) != -1) {
-                    os.write(buffer, 0, read);
-                    totalRead += read;
+                try (InputStream is = response.readEntity(InputStream.class);
+                     OutputStream os = new BufferedOutputStream(Files.newOutputStream(outputFile, StandardOpenOption.CREATE, StandardOpenOption.TRUNCATE_EXISTING))) {
+                    byte[] buffer = new byte[8192];
+                    int read;
+                    while ((read = is.read(buffer)) != -1) {
+                        os.write(buffer, 0, read);
+                        totalRead += read;
+                    }
                 }
             }
+
+            String sha1 = calculateSha1(outputFile);
+            job.setSha1Sum(sha1);
+            job.setFileSize(totalRead);
+            job.setFilePath(outputFile.toString());
+            job.setStatus(JobStatusDto.PACKAGING);
+            job.setModificationTimestamp(OffsetDateTime.now());
+            jobDao.create(job);
+
+            diskQuotaManager.release(job.getId(), "download");
+            diskQuotaManager.claim(job.getId(), "download", totalRead);
+
+            log.info("Downloaded job {} to {}, SHA-1: {}", job.getId(), outputFile, sha1);
+        } catch (Exception e) {
+            log.error("Error processing job {}", job.getId(), e);
+            job.setStatus(JobStatusDto.FAILED);
+            job.setErrorMessage(e.getMessage());
+            job.setModificationTimestamp(OffsetDateTime.now());
+            jobDao.create(job);
         }
-
-        String sha1 = calculateSha1(outputFile);
-        job.setSha1Sum(sha1);
-        job.setFileSize(totalRead);
-        job.setFilePath(outputFile.toString());
-        job.setStatus(JobStatusDto.PACKAGING); // Use next stage status
-        job.setModificationTimestamp(OffsetDateTime.now());
-        jobDao.create(job);
-        
-        // Release half of the claimed space
-        diskQuotaManager.release(job.getId(), "download");
-        diskQuotaManager.claim(job.getId(), "download", totalRead);
-
-        log.info("Downloaded job {} to {}, SHA-1: {}", job.getId(), outputFile, sha1);
     }
 
     private String calculateSha1(Path file) throws IOException {

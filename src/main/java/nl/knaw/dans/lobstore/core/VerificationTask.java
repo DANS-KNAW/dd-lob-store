@@ -35,7 +35,7 @@ import java.util.stream.Stream;
 
 @Slf4j
 @AllArgsConstructor
-public class VerificationTask implements Runnable {
+public class VerificationTask {
     private final JobDao jobDao;
     private final Path downloadFolder;
     private final Path uploadFolder;
@@ -44,23 +44,7 @@ public class VerificationTask implements Runnable {
     private final String transferDestination;
     private final DiskQuotaManager diskQuotaManager;
 
-    @Override
-    @UnitOfWork
-    public void run() {
-        List<Job> transferredJobs = jobDao.findByStatus(JobStatusDto.VERIFYING);
-        if (transferredJobs.isEmpty()) {
-            return;
-        }
-
-        Map<String, List<Job>> byBucket = transferredJobs.stream()
-                .collect(Collectors.groupingBy(Job::getBucketId));
-
-        for (Map.Entry<String, List<Job>> entry : byBucket.entrySet()) {
-            processBucket(entry.getKey(), entry.getValue());
-        }
-    }
-
-    private void processBucket(String bucketId, List<Job> jobs) {
+    public void processBucket(String bucketId, List<Job> jobs) {
         log.info("Verifying bucket {} for {} jobs", bucketId, jobs.size());
 
         try {

@@ -13,24 +13,21 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
+package nl.knaw.dans.lobstore.core;
 
-package nl.knaw.dans.lobstore.config;
+import lombok.RequiredArgsConstructor;
+import nl.knaw.dans.lib.util.pollingtaskexec.TaskSource;
+import nl.knaw.dans.lobstore.api.JobStatusDto;
+import nl.knaw.dans.lobstore.db.JobDao;
 
-import io.dropwizard.util.DataSize;
-import java.nio.file.Path;
-import javax.validation.constraints.NotNull;
-import lombok.Data;
+import java.util.List;
 
-@Data
-public class DownloadConfig {
-    @NotNull
-    private DataSize chunkSize;
-    @NotNull
-    private Path baseDir;
-    @NotNull
-    private DataSize minimalBucketSize;
-    @NotNull
-    private DataSize quota;
-    @NotNull
-    private TaskQueueConfig taskQueue;
+@RequiredArgsConstructor
+public class DownloadTaskSource implements TaskSource<Job> {
+    private final JobDao jobDao;
+
+    @Override
+    public List<Job> nextInputs() {
+        return jobDao.findByStatus(JobStatusDto.PENDING);
+    }
 }

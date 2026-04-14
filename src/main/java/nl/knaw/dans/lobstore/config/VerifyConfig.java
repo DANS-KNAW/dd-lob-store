@@ -25,4 +25,6 @@ public class VerifyConfig {
     private String verifyCommand;
     @NotNull
     private String sshCommand = "ssh";
+    @NotNull
+    private TaskQueueConfig taskQueue;
 }

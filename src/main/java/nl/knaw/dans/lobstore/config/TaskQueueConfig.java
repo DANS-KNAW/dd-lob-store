@@ -13,24 +13,27 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-
 package nl.knaw.dans.lobstore.config;
 
-import io.dropwizard.util.DataSize;
-import java.nio.file.Path;
+import io.dropwizard.util.Duration;
+import javax.validation.constraints.Min;
 import javax.validation.constraints.NotNull;
 import lombok.Data;
 
 @Data
-public class DownloadConfig {
+public class TaskQueueConfig {
     @NotNull
-    private DataSize chunkSize;
+    private String nameFormat;
+
+    @Min(1)
+    private int maxQueueSize;
+
+    @Min(1)
+    private int minThreads;
+
+    @Min(1)
+    private int maxThreads;
+
     @NotNull
-    private Path baseDir;
-    @NotNull
-    private DataSize minimalBucketSize;
-    @NotNull
-    private DataSize quota;
-    @NotNull
-    private TaskQueueConfig taskQueue;
+    private Duration keepAliveTime;
 }
