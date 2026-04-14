@@ -60,14 +60,14 @@ transfer:
     quota: 100G
   packageConfig:
     baseDir: data/upload
-    packageCommand: /usr/local/bin/package.sh
-    verifyCommand: /usr/local/bin/verify-package.sh
+    packageCommand: .venv/bin/dmftar -x -f {0}.dmftar {0}
+    verifyCommand: .venv/bin/dmftar --verify -f {0}.dmftar
     quota: 100G
   transferJob:
-    transferCommand: /usr/local/bin/transfer.sh
-    destination: /data/vault
+    transferCommand:
+    destination: archive/test.lobs
   verify:
-    verifyCommand: /usr/local/bin/verify-transfer.sh
+    verifyCommand:
     sshCommand: ssh
 
 #

@@ -96,6 +96,15 @@
                 <artifactId>jacoco-maven-plugin</artifactId>
             </plugin>
             <plugin>
+                <groupId>com.mycila</groupId>
+                <artifactId>license-maven-plugin</artifactId>
+                <configuration combine.children="override">
+                    <excludes combine.children="append">
+                        <exclude>modules/</exclude>
+                    </excludes>
+                </configuration>
+            </plugin>
+            <plugin>
                 <groupId>org.apache.maven.plugins</groupId>
                 <artifactId>maven-compiler-plugin</artifactId>
                 <configuration combine.children="override">
