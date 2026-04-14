@@ -20,6 +20,8 @@ import lombok.AllArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import nl.knaw.dans.lobstore.api.JobStatusDto;
 import nl.knaw.dans.lobstore.db.JobDao;
+import org.apache.commons.exec.CommandLine;
+import org.apache.commons.exec.DefaultExecutor;
 
 import java.io.IOException;
 import java.nio.file.Files;
@@ -103,19 +105,18 @@ public class PackageTask implements Runnable {
         }
     }
 
-    private void executeDmftar(Path bucketPath, List<String> filePaths) throws IOException, InterruptedException {
+    private void executeDmftar(Path bucketPath, List<String> filePaths) throws IOException {
         // Simple implementation: dmftar -c bucketPath file1 file2 ...
         // In reality, this might need a more complex command or input file
-        List<String> command = new java.util.ArrayList<>();
-        command.add(dmftarCommand);
-        command.add("-c");
-        command.add(bucketPath.toString());
-        command.addAll(filePaths);
+        CommandLine commandLine = new CommandLine(dmftarCommand);
+        commandLine.addArgument("-c");
+        commandLine.addArgument(bucketPath.toString());
+        for (String filePath : filePaths) {
+            commandLine.addArgument(filePath);
+        }
 
-        ProcessBuilder pb = new ProcessBuilder(command);
-        pb.inheritIO();
-        Process process = pb.start();
-        int exitCode = process.waitFor();
+        DefaultExecutor executor = DefaultExecutor.builder().get();
+        int exitCode = executor.execute(commandLine);
         if (exitCode != 0) {
             throw new IOException("dmftar failed with exit code " + exitCode);
         }

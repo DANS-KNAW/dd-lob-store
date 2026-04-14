@@ -20,6 +20,8 @@ import lombok.AllArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import nl.knaw.dans.lobstore.api.JobStatusDto;
 import nl.knaw.dans.lobstore.db.JobDao;
+import org.apache.commons.exec.CommandLine;
+import org.apache.commons.exec.DefaultExecutor;
 
 import java.io.IOException;
 import java.nio.file.Path;
@@ -72,18 +74,15 @@ public class TransferTask implements Runnable {
         }
     }
 
-    private void executeRsync(Path bucketPath) throws IOException, InterruptedException {
+    private void executeRsync(Path bucketPath) throws IOException {
         // rsync -a bucketPath destination/
-        List<String> command = new java.util.ArrayList<>();
-        command.add(rsyncCommand);
-        command.add("-a");
-        command.add(bucketPath.toString());
-        command.add(transferDestination);
+        CommandLine commandLine = new CommandLine(rsyncCommand);
+        commandLine.addArgument("-a");
+        commandLine.addArgument(bucketPath.toString());
+        commandLine.addArgument(transferDestination);
 
-        ProcessBuilder pb = new ProcessBuilder(command);
-        pb.inheritIO();
-        Process process = pb.start();
-        int exitCode = process.waitFor();
+        DefaultExecutor executor = DefaultExecutor.builder().get();
+        int exitCode = executor.execute(commandLine);
         if (exitCode != 0) {
             throw new IOException("rsync failed with exit code " + exitCode);
         }

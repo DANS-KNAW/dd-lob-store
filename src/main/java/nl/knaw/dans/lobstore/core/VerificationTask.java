@@ -20,6 +20,8 @@ import lombok.AllArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import nl.knaw.dans.lobstore.api.JobStatusDto;
 import nl.knaw.dans.lobstore.db.JobDao;
+import org.apache.commons.exec.CommandLine;
+import org.apache.commons.exec.DefaultExecutor;
 
 import java.io.IOException;
 import java.nio.file.Files;
@@ -88,7 +90,7 @@ public class VerificationTask implements Runnable {
         }
     }
 
-    private void executeVerification(String bucketId) throws IOException, InterruptedException {
+    private void executeVerification(String bucketId) throws IOException {
         // ssh remoteHost 'dmftar --verify /path/to/dest/bucketId.tar'
         // destination is user@host:/path/to/dest
         String[] parts = transferDestination.split(":");
@@ -96,15 +98,12 @@ public class VerificationTask implements Runnable {
         String remoteDir = parts[1];
         String remotePath = remoteDir + "/" + bucketId + ".tar";
 
-        List<String> command = new java.util.ArrayList<>();
-        command.add(sshCommand);
-        command.add(host);
-        command.add(verificationCommand + " " + remotePath);
+        CommandLine commandLine = new CommandLine(sshCommand);
+        commandLine.addArgument(host);
+        commandLine.addArgument(verificationCommand + " " + remotePath);
 
-        ProcessBuilder pb = new ProcessBuilder(command);
-        pb.inheritIO();
-        Process process = pb.start();
-        int exitCode = process.waitFor();
+        DefaultExecutor executor = DefaultExecutor.builder().get();
+        int exitCode = executor.execute(commandLine);
         if (exitCode != 0) {
             throw new IOException("Verification failed with exit code " + exitCode);
         }
