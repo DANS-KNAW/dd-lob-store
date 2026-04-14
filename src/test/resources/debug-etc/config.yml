@@ -18,28 +18,24 @@ server:
         timeZone: system
         currentLogFilename: /var/opt/dans.knaw.nl/log/dd-lob-store/request.log
 
-dataStations:
-  - name: archaeology
-    baseUrl: https://dev.archaeology.datastations.nl
-    apiKey: changeme
-    lobStore:
-      user: changeme
-      host: archive.surfsara.nl
-      path: archive/data-vault/archaelogy.lobs
+#dataStations:
+#  - name: archaeology
+#    baseUrl: https://dev.archaeology.datastations.nl
+#    apiKey: changeme
+#    lobStore:
+#      user: changeme
+#      host: archive.surfsara.nl
+#      path: archive/data-vault/archaelogy.lobs
 
 database:
   driverClass: org.postgresql.Driver
-  user: dd_lob_store
-  password: dd_lob_store
-  url: jdbc:postgresql://localhost:5432/dd_lob_store
+  user: dd_lob_store_test
+  password: dd_lob_store_test
+  url: jdbc:postgresql://dev.transfer.dans-data.nl:5432/dd_lob_store_test
+  logValidationErrors: true
   properties:
-    charSet: UTF-8
-    hibernate.dialect: org.hibernate.dialect.PostgreSQLDialect
-  maxSize: 8
-  minSize: 2
-  checkConnectionWhileIdle: false
-  evictionInterval: 10s
-  minIdleTime: 1 minute
+    hibernate.dialect: 'org.hibernate.dialect.PostgreSQL95Dialect'
+    hibernate.hbm2ddl.auto: update
 
 httpClient:
   timeout: 500ms
@@ -58,17 +54,53 @@ transfer:
     baseDir: data/download
     minimalBucketSize: 1G
     quota: 100G
+    taskQueue:
+      nameFormat: "extract-metadata-worker-%d"
+      maxQueueSize: 5000
+      # Number of threads will be increased when maxQueueSize is exceeded.
+      minThreads: 1
+      # No more than maxThreads will be created though
+      maxThreads: 3
+      # Threads will die after 60 seconds of idleness
+      keepAliveTime: 60 seconds
   packageConfig:
-    baseDir: data/upload
-    packageCommand: .venv/bin/dmftar -x -f {0}.dmftar {0}
-    verifyCommand: .venv/bin/dmftar --verify -f {0}.dmftar
+    baseDir: /data/lob-transfer/upload
+    packageCommand: /usr/local/bin/package.sh
+    verifyCommand: /usr/local/bin/verify-package.sh
     quota: 100G
+    taskQueue:
+      nameFormat: "extract-metadata-worker-%d"
+      maxQueueSize: 5000
+      # Number of threads will be increased when maxQueueSize is exceeded.
+      minThreads: 1
+      # No more than maxThreads will be created though
+      maxThreads: 3
+      # Threads will die after 60 seconds of idleness
+      keepAliveTime: 60 seconds
   transferJob:
-    transferCommand:
-    destination: archive/test.lobs
+    transferCommand: /usr/local/bin/transfer.sh
+    destination: /data/vault
+    taskQueue:
+      nameFormat: "extract-metadata-worker-%d"
+      maxQueueSize: 5000
+      # Number of threads will be increased when maxQueueSize is exceeded.
+      minThreads: 1
+      # No more than maxThreads will be created though
+      maxThreads: 3
+      # Threads will die after 60 seconds of idleness
+      keepAliveTime: 60 seconds
   verify:
-    verifyCommand:
+    verifyCommand: /usr/local/bin/verify-transfer.sh
     sshCommand: ssh
+    taskQueue:
+      nameFormat: "extract-metadata-worker-%d"
+      maxQueueSize: 5000
+      # Number of threads will be increased when maxQueueSize is exceeded.
+      minThreads: 1
+      # No more than maxThreads will be created though
+      maxThreads: 3
+      # Threads will die after 60 seconds of idleness
+      keepAliveTime: 60 seconds
 
 #
 # See https://www.dropwizard.io/en/latest/manual/configuration.html#logging
@@ -79,7 +111,7 @@ logging:
     - type: file
       archive: false
       timeZone: system
-      currentLogFilename: /var/opt/dans.knaw.nl/log/dd-lob-store/dd-lob-store.log
+      currentLogFilename: data/dd-lob-store.log
     - type: console
       # Used in combination with journald, which already adds the timestamp
       logFormat: "%-5p %c{0}: %m%n%dwREx"

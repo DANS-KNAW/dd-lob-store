@@ -17,19 +17,22 @@ package nl.knaw.dans.lobstore.core;
 
 import lombok.RequiredArgsConstructor;
 import nl.knaw.dans.lib.util.pollingtaskexec.TaskFactory;
+import nl.knaw.dans.lobstore.db.JobDao;
 
+import javax.ws.rs.client.Client;
+import java.nio.file.Path;
 import java.util.List;
 
 @RequiredArgsConstructor
 public class DownloadTaskFactory implements TaskFactory<Job> {
-    private final DownloadTask downloadTask;
+    private final JobDao jobDao;
+    private final Client httpClient;
+    private final Path downloadDir;
+    private final long chunkSize;
+    private final DiskQuotaManager diskQuotaManager;
 
     @Override
     public Runnable create(List<Job> records) {
-        return () -> {
-            for (Job job : records) {
-                downloadTask.processJob(job);
-            }
-        };
+        return new DownloadTask(records.get(0).getId(), jobDao, httpClient, downloadDir, chunkSize, diskQuotaManager);
     }
 }

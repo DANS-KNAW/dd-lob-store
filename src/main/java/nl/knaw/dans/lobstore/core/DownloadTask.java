@@ -32,20 +32,23 @@ import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.StandardOpenOption;
 import java.time.OffsetDateTime;
-import java.util.List;
+import java.util.UUID;
 
 @Slf4j
 @AllArgsConstructor
-public class DownloadTask {
+public class DownloadTask implements Runnable {
+    private final UUID jobId;
     private final JobDao jobDao;
     private final Client httpClient;
     private final Path downloadFolder;
     private final long chunkSize;
     private final DiskQuotaManager diskQuotaManager;
 
-    public void processJob(Job job) {
+    @UnitOfWork
+    public void run() {
+        var job = jobDao.findById(jobId).orElseThrow(() -> new IllegalStateException("Job not found: " + jobId));
         try {
-            log.info("Downloading job {}", job.getId());
+            log.info("Downloading job {}", jobId);
             job.setStatus(JobStatusDto.DOWNLOADING);
             job.setModificationTimestamp(OffsetDateTime.now());
             jobDao.create(job);
@@ -66,7 +69,7 @@ public class DownloadTask {
                 }
 
                 try (InputStream is = response.readEntity(InputStream.class);
-                     OutputStream os = new BufferedOutputStream(Files.newOutputStream(outputFile, StandardOpenOption.CREATE, StandardOpenOption.TRUNCATE_EXISTING))) {
+                    OutputStream os = new BufferedOutputStream(Files.newOutputStream(outputFile, StandardOpenOption.CREATE, StandardOpenOption.TRUNCATE_EXISTING))) {
                     byte[] buffer = new byte[8192];
                     int read;
                     while ((read = is.read(buffer)) != -1) {
@@ -88,7 +91,8 @@ public class DownloadTask {
             diskQuotaManager.claim(job.getId(), "download", totalRead);
 
             log.info("Downloaded job {} to {}, SHA-1: {}", job.getId(), outputFile, sha1);
-        } catch (Exception e) {
+        }
+        catch (Exception e) {
             log.error("Error processing job {}", job.getId(), e);
             job.setStatus(JobStatusDto.FAILED);
             job.setErrorMessage(e.getMessage());
