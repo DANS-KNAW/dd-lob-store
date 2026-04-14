@@ -29,7 +29,7 @@
     <artifactId>dd-lob-store</artifactId>
     <version>0.1.0-SNAPSHOT</version>
 
-    <name>Dd Lob Store</name>
+    <name>DD LOB Store</name>
     <url>https://github.com/DANS-KNAW/dd-lob-store</url>
     <description>Manages a DANS Data Vault Large Object Store</description>
     <inceptionYear>2026</inceptionYear>
