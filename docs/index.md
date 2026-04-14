@@ -1,11 +1,11 @@
 dd-lob-store
 =============
 
-Manages a DANS Data Vault Large Object Store
+Manages DANS Data Vault Large Object Stores
 
 Purpose
 -------
-Transfers large files from Dataverse instances to the Data Vault Large Object Store.
+Transfers large files from Dataverse instances to a Data Vault Large Object Store.
 
 Interfaces
 ----------

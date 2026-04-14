@@ -31,7 +31,7 @@
 
     <name>DD LOB Store</name>
     <url>https://github.com/DANS-KNAW/dd-lob-store</url>
-    <description>Manages a DANS Data Vault Large Object Store</description>
+    <description>Manages DANS Data Vault Large Object Stores</description>
     <inceptionYear>2026</inceptionYear>
 
     <properties>
