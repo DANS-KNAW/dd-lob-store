@@ -29,7 +29,9 @@ import java.nio.file.Path;
 import java.time.OffsetDateTime;
 import java.util.List;
 import java.util.Map;
+import java.util.UUID;
 import java.util.stream.Collectors;
+import java.util.stream.Stream;
 
 @Slf4j
 @AllArgsConstructor
@@ -78,7 +80,7 @@ public class VerificationTask implements Runnable {
             cleanupBucketFile(bucketId);
             
             // Release quota
-            diskQuotaManager.release(java.util.UUID.fromString(bucketId));
+            diskQuotaManager.release(UUID.fromString(bucketId));
             for (Job job : jobs) {
                 diskQuotaManager.release(job.getId());
             }
@@ -130,7 +132,7 @@ public class VerificationTask implements Runnable {
 
     private void deleteRecursively(Path path) throws IOException {
         if (Files.isDirectory(path)) {
-            try (java.util.stream.Stream<Path> entries = Files.list(path)) {
+            try (Stream<Path> entries = Files.list(path)) {
                 for (Path entry : entries.collect(Collectors.toList())) {
                     deleteRecursively(entry);
                 }

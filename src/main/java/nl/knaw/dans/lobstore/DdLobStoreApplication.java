@@ -22,6 +22,7 @@ import io.dropwizard.core.setup.Environment;
 import io.dropwizard.hibernate.HibernateBundle;
 import io.dropwizard.hibernate.UnitOfWorkAwareProxyFactory;
 import io.dropwizard.client.JerseyClientBuilder;
+import io.dropwizard.lifecycle.Managed;
 import nl.knaw.dans.lobstore.config.DdLobStoreConfig;
 import nl.knaw.dans.lobstore.core.DiskQuotaManager;
 import nl.knaw.dans.lobstore.core.DownloadTask;
@@ -34,6 +35,7 @@ import nl.knaw.dans.lobstore.resources.JobsResource;
 import nl.knaw.dans.lobstore.resources.LocationResource;
 
 import javax.ws.rs.client.Client;
+import java.nio.file.Path;
 import java.util.concurrent.Executors;
 import java.util.concurrent.ScheduledExecutorService;
 import java.util.concurrent.TimeUnit;
@@ -81,19 +83,19 @@ public class DdLobStoreApplication extends Application<DdLobStoreConfig> {
         UnitOfWorkAwareProxyFactory proxyFactory = new UnitOfWorkAwareProxyFactory(hibernateBundle);
         
         DownloadTask downloadTask = proxyFactory.create(DownloadTask.class, 
-                new Class[]{JobDao.class, Client.class, java.nio.file.Path.class, long.class, DiskQuotaManager.class},
+                new Class[]{JobDao.class, Client.class, Path.class, long.class, DiskQuotaManager.class},
                 new Object[]{jobDao, httpClient, config.getTransfer().getDownload().getBaseDir(), config.getTransfer().getDownload().getChunkSize().toBytes(), diskQuotaManager});
         
         PackageTask packageTask = proxyFactory.create(PackageTask.class,
-                new Class[]{JobDao.class, java.nio.file.Path.class, long.class, String.class, DiskQuotaManager.class},
+                new Class[]{JobDao.class, Path.class, long.class, String.class, DiskQuotaManager.class},
                 new Object[]{jobDao, config.getTransfer().getPackageConfig().getBaseDir(), config.getTransfer().getDownload().getMinimalBucketSize().toBytes(), config.getTransfer().getPackageConfig().getPackageCommand(), diskQuotaManager});
         
         TransferTask transferTask = proxyFactory.create(TransferTask.class,
-                new Class[]{JobDao.class, java.nio.file.Path.class, String.class, String.class},
+                new Class[]{JobDao.class, Path.class, String.class, String.class},
                 new Object[]{jobDao, config.getTransfer().getPackageConfig().getBaseDir(), config.getTransfer().getTransferJob().getTransferCommand(), config.getTransfer().getTransferJob().getDestination()});
         
         VerificationTask verificationTask = proxyFactory.create(VerificationTask.class,
-                new Class[]{JobDao.class, java.nio.file.Path.class, java.nio.file.Path.class, String.class, String.class, String.class, DiskQuotaManager.class},
+                new Class[]{JobDao.class, Path.class, Path.class, String.class, String.class, String.class, DiskQuotaManager.class},
                 new Object[]{jobDao, config.getTransfer().getDownload().getBaseDir(), config.getTransfer().getPackageConfig().getBaseDir(), config.getTransfer().getVerify().getSshCommand(), config.getTransfer().getVerify().getVerifyCommand(), config.getTransfer().getTransferJob().getDestination(), diskQuotaManager});
 
         ScheduledExecutorService scheduler = Executors.newScheduledThreadPool(4);
@@ -105,7 +107,7 @@ public class DdLobStoreApplication extends Application<DdLobStoreConfig> {
         environment.lifecycle().manage(new ManagedExecutorService(scheduler));
     }
 
-    private static class ManagedExecutorService implements io.dropwizard.lifecycle.Managed {
+    private static class ManagedExecutorService implements Managed {
         private final ScheduledExecutorService scheduler;
         ManagedExecutorService(ScheduledExecutorService scheduler) { this.scheduler = scheduler; }
         @Override public void start() {}
