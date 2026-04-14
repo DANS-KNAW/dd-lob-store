@@ -49,6 +49,7 @@ import nl.knaw.dans.lobstore.resources.LocationResource;
 
 import javax.ws.rs.client.Client;
 import java.nio.file.Path;
+import java.time.Duration;
 import java.util.concurrent.Executors;
 import java.util.concurrent.ScheduledExecutorService;
 import java.util.concurrent.TimeUnit;
@@ -106,13 +107,13 @@ public class DdLobStoreApplication extends Application<DdLobStoreConfig> {
         environment.lifecycle().manage(createPollingTaskExecutor("Verify", config.getTransfer().getVerify().getTaskQueue(), new VerificationTaskSource(jobDao), new VerificationTaskFactory(verificationTask), proxyFactory, environment));
     }
 
-    private Managed createPollingTaskExecutor(String name, TaskQueueConfig queueConfig, nl.knaw.dans.lib.util.pollingtaskexec.TaskSource<Job> source, nl.knaw.dans.lib.util.pollingtaskexec.TaskFactory<Job> factory, UnitOfWorkAwareProxyFactory proxyFactory, Environment environment) {
+    private Managed createPollingTaskExecutor(String name, TaskQueueConfig queueConfig, TaskSource<Job> source, TaskFactory<Job> factory, UnitOfWorkAwareProxyFactory proxyFactory, Environment environment) {
         ScheduledExecutorService taskScheduler = environment.lifecycle().scheduledExecutorService(name + "-scheduler").build();
         
         PollingTaskExecutor<Job> executor = new PollingTaskExecutor<>(
                 name,
                 taskScheduler,
-                java.time.Duration.ofSeconds(10), // polling interval
+                Duration.ofSeconds(10), // polling interval
                 source,
                 factory
         );
