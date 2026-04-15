@@ -53,13 +53,23 @@ httpClient:
   userAgent: dd-lob-store
 
 transfer:
+  fileSize:
+    taskQueue:
+      nameFormat: "extract-metadata-worker-%d"
+      maxQueueSize: 5000
+      # Number of threads will be increased when maxQueueSize is exceeded.
+      minThreads: 1
+      # No more than maxThreads will be created though
+      maxThreads: 3
+      # Threads will die after 60 seconds of idleness
+      keepAliveTime: 60 seconds
   download:
     chunkSize: 1G
     baseDir: /data/lob-transfer/download
     minimalBucketSize: 1G
     quota: 100G
     taskQueue:
-      nameFormat: "extract-metadata-worker-%d"
+      nameFormat: "download-worker-%d"
       maxQueueSize: 5000
       # Number of threads will be increased when maxQueueSize is exceeded.
       minThreads: 1
@@ -73,7 +83,7 @@ transfer:
     verifyCommand: /usr/local/bin/verify-package.sh
     quota: 100G
     taskQueue:
-      nameFormat: "extract-metadata-worker-%d"
+      nameFormat: "package-worker-%d"
       maxQueueSize: 5000
       # Number of threads will be increased when maxQueueSize is exceeded.
       minThreads: 1
@@ -85,7 +95,7 @@ transfer:
     transferCommand: /usr/local/bin/transfer.sh
     destination: /data/vault
     taskQueue:
-      nameFormat: "extract-metadata-worker-%d"
+      nameFormat: "transfer-worker-%d"
       maxQueueSize: 5000
       # Number of threads will be increased when maxQueueSize is exceeded.
       minThreads: 1
@@ -97,7 +107,7 @@ transfer:
     verifyCommand: /usr/local/bin/verify-transfer.sh
     sshCommand: ssh
     taskQueue:
-      nameFormat: "extract-metadata-worker-%d"
+      nameFormat: "verify-worker-%d"
       maxQueueSize: 5000
       # Number of threads will be increased when maxQueueSize is exceeded.
       minThreads: 1

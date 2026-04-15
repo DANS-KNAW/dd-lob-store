@@ -38,6 +38,7 @@
         <main-class>nl.knaw.dans.lobstore.DdLobStoreApplication</main-class>
         <dd-lob-store-api.version>0.1.0-SNAPSHOT</dd-lob-store-api.version>
         <dans-java-utils.version>3.0.0-SNAPSHOT</dans-java-utils.version>
+        <dans-dataverse-client-lib.version>1.11.0</dans-dataverse-client-lib.version>
     </properties>
 
     <scm>
@@ -46,6 +47,10 @@
     </scm>
 
     <dependencies>
+        <dependency>
+            <groupId>nl.knaw.dans</groupId>
+            <artifactId>dans-dataverse-client-lib</artifactId>
+        </dependency>
         <dependency>
             <groupId>io.dropwizard</groupId>
             <artifactId>dropwizard-core</artifactId>
