@@ -16,7 +16,7 @@
 package nl.knaw.dans.lobstore.db;
 
 import io.dropwizard.hibernate.AbstractDAO;
-import nl.knaw.dans.lobstore.core.Job;
+import nl.knaw.dans.lobstore.core.FileDownloadRequest;
 import org.hibernate.SessionFactory;
 
 import java.util.List;
@@ -24,25 +24,25 @@ import java.util.Optional;
 import java.util.UUID;
 import nl.knaw.dans.lobstore.api.JobStatusDto;
 
-public class JobDao extends AbstractDAO<Job> {
+public class JobDao extends AbstractDAO<FileDownloadRequest> {
     public JobDao(SessionFactory sessionFactory) {
         super(sessionFactory);
     }
 
-    public Optional<Job> findById(UUID id) {
+    public Optional<FileDownloadRequest> findById(UUID id) {
         return Optional.ofNullable(get(id));
     }
 
-    public Job create(Job job) {
-        return persist(job);
+    public FileDownloadRequest create(FileDownloadRequest fileDownloadRequest) {
+        return persist(fileDownloadRequest);
     }
 
-    public List<Job> findByStatus(JobStatusDto status) {
+    public List<FileDownloadRequest> findByStatus(JobStatusDto status) {
         return list(namedTypedQuery("nl.knaw.dans.lobstore.core.Job.findByStatus")
                 .setParameter("status", status));
     }
 
-    public Optional<Job> findBySha1SumAndStatus(String sha1Sum, JobStatusDto status) {
+    public Optional<FileDownloadRequest> findBySha1SumAndStatus(String sha1Sum, JobStatusDto status) {
         return Optional.ofNullable(uniqueResult(namedTypedQuery("nl.knaw.dans.lobstore.core.Job.findBySha1SumAndStatus")
                 .setParameter("sha1Sum", sha1Sum)
                 .setParameter("status", status)));

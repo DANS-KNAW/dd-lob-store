@@ -33,7 +33,6 @@ import nl.knaw.dans.lobstore.config.DdLobStoreConfig;
 import nl.knaw.dans.lobstore.core.DiskQuotaManager;
 import nl.knaw.dans.lobstore.core.DownloadTaskFactory;
 import nl.knaw.dans.lobstore.core.DownloadTaskSource;
-import nl.knaw.dans.lobstore.core.Job;
 import nl.knaw.dans.lobstore.db.DiskClaimDao;
 import nl.knaw.dans.lobstore.db.JobDao;
 import nl.knaw.dans.lobstore.resources.JobsResource;

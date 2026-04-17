@@ -46,59 +46,7 @@ public class DownloadTask implements Runnable {
 
     @UnitOfWork
     public void run() {
-        var job = jobDao.findById(jobId).orElseThrow(() -> new IllegalStateException("Job not found: " + jobId));
-        try {
-            log.info("Downloading job {}", jobId);
-            job.setStatus(JobStatusDto.DOWNLOADING);
-            job.setModificationTimestamp(OffsetDateTime.now());
-            jobDao.create(job);
 
-            Path jobPath = downloadFolder.resolve(job.getId().toString());
-            Files.createDirectories(jobPath);
-            Path outputFile = jobPath.resolve("data");
-
-            long totalRead = 0;
-            try (Response response = httpClient.target(job.getUrl()).request().get()) {
-                if (response.getStatus() != 200) {
-                    throw new IOException("Failed to download: " + response.getStatus());
-                }
-
-                Long contentLength = response.getLength() != -1 ? (long) response.getLength() : null;
-                if (contentLength != null && !diskQuotaManager.claim(job.getId(), "download", 2 * contentLength)) {
-                    throw new IOException("Insufficient disk quota");
-                }
-
-                try (InputStream is = response.readEntity(InputStream.class);
-                    OutputStream os = new BufferedOutputStream(Files.newOutputStream(outputFile, StandardOpenOption.CREATE, StandardOpenOption.TRUNCATE_EXISTING))) {
-                    byte[] buffer = new byte[8192];
-                    int read;
-                    while ((read = is.read(buffer)) != -1) {
-                        os.write(buffer, 0, read);
-                        totalRead += read;
-                    }
-                }
-            }
-
-            String sha1 = calculateSha1(outputFile);
-            job.setSha1Sum(sha1);
-            job.setFileSize(totalRead);
-            job.setFilePath(outputFile.toString());
-            job.setStatus(JobStatusDto.PACKAGING);
-            job.setModificationTimestamp(OffsetDateTime.now());
-            jobDao.create(job);
-
-            diskQuotaManager.release(job.getId(), "download");
-            diskQuotaManager.claim(job.getId(), "download", totalRead);
-
-            log.info("Downloaded job {} to {}, SHA-1: {}", job.getId(), outputFile, sha1);
-        }
-        catch (Exception e) {
-            log.error("Error processing job {}", job.getId(), e);
-            job.setStatus(JobStatusDto.FAILED);
-            job.setErrorMessage(e.getMessage());
-            job.setModificationTimestamp(OffsetDateTime.now());
-            jobDao.create(job);
-        }
     }
 
     private String calculateSha1(Path file) throws IOException {

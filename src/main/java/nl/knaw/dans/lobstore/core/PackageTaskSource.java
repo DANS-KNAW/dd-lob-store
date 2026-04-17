@@ -26,18 +26,18 @@ import java.util.Map;
 import java.util.stream.Collectors;
 
 @RequiredArgsConstructor
-public class PackageTaskSource implements TaskSource<Job> {
+public class PackageTaskSource implements TaskSource<FileDownloadRequest> {
     private final JobDao jobDao;
 
     @Override
-    public List<Job> nextInputs() {
-        List<Job> downloadedJobs = jobDao.findByStatus(JobStatusDto.PACKAGING);
-        if (downloadedJobs.isEmpty()) {
+    public List<FileDownloadRequest> nextInputs() {
+        List<FileDownloadRequest> downloadedFileDownloadRequests = jobDao.findByStatus(JobStatusDto.PACKAGING);
+        if (downloadedFileDownloadRequests.isEmpty()) {
             return Collections.emptyList();
         }
 
-        Map<String, List<Job>> byDatastation = downloadedJobs.stream()
-                .collect(Collectors.groupingBy(Job::getDatastation));
+        Map<String, List<FileDownloadRequest>> byDatastation = downloadedFileDownloadRequests.stream()
+                .collect(Collectors.groupingBy(FileDownloadRequest::getDatastation));
 
         // Return first datastation's jobs
         return byDatastation.values().iterator().next();

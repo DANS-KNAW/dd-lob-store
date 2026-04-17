@@ -21,11 +21,11 @@ import nl.knaw.dans.lib.util.pollingtaskexec.TaskFactory;
 import java.util.List;
 
 @RequiredArgsConstructor
-public class TransferTaskFactory implements TaskFactory<Job> {
+public class TransferTaskFactory implements TaskFactory<FileDownloadRequest> {
     private final TransferTask transferTask;
 
     @Override
-    public Runnable create(List<Job> records) {
+    public Runnable create(List<FileDownloadRequest> records) {
         return () -> {
             if (!records.isEmpty()) {
                 transferTask.processBucket(records.get(0).getBucketId(), records);

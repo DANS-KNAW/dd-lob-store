@@ -15,23 +15,25 @@
  */
 package nl.knaw.dans.lobstore.core;
 
-import lombok.RequiredArgsConstructor;
-import nl.knaw.dans.lib.util.pollingtaskexec.TaskSource;
-import nl.knaw.dans.lobstore.api.JobStatusDto;
-import nl.knaw.dans.lobstore.db.JobDao;
+import lombok.AllArgsConstructor;
+import lombok.Builder;
+import lombok.Data;
+import lombok.NoArgsConstructor;
 
-import java.util.List;
-import java.util.UUID;
+import javax.persistence.Column;
+import javax.persistence.Entity;
+import javax.persistence.NamedQueries;
+import javax.persistence.NamedQuery;
+import javax.persistence.Table;
 
-/**
- * TaskSource that provides the next file to be downloaded.
- */
-@RequiredArgsConstructor
-public class DownloadTaskSource implements TaskSource<UUID> {
-    private final JobDao jobDao;
+@Entity
+@Table(name = "archive")
+@Data
+@Builder
+@NoArgsConstructor
+@AllArgsConstructor
+public class Archive {
+    @Column(name = "bucket_id")
+    private String bucketId;
 
-    @Override
-    public List<UUID> nextInputs() {
-        return jobDao.findByStatus(JobStatusDto.PENDING).stream().map(FileDownloadRequest::getId).toList();
-    }
 }

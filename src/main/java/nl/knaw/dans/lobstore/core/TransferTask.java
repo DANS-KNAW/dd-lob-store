@@ -15,20 +15,15 @@
  */
 package nl.knaw.dans.lobstore.core;
 
-import io.dropwizard.hibernate.UnitOfWork;
 import lombok.AllArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
-import nl.knaw.dans.lobstore.api.JobStatusDto;
 import nl.knaw.dans.lobstore.db.JobDao;
 import org.apache.commons.exec.CommandLine;
 import org.apache.commons.exec.DefaultExecutor;
 
 import java.io.IOException;
 import java.nio.file.Path;
-import java.time.OffsetDateTime;
 import java.util.List;
-import java.util.Map;
-import java.util.stream.Collectors;
 
 @Slf4j
 @AllArgsConstructor
@@ -38,24 +33,8 @@ public class TransferTask {
     private final String rsyncCommand;
     private final String transferDestination;
 
-    public void processBucket(String bucketId, List<Job> jobs) {
-        log.info("Transferring bucket {} for {} jobs", bucketId, jobs.size());
-        Path bucketPath = uploadFolder.resolve(bucketId + ".tar");
+    public void processBucket(String bucketId, List<FileDownloadRequest> fileDownloadRequests) {
 
-        try {
-            executeRsync(bucketPath);
-
-            OffsetDateTime now = OffsetDateTime.now();
-            for (Job job : jobs) {
-                job.setStatus(JobStatusDto.VERIFYING);
-                job.setModificationTimestamp(now);
-                jobDao.create(job);
-            }
-            log.info("Transferred bucket {} to destination", bucketId);
-
-        } catch (Exception e) {
-            log.error("Failed to transfer bucket {}", bucketId, e);
-        }
     }
 
     private void executeRsync(Path bucketPath) throws IOException {

@@ -15,10 +15,8 @@
  */
 package nl.knaw.dans.lobstore.core;
 
-import io.dropwizard.hibernate.UnitOfWork;
 import lombok.AllArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
-import nl.knaw.dans.lobstore.api.JobStatusDto;
 import nl.knaw.dans.lobstore.db.JobDao;
 import org.apache.commons.exec.CommandLine;
 import org.apache.commons.exec.DefaultExecutor;
@@ -26,10 +24,7 @@ import org.apache.commons.exec.DefaultExecutor;
 import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.Path;
-import java.time.OffsetDateTime;
 import java.util.List;
-import java.util.Map;
-import java.util.UUID;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
@@ -44,36 +39,8 @@ public class VerificationTask {
     private final String transferDestination;
     private final DiskQuotaManager diskQuotaManager;
 
-    public void processBucket(String bucketId, List<Job> jobs) {
-        log.info("Verifying bucket {} for {} jobs", bucketId, jobs.size());
+    public void processBucket(String bucketId, List<FileDownloadRequest> fileDownloadRequests) {
 
-        try {
-            executeVerification(bucketId);
-
-            OffsetDateTime now = OffsetDateTime.now();
-            for (Job job : jobs) {
-                job.setStatus(JobStatusDto.DONE);
-                job.setModificationTimestamp(now);
-                jobDao.create(job);
-                
-                // Cleanup downloaded file
-                cleanupJobFile(job);
-            }
-            
-            // Cleanup upload bucket
-            cleanupBucketFile(bucketId);
-            
-            // Release quota
-            diskQuotaManager.release(UUID.fromString(bucketId));
-            for (Job job : jobs) {
-                diskQuotaManager.release(job.getId());
-            }
-
-            log.info("Verified and cleaned up bucket {}", bucketId);
-
-        } catch (Exception e) {
-            log.error("Failed to verify bucket {}", bucketId, e);
-        }
     }
 
     private void executeVerification(String bucketId) throws IOException {
@@ -95,13 +62,13 @@ public class VerificationTask {
         }
     }
 
-    private void cleanupJobFile(Job job) {
+    private void cleanupJobFile(FileDownloadRequest fileDownloadRequest) {
         try {
-            Path jobPath = downloadFolder.resolve(job.getId().toString());
+            Path jobPath = downloadFolder.resolve(fileDownloadRequest.getId().toString());
             // Recursive delete
             deleteRecursively(jobPath);
         } catch (IOException e) {
-            log.warn("Failed to cleanup downloaded file for job {}", job.getId(), e);
+            log.warn("Failed to cleanup downloaded file for job {}", fileDownloadRequest.getId(), e);
         }
     }
 

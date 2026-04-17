@@ -26,18 +26,18 @@ import java.util.Map;
 import java.util.stream.Collectors;
 
 @RequiredArgsConstructor
-public class VerificationTaskSource implements TaskSource<Job> {
+public class VerificationTaskSource implements TaskSource<FileDownloadRequest> {
     private final JobDao jobDao;
 
     @Override
-    public List<Job> nextInputs() {
-        List<Job> transferredJobs = jobDao.findByStatus(JobStatusDto.VERIFYING);
-        if (transferredJobs.isEmpty()) {
+    public List<FileDownloadRequest> nextInputs() {
+        List<FileDownloadRequest> transferredFileDownloadRequests = jobDao.findByStatus(JobStatusDto.VERIFYING);
+        if (transferredFileDownloadRequests.isEmpty()) {
             return Collections.emptyList();
         }
 
-        Map<String, List<Job>> byBucket = transferredJobs.stream()
-                .collect(Collectors.groupingBy(Job::getBucketId));
+        Map<String, List<FileDownloadRequest>> byBucket = transferredFileDownloadRequests.stream()
+                .collect(Collectors.groupingBy(FileDownloadRequest::getBucketId));
 
         return byBucket.values().iterator().next();
     }

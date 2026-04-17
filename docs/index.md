@@ -45,32 +45,52 @@ This service has the following interfaces:
 Processing
 ----------
 
+### A word about disk quotas
+
+Before discussing the processing pipeline, it is important to understand how the service manages its limited working disk space. Both the download and upload
+folders are assigned a quota, managed by a DiskQuotaManager. The idea is that a task must first claim sufficient disk space to perform its work. If that space
+is not available, the task is not scheduled. The steps below, starting from [Inspect](#inspect), all use a polling mechanism, which checks the
+fileDownloadRequest table for new work. Before scheduling a task, the service checks if the necessary disk space can be claimed. If not, the task is not scheduled and will be
+retried in the next polling cycle.
+
 ### Request creation
 
-The service receives requests for transfer via the API. It first checks if the URL has a base URL that corresponds with the targeted Data Station. If not, the
-request is rejected immediately. Next, the service checks whether the SHA-1 checksum is already present in the targeted LOB-store. If so, the job is immediately
-changed to DONE. Otherwise, the job is created as PENDING in the database.
+The service receives requests for transfer via the API. It checks whether the SHA-1 checksum is already present in the targeted LOB-store. If so, the fileDownloadRequest is
+immediately changed to `DONE`. Otherwise, the fileDownloadRequest is created as `PENDING` in the database.
+
+### Inspect
+
+The Inspect step retrieves the file metadata from the Dataverse instance, including the size and the SHA1-checksum. The size is stored in the fileDownloadRequest record.
+If the SHA-1 checksum from Dataverse does not match the one from the request, the fileDownloadRequest is set to `REJECTED`. If the checksum is OK, the fileDownloadRequest is set to
+`INSPECTED`.
 
 ### File download
 
-There is one worker thread that periodically checks for PENDING jobs and processes them from older to newer. It first creates a new bucket-directory in the
-download-directory if none exists yet. It then starts downloading the file in chunks of the configured size using range requests. The chunk files are named
-`<sha1sum>.<seqnr>`, e.g., `3f24c343d7e7e1d8606c894689625de5a53df28c.1`, `3f24c343d7e7e1d8606c894689625de5a53df28c.2`, etc. After all chunks are downloaded
-they are concatenated into a single file named `<sha1sum>`, e.g., `3f24c343d7e7e1d8606c894689625de5a53df28c`. The chunk files are then deleted. The service then
-verifies that the SHA-1 checksum of the concatenated file matches the expected value. If not, the job is marked as FAILED and the file is deleted.
+The File Download step is responsible for downloading a file. Before the task is scheduled, two disk quotas are claimed in the download folder:
 
-If the bucket size exceeds the configured maximum, the service proceeds to the next step. Otherwise, more files are downloaded first.
+1. One for the size of the file;
+2. One for the size of the file plus a margin.
 
-### Archive package creation
+The task downloads chunks of a configurable size and concatenates them at the end. The second claim is necessary for the concatenation step. The task then
+computes the SHA-1 and verifies it. If it does not match the fileDownloadRequest is set to `REJECTED`. If the checksum is OK, the fileDownloadRequest status is set to `DOWNLOADED`. The
+second of the aforementioned claims is then released.
 
-The service now calls the configured packaging command to create the bucket archive, typically a DMFTAR archive. This archive will be placed in the upload 
-directory. 
+### Package
+
+The Package step is responsible for packaging one or more files into an archive file, typically using DMFTAR. It looks for `DOWNLOADED` files from older to
+newer adding files until the total size exceeds the minimal package threshold. It then claims two quotas in the upload folder:
+
+1. One for the combined sizes of the selected files;
+2. One for the combined sizes of the selected files plus a margin.
+
+It then creates a bucket folder in the upload folder and moves the files into it. For each file the remaining claims on the download folder are now released.
+
+The task now runs the configured packaging command. If that succeeds, the source files are deleted and the second claim on the upload folder is released. 
+Finally, the status of all the corresponding fileDownloadRequests is set to `PACKAGED`.
 
 ### Transfer to Data Archive
 
-After the successful creation of the archive package, the service will now call the configured transfer command. Typically, this will be `rsync` with the option
-activated that allows for resumption after a connection failure. If the process is interrupted or returns a non-zero response, the command is retried after the
-configured waiting period.
+TO DO
 
 ### Verification of transfer
 

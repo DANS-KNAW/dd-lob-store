@@ -48,24 +48,11 @@ import java.util.UUID;
 @Builder
 @NoArgsConstructor
 @AllArgsConstructor
-public class Job {
+public class FileDownloadRequest {
 
     @Id
     @Column(name = "id")
     private UUID id;
-
-    @Column(name = "url", nullable = false)
-    private String url;
-
-    @Column(name = "sha1_sum")
-    private String sha1Sum;
-
-    @Column(name = "datastation", nullable = false)
-    private String datastation;
-
-    @Enumerated(EnumType.STRING)
-    @Column(name = "status", nullable = false)
-    private JobStatusDto status;
 
     @Column(name = "creation_timestamp", nullable = false)
     private OffsetDateTime creationTimestamp;
@@ -73,14 +60,24 @@ public class Job {
     @Column(name = "modification_timestamp", nullable = false)
     private OffsetDateTime modificationTimestamp;
 
-    @Column(name = "file_path")
-    private String filePath;
+    @Column(name = "datastation", nullable = false)
+    private String datastation;
+
+    @Column(name = "file_id", nullable = false)
+    private Long fileId;
+
+    @Column(name = "sha1_sum")
+    private String sha1Sum;
 
     @Column(name = "file_size")
     private Long fileSize;
 
     @Column(name = "bucket_id")
     private String bucketId;
+
+    @Enumerated(EnumType.STRING)
+    @Column(name = "status", nullable = false)
+    private JobStatusDto status;
 
     @Column(name = "error_message")
     private String errorMessage;

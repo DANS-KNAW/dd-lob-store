@@ -17,16 +17,11 @@ package nl.knaw.dans.lobstore.resources;
 
 import io.dropwizard.hibernate.UnitOfWork;
 import nl.knaw.dans.lobstore.api.JobRequestDto;
-import nl.knaw.dans.lobstore.api.JobResponseDto;
 import nl.knaw.dans.lobstore.api.JobStatusInfoDto;
-import nl.knaw.dans.lobstore.api.JobStatusDto;
-import nl.knaw.dans.lobstore.resources.JobsApi;
-import nl.knaw.dans.lobstore.core.Job;
 import nl.knaw.dans.lobstore.db.JobDao;
 
 import javax.ws.rs.NotFoundException;
 import javax.ws.rs.core.Response;
-import java.time.OffsetDateTime;
 import java.util.UUID;
 
 public class JobsResource implements JobsApi {
@@ -39,19 +34,20 @@ public class JobsResource implements JobsApi {
     @Override
     @UnitOfWork
     public Response addJob(JobRequestDto jobRequestDto) {
-        Job job = Job.builder()
-                .id(UUID.randomUUID())
-                .url(jobRequestDto.getUrl().toString())
-                .datastation(jobRequestDto.getDatastation())
-                .status(JobStatusDto.PENDING)
-                .creationTimestamp(OffsetDateTime.now())
-                .modificationTimestamp(OffsetDateTime.now())
-                .build();
-        
-        Job saved = jobDao.create(job);
-        JobResponseDto response = new JobResponseDto();
-        response.setId(saved.getId());
-        return Response.status(Response.Status.CREATED).entity(response).build();
+//        Job job = Job.builder()
+//                .id(UUID.randomUUID())
+//
+//                .datastation(jobRequestDto.getDatastation())
+//                .status(JobStatusDto.PENDING)
+//                .creationTimestamp(OffsetDateTime.now())
+//                .modificationTimestamp(OffsetDateTime.now())
+//                .build();
+//
+//        Job saved = jobDao.create(job);
+//        JobResponseDto response = new JobResponseDto();
+//        response.setId(saved.getId());
+//        return Response.status(Response.Status.CREATED).entity(response).build();
+        return null;
     }
 
     @Override

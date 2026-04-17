@@ -21,11 +21,11 @@ import nl.knaw.dans.lib.util.pollingtaskexec.TaskFactory;
 import java.util.List;
 
 @RequiredArgsConstructor
-public class PackageTaskFactory implements TaskFactory<Job> {
+public class PackageTaskFactory implements TaskFactory<FileDownloadRequest> {
     private final PackageTask packageTask;
 
     @Override
-    public Runnable create(List<Job> records) {
+    public Runnable create(List<FileDownloadRequest> records) {
         return () -> {
             if (!records.isEmpty()) {
                 packageTask.processDatastation(records.get(0).getDatastation(), records);

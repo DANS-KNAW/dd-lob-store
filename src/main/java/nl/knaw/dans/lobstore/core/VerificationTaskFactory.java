@@ -21,11 +21,11 @@ import nl.knaw.dans.lib.util.pollingtaskexec.TaskFactory;
 import java.util.List;
 
 @RequiredArgsConstructor
-public class VerificationTaskFactory implements TaskFactory<Job> {
+public class VerificationTaskFactory implements TaskFactory<FileDownloadRequest> {
     private final VerificationTask verificationTask;
 
     @Override
-    public Runnable create(List<Job> records) {
+    public Runnable create(List<FileDownloadRequest> records) {
         return () -> {
             if (!records.isEmpty()) {
                 verificationTask.processBucket(records.get(0).getBucketId(), records);
