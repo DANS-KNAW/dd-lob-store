@@ -30,7 +30,9 @@ import nl.knaw.dans.lobstore.core.DownloadTaskFactory;
 import nl.knaw.dans.lobstore.core.DownloadTaskSource;
 import nl.knaw.dans.lobstore.core.InspectTaskFactory;
 import nl.knaw.dans.lobstore.core.InspectTaskSource;
+import nl.knaw.dans.lobstore.core.QuotaManager;
 import nl.knaw.dans.lobstore.core.TransferRequest;
+import nl.knaw.dans.lobstore.db.ClaimDao;
 import nl.knaw.dans.lobstore.db.TransferRequestDao;
 import nl.knaw.dans.lobstore.resources.DefaultResource;
 import nl.knaw.dans.lobstore.resources.LocationResource;
@@ -61,6 +63,13 @@ public class DdLobStoreApplication extends Application<DdLobStoreConfig> {
     @Override
     public void run(final DdLobStoreConfig config, final Environment environment) {
         final TransferRequestDao transferRequestDao = new TransferRequestDao(hibernateBundle.getSessionFactory());
+        final ClaimDao claimDao = new ClaimDao(hibernateBundle.getSessionFactory());
+
+        var uowProxyFactory = new UnitOfWorkAwareProxyFactory(hibernateBundle);
+        final QuotaManager quotaManager = uowProxyFactory.create(QuotaManager.class,
+            new Class<?>[] { ClaimDao.class, Map.class },
+            new Object[] { claimDao, config.getDiskSpace() });
+
         environment.jersey().register(new TransfersResource(transferRequestDao));
         environment.jersey().register(new LocationResource());
         environment.jersey().register(new DefaultResource());
@@ -69,8 +78,6 @@ public class DdLobStoreApplication extends Application<DdLobStoreConfig> {
             .map(e -> Map.entry(e.getKey(),
                 e.getValue().getDataverse().build(environment, e.getKey())))
             .collect(Collectors.toMap(Map.Entry::getKey, Map.Entry::getValue));
-
-        var uowProxyFactory = new UnitOfWorkAwareProxyFactory(hibernateBundle);
 
         final PollingTaskExecutor<TransferRequest> inspectTaskExecutor = new PollingTaskExecutor<>(
             "InspectTaskExecutor",
