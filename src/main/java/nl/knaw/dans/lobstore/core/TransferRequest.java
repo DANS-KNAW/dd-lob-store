@@ -26,6 +26,7 @@ import javax.persistence.EnumType;
 import javax.persistence.Enumerated;
 import javax.persistence.Id;
 import javax.persistence.Table;
+import java.time.OffsetDateTime;
 import java.util.UUID;
 
 @Entity
@@ -55,6 +56,9 @@ public class TransferRequest {
 
     @Column(name = "file_size")
     private Long fileSize;
+
+    @Column(name = "created", nullable = false)
+    private OffsetDateTime created;
 
     public boolean isInProgress() {
         return switch (status) {

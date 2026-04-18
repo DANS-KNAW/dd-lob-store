@@ -20,6 +20,7 @@ import io.dropwizard.core.Application;
 import io.dropwizard.core.setup.Bootstrap;
 import io.dropwizard.core.setup.Environment;
 import io.dropwizard.hibernate.HibernateBundle;
+import nl.knaw.dans.lib.util.pollingtaskexec.PollingTaskExecutor;
 import nl.knaw.dans.lobstore.config.DdLobStoreConfig;
 import nl.knaw.dans.lobstore.db.TransferRequestDao;
 import nl.knaw.dans.lobstore.resources.DefaultResource;
@@ -50,5 +51,10 @@ public class DdLobStoreApplication extends Application<DdLobStoreConfig> {
         environment.jersey().register(new TransfersResource(transferRequestDao));
         environment.jersey().register(new LocationResource());
         environment.jersey().register(new DefaultResource());
+
+
+
     }
+
+
 }

@@ -28,6 +28,7 @@ import javax.validation.Valid;
 import javax.validation.constraints.NotNull;
 import javax.ws.rs.WebApplicationException;
 import javax.ws.rs.core.Response;
+import java.time.OffsetDateTime;
 import java.util.List;
 import java.util.UUID;
 
@@ -69,6 +70,7 @@ public class TransfersResource implements TransfersApi {
             .sha1Sum(sha1)
             .datastation(transferRequestDto.getDatastation())
             .status(alreadyDone ? TransferStatus.DONE : TransferStatus.PENDING)
+            .created(OffsetDateTime.now())
             .build();
 
         transferRequestDao.save(newRequest);
