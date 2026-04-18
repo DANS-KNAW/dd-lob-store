@@ -48,16 +48,18 @@ Processing
 ### Disk quotas
 
 Before discussing the processing pipeline, it is important to understand how the service manages its limited working disk space. Both the download and upload
-folders are assigned a quota, managed by a DiskQuotaManager. The idea is that a task must first claim sufficient disk space to perform its work. If that space
-is not available, the task is not scheduled. The steps below, starting from [Inspect](#inspect), all use a polling mechanism, which checks the
-fileDownloadRequest table for new work. Before scheduling a task, the service checks if the necessary disk space can be claimed. If not, the task is not
-scheduled and will be retried in the next polling cycle.
+folders are assigned a quota, managed by a disk quota manager. The idea is that a task must first claim sufficient disk space to perform its work. If that space
+is not available, the task is not scheduled. The steps below, starting from [Inspect](#inspect), all use a polling mechanism, which checks the source table for
+new work. Before scheduling a task, the service checks if the necessary disk space can be claimed. If not, the task is not scheduled and will be retried in the
+next polling cycle.
 
 ### Request
 
 The service receives requests for transfer via the API. It checks whether the SHA-1 checksum is already present in the targeted LOB-store. If so, the
-fileDownloadRequest is
-immediately changed to `DONE`. Otherwise, the fileDownloadRequest is created as `PENDING` in the database.
+file download request is immediately changed to `DONE`. It also checks whether a file download request for the same SHA-1 is already present with a status other
+than `FAILED`, `REJECTED` or `DONE`. If so, the file download request is not created and a 409 Conflict status is returned to the caller.
+
+Otherwise, the file download request is created as `PENDING` in the database.
 
 ### Inspect
 

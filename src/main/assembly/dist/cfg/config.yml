@@ -84,7 +84,7 @@ transfer:
       maxThreads: 3
       # Threads will die after 60 seconds of idleness
       keepAliveTime: 60 seconds
-  #
+  # Packages files worth at least a minimal bucket size of data into a package.
   package:
     minimalBucketSize: 1G
     uploadDirectory: /data/lob-transfer/upload
@@ -98,6 +98,7 @@ transfer:
       maxThreads: 3
       # Threads will die after 60 seconds of idleness
       keepAliveTime: 60 seconds
+  # Uploads a package to the Data Archive
   upload:
     command: /usr/local/bin/transfer.sh
     destination: /data/vault
@@ -110,6 +111,7 @@ transfer:
       maxThreads: 3
       # Threads will die after 60 seconds of idleness
       keepAliveTime: 60 seconds
+  # Verifies the integrity of the uploaded package.
   verify:
     command: /usr/local/bin/verify-transfer.sh
     sshCommand: ssh
