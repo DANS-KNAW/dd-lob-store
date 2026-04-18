@@ -29,7 +29,7 @@ public class TransferConfig {
     @JsonProperty("package")
     private PackageConfig packageConfig;
     @NotNull
-    private TransferJobConfig transferJob;
+    private UploadConfig upload;
     @NotNull
     private VerifyConfig verify;
 }

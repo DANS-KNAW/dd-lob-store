@@ -22,7 +22,7 @@ import nl.knaw.dans.lib.util.ExecutorServiceFactory;
 import javax.validation.constraints.NotNull;
 
 @Data
-public class TransferJobConfig {
+public class UploadConfig {
     @NotNull
     private String transferCommand;
     @NotNull
