@@ -16,11 +16,11 @@
 
 package nl.knaw.dans.lobstore.config;
 
-import io.dropwizard.util.DataSize;
-import java.nio.file.Path;
-import javax.validation.constraints.NotNull;
 import lombok.Data;
 import nl.knaw.dans.lib.util.ExecutorServiceFactory;
+
+import javax.validation.constraints.NotNull;
+import java.nio.file.Path;
 
 @Data
 public class PackageConfig {
@@ -30,8 +30,6 @@ public class PackageConfig {
     private String packageCommand;
     @NotNull
     private String verifyCommand;
-    @NotNull
-    private DataSize quota;
     @NotNull
     private ExecutorServiceFactory taskQueue;
 }

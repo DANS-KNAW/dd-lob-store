@@ -45,26 +45,29 @@ This service has the following interfaces:
 Processing
 ----------
 
-### A word about disk quotas
+### Disk quotas
 
 Before discussing the processing pipeline, it is important to understand how the service manages its limited working disk space. Both the download and upload
 folders are assigned a quota, managed by a DiskQuotaManager. The idea is that a task must first claim sufficient disk space to perform its work. If that space
 is not available, the task is not scheduled. The steps below, starting from [Inspect](#inspect), all use a polling mechanism, which checks the
-fileDownloadRequest table for new work. Before scheduling a task, the service checks if the necessary disk space can be claimed. If not, the task is not scheduled and will be
-retried in the next polling cycle.
+fileDownloadRequest table for new work. Before scheduling a task, the service checks if the necessary disk space can be claimed. If not, the task is not
+scheduled and will be retried in the next polling cycle.
 
-### Request creation
+### Request
 
-The service receives requests for transfer via the API. It checks whether the SHA-1 checksum is already present in the targeted LOB-store. If so, the fileDownloadRequest is
+The service receives requests for transfer via the API. It checks whether the SHA-1 checksum is already present in the targeted LOB-store. If so, the
+fileDownloadRequest is
 immediately changed to `DONE`. Otherwise, the fileDownloadRequest is created as `PENDING` in the database.
 
 ### Inspect
 
-The Inspect step retrieves the file metadata from the Dataverse instance, including the size and the SHA1-checksum. The size is stored in the fileDownloadRequest record.
-If the SHA-1 checksum from Dataverse does not match the one from the request, the fileDownloadRequest is set to `REJECTED`. If the checksum is OK, the fileDownloadRequest is set to
+The Inspect step retrieves the file metadata from the Dataverse instance, including the size and the SHA1-checksum. The size is stored in the
+fileDownloadRequest record.
+If the SHA-1 checksum from Dataverse does not match the one from the request, the fileDownloadRequest is set to `REJECTED`. If the checksum is OK, the
+fileDownloadRequest is set to
 `INSPECTED`.
 
-### File download
+### Download
 
 The File Download step is responsible for downloading a file. Before the task is scheduled, two disk quotas are claimed in the download folder:
 
@@ -72,7 +75,8 @@ The File Download step is responsible for downloading a file. Before the task is
 2. One for the size of the file plus a margin.
 
 The task downloads chunks of a configurable size and concatenates them at the end. The second claim is necessary for the concatenation step. The task then
-computes the SHA-1 and verifies it. If it does not match the fileDownloadRequest is set to `REJECTED`. If the checksum is OK, the fileDownloadRequest status is set to `DOWNLOADED`. The
+computes the SHA-1 and verifies it. If it does not match the fileDownloadRequest is set to `REJECTED`. If the checksum is OK, the fileDownloadRequest status is
+set to `DOWNLOADED`. The
 second of the aforementioned claims is then released.
 
 ### Package
@@ -85,13 +89,13 @@ newer adding files until the total size exceeds the minimal package threshold. I
 
 It then creates a bucket folder in the upload folder and moves the files into it. For each file the remaining claims on the download folder are now released.
 
-The task now runs the configured packaging command. If that succeeds, the source files are deleted and the second claim on the upload folder is released. 
+The task now runs the configured packaging command. If that succeeds, the source files are deleted and the second claim on the upload folder is released.
 Finally, the status of all the corresponding fileDownloadRequests is set to `PACKAGED`.
 
-### Transfer to Data Archive
+### Upload
 
 TO DO
 
-### Verification of transfer
+### Verify
 
 Finally, on finishing the transfer, the archive package is verified using the configured verification command. 

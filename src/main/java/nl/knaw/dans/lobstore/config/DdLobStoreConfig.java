@@ -16,16 +16,14 @@
 
 package nl.knaw.dans.lobstore.config;
 
+import io.dropwizard.client.JerseyClientConfiguration;
 import io.dropwizard.core.Configuration;
 import io.dropwizard.db.DataSourceFactory;
-import io.dropwizard.client.JerseyClientConfiguration;
-import io.dropwizard.util.DataSize;
-
-import java.nio.file.Path;
-import javax.validation.Valid;
-import javax.validation.constraints.NotNull;
 import lombok.Data;
 import lombok.EqualsAndHashCode;
+
+import javax.validation.Valid;
+import javax.validation.constraints.NotNull;
 
 @Data
 @EqualsAndHashCode(callSuper = true)

@@ -17,10 +17,11 @@
 package nl.knaw.dans.lobstore.config;
 
 import io.dropwizard.util.DataSize;
-import java.nio.file.Path;
-import javax.validation.constraints.NotNull;
 import lombok.Data;
 import nl.knaw.dans.lib.util.ExecutorServiceFactory;
+
+import javax.validation.constraints.NotNull;
+import java.nio.file.Path;
 
 @Data
 public class DownloadConfig {
@@ -28,10 +29,6 @@ public class DownloadConfig {
     private DataSize chunkSize;
     @NotNull
     private Path baseDir;
-    @NotNull
-    private DataSize minimalBucketSize;
-    @NotNull
-    private DataSize quota;
     @NotNull
     private ExecutorServiceFactory taskQueue;
 }

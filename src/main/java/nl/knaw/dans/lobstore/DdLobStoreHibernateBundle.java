@@ -18,12 +18,10 @@ package nl.knaw.dans.lobstore;
 import io.dropwizard.db.PooledDataSourceFactory;
 import io.dropwizard.hibernate.HibernateBundle;
 import nl.knaw.dans.lobstore.config.DdLobStoreConfig;
-import nl.knaw.dans.lobstore.core.DiskClaim;
-import nl.knaw.dans.lobstore.core.FileDownloadRequest;
 
 public class DdLobStoreHibernateBundle extends HibernateBundle<DdLobStoreConfig> {
     public DdLobStoreHibernateBundle() {
-        super(FileDownloadRequest.class, DiskClaim.class);
+        super(null);
     }
 
     @Override

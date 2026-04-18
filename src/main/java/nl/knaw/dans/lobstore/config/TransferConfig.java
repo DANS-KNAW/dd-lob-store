@@ -16,14 +16,17 @@
 
 package nl.knaw.dans.lobstore.config;
 
-import javax.validation.constraints.NotNull;
+import com.fasterxml.jackson.annotation.JsonProperty;
 import lombok.Data;
+
+import javax.validation.constraints.NotNull;
 
 @Data
 public class TransferConfig {
     @NotNull
     private DownloadConfig download;
     @NotNull
+    @JsonProperty("package")
     private PackageConfig packageConfig;
     @NotNull
     private TransferJobConfig transferJob;

@@ -16,31 +16,11 @@
 
 package nl.knaw.dans.lobstore;
 
-import io.dropwizard.client.JerseyClientBuilder;
 import io.dropwizard.core.Application;
 import io.dropwizard.core.setup.Bootstrap;
 import io.dropwizard.core.setup.Environment;
 import io.dropwizard.hibernate.HibernateBundle;
-import io.dropwizard.hibernate.UnitOfWorkAwareProxyFactory;
-import io.dropwizard.lifecycle.Managed;
-import nl.knaw.dans.lib.util.ExecutorServiceFactory;
-import nl.knaw.dans.lib.util.pollingtaskexec.ExecutorServiceTaskScheduler;
-import nl.knaw.dans.lib.util.pollingtaskexec.PollingTaskExecutor;
-import nl.knaw.dans.lib.util.pollingtaskexec.TaskFactory;
-import nl.knaw.dans.lib.util.pollingtaskexec.TaskScheduler;
-import nl.knaw.dans.lib.util.pollingtaskexec.TaskSource;
 import nl.knaw.dans.lobstore.config.DdLobStoreConfig;
-import nl.knaw.dans.lobstore.core.DiskQuotaManager;
-import nl.knaw.dans.lobstore.core.DownloadTaskFactory;
-import nl.knaw.dans.lobstore.core.DownloadTaskSource;
-import nl.knaw.dans.lobstore.db.DiskClaimDao;
-import nl.knaw.dans.lobstore.db.JobDao;
-import nl.knaw.dans.lobstore.resources.JobsResource;
-import nl.knaw.dans.lobstore.resources.LocationResource;
-
-import javax.ws.rs.client.Client;
-import java.time.Duration;
-import java.util.concurrent.ScheduledExecutorService;
 
 public class DdLobStoreApplication extends Application<DdLobStoreConfig> {
 
@@ -62,56 +42,6 @@ public class DdLobStoreApplication extends Application<DdLobStoreConfig> {
 
     @Override
     public void run(final DdLobStoreConfig config, final Environment environment) {
-        final JobDao jobDao = new JobDao(hibernateBundle.getSessionFactory());
-        final DiskClaimDao diskClaimDao = new DiskClaimDao(hibernateBundle.getSessionFactory());
 
-        final Client httpClient = new JerseyClientBuilder(environment)
-            .using(config.getHttpClient())
-            .build(getName());
-
-        final DiskQuotaManager diskQuotaManager = new DiskQuotaManager(
-            diskClaimDao,
-            config.getTransfer().getDownload().getBaseDir(),
-            config.getTransfer().getPackageConfig().getBaseDir(),
-            config.getTransfer().getDownload().getQuota().toBytes(),
-            config.getTransfer().getPackageConfig().getQuota().toBytes(),
-            false // enforcement
-        );
-
-        environment.jersey().register(new JobsResource(jobDao));
-        environment.jersey().register(new LocationResource(jobDao));
-
-        // Background tasks
-        UnitOfWorkAwareProxyFactory proxyFactory = new UnitOfWorkAwareProxyFactory(hibernateBundle);
-
-        var downloadTaskFactory = new DownloadTaskFactory(jobDao, httpClient, config.getTransfer().getDownload().getBaseDir(), config.getTransfer().getDownload().getChunkSize().toBytes(),
-            diskQuotaManager);
-
-        environment.lifecycle().manage(
-            createPollingTaskExecutor("download", config.getTransfer().getDownload().getTaskQueue(), new DownloadTaskSource(jobDao), downloadTaskFactory, proxyFactory, environment));
-        //        environment.lifecycle().manage(
-        //            createPollingTaskExecutor("Package", config.getTransfer().getPackageConfig().getTaskQueue(), new PackageTaskSource(jobDao), new PackageTaskFactory(packageTask), proxyFactory,
-        //                environment));
-        //        environment.lifecycle().manage(
-        //            createPollingTaskExecutor("Transfer", config.getTransfer().getTransferJob().getTaskQueue(), new TransferTaskSource(jobDao), new TransferTaskFactory(transferTask), proxyFactory,
-        //                environment));
-        //        environment.lifecycle().manage(
-        //            createPollingTaskExecutor("Verify", config.getTransfer().getVerify().getTaskQueue(), new VerificationTaskSource(jobDao), new VerificationTaskFactory(verificationTask), proxyFactory,
-        //                environment));
-    }
-
-    private <T> Managed createPollingTaskExecutor(String name, ExecutorServiceFactory queueConfig, TaskSource<T> source, TaskFactory<T> factory, UnitOfWorkAwareProxyFactory proxyFactory,
-        Environment environment) {
-        ScheduledExecutorService scheduledExecutorService = environment.lifecycle().scheduledExecutorService(name + "-scheduler").build();
-        TaskScheduler taskScheduler = new ExecutorServiceTaskScheduler(queueConfig.build(environment), proxyFactory);
-
-        PollingTaskExecutor<T> executor = new PollingTaskExecutor<>(
-            name,
-            scheduledExecutorService,
-            Duration.ofSeconds(10), // polling interval
-            source,
-            factory,
-            taskScheduler);
-        return proxyFactory.create(PollingTaskExecutor.class, new Class[] { PollingTaskExecutor.class }, new Object[] { executor });
     }
 }

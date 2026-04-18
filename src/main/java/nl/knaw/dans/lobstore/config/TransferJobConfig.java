@@ -16,9 +16,10 @@
 
 package nl.knaw.dans.lobstore.config;
 
-import javax.validation.constraints.NotNull;
 import lombok.Data;
 import nl.knaw.dans.lib.util.ExecutorServiceFactory;
+
+import javax.validation.constraints.NotNull;
 
 @Data
 public class TransferJobConfig {
