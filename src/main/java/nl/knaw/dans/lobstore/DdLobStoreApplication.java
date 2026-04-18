@@ -75,7 +75,7 @@ public class DdLobStoreApplication extends Application<DdLobStoreConfig> {
         final PollingTaskExecutor<TransferRequest> inspectTaskExecutor = new PollingTaskExecutor<>(
             "InspectTaskExecutor",
             environment.lifecycle().scheduledExecutorService("inspect-task-executor", true).build(),
-            Duration.ofSeconds(10),
+            config.getTransfer().getInspect().getPollingInterval().toJavaDuration(),
             new InspectTaskSource(transferRequestDao),
             new InspectTaskFactory(transferRequestDao, dataverseClients, uowProxyFactory),
             new ExecutorServiceTaskScheduler(config.getTransfer().getInspect().getTaskQueue().build(environment)));
@@ -83,7 +83,7 @@ public class DdLobStoreApplication extends Application<DdLobStoreConfig> {
         final PollingTaskExecutor<TransferRequest> downloadTaskExecutor = new PollingTaskExecutor<>(
             "DownloadTaskExecutor",
             environment.lifecycle().scheduledExecutorService("download-task-executor", true).build(),
-            Duration.ofSeconds(10),
+            config.getTransfer().getDownload().getPollingInterval().toJavaDuration(),
             new DownloadTaskSource(transferRequestDao),
             new DownloadTaskFactory(transferRequestDao, dataverseClients, config.getTransfer().getDownload(), uowProxyFactory),
             new ExecutorServiceTaskScheduler(config.getTransfer().getDownload().getTaskQueue().build(environment)));

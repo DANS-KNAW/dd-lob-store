@@ -17,6 +17,7 @@
 package nl.knaw.dans.lobstore.config;
 
 import io.dropwizard.util.DataSize;
+import io.dropwizard.util.Duration;
 import lombok.Data;
 import nl.knaw.dans.lib.util.ExecutorServiceFactory;
 
@@ -25,6 +26,8 @@ import java.nio.file.Path;
 
 @Data
 public class DownloadConfig {
+    @NotNull
+    private Duration pollingInterval;
     private DataSize chunkSize = DataSize.gigabytes(1);
     @NotNull
     private Path downloadDirectory;

@@ -16,6 +16,7 @@
 
 package nl.knaw.dans.lobstore.config;
 
+import io.dropwizard.util.Duration;
 import lombok.Data;
 import nl.knaw.dans.lib.util.ExecutorServiceFactory;
 
@@ -23,6 +24,8 @@ import javax.validation.constraints.NotNull;
 
 @Data
 public class UploadConfig {
+    @NotNull
+    private Duration pollingInterval;
     @NotNull
     private String command;
     @NotNull
