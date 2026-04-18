@@ -51,7 +51,7 @@ public class InspectTask implements Runnable {
             log.info("Finished INSPECT step for {}", transferRequestId);
         }
         catch (Exception e) {
-            log.error("Error inspecting transfer request with id " + transferRequestId, e);
+            log.error("Error inspecting transfer request with id {}", transferRequestId, e);
             if (transferRequest != null) {
                 transferRequest.setStatus(TransferStatus.FAILED);
                 transferRequest.setMessage("Error inspecting transfer request: " + e.getMessage());

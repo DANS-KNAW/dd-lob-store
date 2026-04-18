@@ -62,7 +62,7 @@ public class DownloadTask implements Runnable {
             log.info("Finished DOWNLOAD step for {}", transferRequestId);
         }
         catch (Exception e) {
-            log.error("Error downloading file for transfer request with id " + transferRequestId, e);
+            log.error("Error downloading file for transfer request with id {}", transferRequestId, e);
             if (transferRequest != null) {
                 transferRequest.setStatus(TransferStatus.FAILED);
                 transferRequest.setMessage("Error downloading file: " + e.getMessage());
