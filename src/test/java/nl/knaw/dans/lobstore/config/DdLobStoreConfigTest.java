@@ -19,9 +19,9 @@ import com.fasterxml.jackson.databind.DeserializationFeature;
 import io.dropwizard.configuration.ConfigurationFactory;
 import io.dropwizard.configuration.YamlConfigurationFactory;
 import io.dropwizard.jackson.Jackson;
-import io.dropwizard.jersey.validation.Validators;
 import org.junit.jupiter.api.Test;
 
+import javax.validation.Validation;
 import java.nio.file.Path;
 
 import static org.junit.jupiter.api.Assertions.assertNotNull;
@@ -29,14 +29,14 @@ import static org.junit.jupiter.api.Assertions.assertNotNull;
 public class DdLobStoreConfigTest {
 
     private DdLobStoreConfig parseConfigurationFile(String configFile) throws Exception {
-        ConfigurationFactory<DdLobStoreConfig> factory = new YamlConfigurationFactory<>(
-            DdLobStoreConfig.class,
-            null, // No validator
-            Jackson.newObjectMapper().configure(DeserializationFeature.FAIL_ON_UNKNOWN_PROPERTIES, true),
-            "dw"
-        );
+        try (var validatorFactory = Validation.buildDefaultValidatorFactory()) {
+            ConfigurationFactory<DdLobStoreConfig> factory =
+                new YamlConfigurationFactory<>(DdLobStoreConfig.class,
+                    validatorFactory.getValidator(),
+                    Jackson.newObjectMapper().configure(DeserializationFeature.FAIL_ON_UNKNOWN_PROPERTIES, true), "dw");
 
-        return factory.build(Path.of(configFile).toFile());
+            return factory.build(Path.of(configFile).toFile());
+        }
     }
 
     @Test

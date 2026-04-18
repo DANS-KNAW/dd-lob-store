@@ -31,7 +31,5 @@ public class PackageConfig {
     @NotNull
     private String command;
     @NotNull
-    private String verifyCommand;
-    @NotNull
     private ExecutorServiceFactory taskQueue;
 }
