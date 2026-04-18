@@ -44,16 +44,23 @@ public class TransfersResource implements TransfersApi {
     public Response addTransfer(@Valid @NotNull TransferRequestDto transferRequestDto) {
         String sha1 = transferRequestDto.getSha1Sum();
 
-        List<TransferRequest> existingRequests = transferRequestDao.findBySha1Sum(sha1);
-
-        if (existingRequests.stream()
+        List<TransferRequest> existingRequestsForSha1 = transferRequestDao.findBySha1Sum(sha1);
+        if (existingRequestsForSha1.stream()
             .anyMatch(TransferRequest::isInProgress)) {
             return Response.status(Response.Status.CONFLICT)
-                .entity("Transfer already in progress for the given SHA-1")
+                .entity("Transfer(s) already in progress for the given SHA-1")
                 .build();
         }
 
-        boolean alreadyDone = existingRequests.stream()
+        List<TransferRequest> existingRequestsForFileId = transferRequestDao.findByDataverseFileId(transferRequestDto.getDataverseFileId());
+        if (existingRequestsForFileId.stream()
+            .anyMatch(TransferRequest::isInProgress)) {
+            return Response.status(Response.Status.CONFLICT)
+                .entity("Transfer(s) already in progress for the given Dataverse file ID")
+                .build();
+        }
+
+        boolean alreadyDone = existingRequestsForSha1.stream()
             .anyMatch(r -> r.getStatus() == TransferStatus.DONE);
 
         TransferRequest newRequest = TransferRequest.builder()

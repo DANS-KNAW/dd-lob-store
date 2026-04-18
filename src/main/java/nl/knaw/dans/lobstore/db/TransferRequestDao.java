@@ -49,14 +49,12 @@ public class TransferRequestDao extends AbstractDAO<TransferRequest> {
         return currentSession().createQuery(cq).getResultList();
     }
 
-    public List<TransferRequest> findBySha1SumAndStatus(String sha1Sum, TransferStatus status) {
+    public List<TransferRequest> findByDataverseFileId(long id) {
         CriteriaBuilder cb = currentSession().getCriteriaBuilder();
         CriteriaQuery<TransferRequest> cq = cb.createQuery(TransferRequest.class);
         Root<TransferRequest> root = cq.from(TransferRequest.class);
-        cq.where(cb.and(
-            cb.equal(root.get("sha1Sum"), sha1Sum),
-            cb.equal(root.get("status"), status)
-        ));
+        cq.where(cb.equal(root.get("dataverseFileId"), id));
         return currentSession().createQuery(cq).getResultList();
     }
+    
 }
