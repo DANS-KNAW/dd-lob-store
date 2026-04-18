@@ -20,12 +20,23 @@ import io.dropwizard.core.Application;
 import io.dropwizard.core.setup.Bootstrap;
 import io.dropwizard.core.setup.Environment;
 import io.dropwizard.hibernate.HibernateBundle;
+
+import io.dropwizard.hibernate.UnitOfWorkAwareProxyFactory;
+import nl.knaw.dans.lib.dataverse.DataverseClient;
+import nl.knaw.dans.lib.util.pollingtaskexec.ExecutorServiceTaskScheduler;
 import nl.knaw.dans.lib.util.pollingtaskexec.PollingTaskExecutor;
 import nl.knaw.dans.lobstore.config.DdLobStoreConfig;
+import nl.knaw.dans.lobstore.core.InspectTaskFactory;
+import nl.knaw.dans.lobstore.core.InspectTaskSource;
+import nl.knaw.dans.lobstore.core.TransferRequest;
 import nl.knaw.dans.lobstore.db.TransferRequestDao;
 import nl.knaw.dans.lobstore.resources.DefaultResource;
 import nl.knaw.dans.lobstore.resources.LocationResource;
 import nl.knaw.dans.lobstore.resources.TransfersResource;
+
+import java.time.Duration;
+import java.util.Map;
+import java.util.stream.Collectors;
 
 public class DdLobStoreApplication extends Application<DdLobStoreConfig> {
 
@@ -52,9 +63,30 @@ public class DdLobStoreApplication extends Application<DdLobStoreConfig> {
         environment.jersey().register(new LocationResource());
         environment.jersey().register(new DefaultResource());
 
+        Map<String, DataverseClient> dataverseClients = config.getDatastations().entrySet().stream()
+            .map(e -> Map.entry(e.getKey(),
+                e.getValue().getDataverse().build(environment, e.getKey())))
+            .collect(Collectors.toMap(Map.Entry::getKey, Map.Entry::getValue));
 
+        var uowProxyFactory = new UnitOfWorkAwareProxyFactory(hibernateBundle);
 
+        final PollingTaskExecutor<TransferRequest> inspectTaskExecutor = new PollingTaskExecutor<>(
+            "InspectTaskExecutor",
+            environment.lifecycle().scheduledExecutorService("inspect-task-executor", true).build(),
+            Duration.ofSeconds(10),
+            new InspectTaskSource(transferRequestDao),
+            new InspectTaskFactory(transferRequestDao, dataverseClients, uowProxyFactory),
+            new ExecutorServiceTaskScheduler(environment
+                .lifecycle()
+                .scheduledExecutorService("inspect-task-scheduler", true)
+                .build()));
+        
+        environment.lifecycle().manage(createUnitOfWorkAwareProxy(uowProxyFactory, inspectTaskExecutor));
     }
 
+    private <R> PollingTaskExecutor<R> createUnitOfWorkAwareProxy(UnitOfWorkAwareProxyFactory uowFactory, PollingTaskExecutor<R> executor) {
+        return uowFactory
+            .create(PollingTaskExecutor.class, new Class<?>[] { PollingTaskExecutor.class }, new Object[] { executor });
+    }
 
 }

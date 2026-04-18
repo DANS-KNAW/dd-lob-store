@@ -30,9 +30,6 @@ public class InspectTaskSource implements TaskSource<TransferRequest> {
 
     @Override
     public List<TransferRequest> nextInputs() {
-
-
-
-        return List.of();
+        return transferRequestDao.findNextInspectableItem().stream().toList();
     }
 }

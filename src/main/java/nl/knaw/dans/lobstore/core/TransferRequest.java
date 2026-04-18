@@ -54,6 +54,9 @@ public class TransferRequest {
     @Column(name = "status", nullable = false)
     private TransferStatus status;
 
+    @Column(name = "message")
+    private String message;
+
     @Column(name = "file_size")
     private Long fileSize;
 
