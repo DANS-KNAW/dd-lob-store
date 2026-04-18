@@ -18,4 +18,6 @@
 echo -n "Pre-creating log..."
 TEMPDIR=data
 touch $TEMPDIR/dd-lob-store.log
+mkdir $TEMPDIR/download
+mkdir $TEMPDIR/upload
 echo "OK"

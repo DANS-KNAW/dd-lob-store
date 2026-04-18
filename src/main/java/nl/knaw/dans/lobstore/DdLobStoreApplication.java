@@ -26,6 +26,8 @@ import nl.knaw.dans.lib.dataverse.DataverseClient;
 import nl.knaw.dans.lib.util.pollingtaskexec.ExecutorServiceTaskScheduler;
 import nl.knaw.dans.lib.util.pollingtaskexec.PollingTaskExecutor;
 import nl.knaw.dans.lobstore.config.DdLobStoreConfig;
+import nl.knaw.dans.lobstore.core.DownloadTaskFactory;
+import nl.knaw.dans.lobstore.core.DownloadTaskSource;
 import nl.knaw.dans.lobstore.core.InspectTaskFactory;
 import nl.knaw.dans.lobstore.core.InspectTaskSource;
 import nl.knaw.dans.lobstore.core.TransferRequest;
@@ -76,12 +78,18 @@ public class DdLobStoreApplication extends Application<DdLobStoreConfig> {
             Duration.ofSeconds(10),
             new InspectTaskSource(transferRequestDao),
             new InspectTaskFactory(transferRequestDao, dataverseClients, uowProxyFactory),
-            new ExecutorServiceTaskScheduler(environment
-                .lifecycle()
-                .scheduledExecutorService("inspect-task-scheduler", true)
-                .build()));
-        
+            new ExecutorServiceTaskScheduler(config.getTransfer().getInspect().getTaskQueue().build(environment)));
+
+        final PollingTaskExecutor<TransferRequest> downloadTaskExecutor = new PollingTaskExecutor<>(
+            "DownloadTaskExecutor",
+            environment.lifecycle().scheduledExecutorService("download-task-executor", true).build(),
+            Duration.ofSeconds(10),
+            new DownloadTaskSource(transferRequestDao),
+            new DownloadTaskFactory(transferRequestDao, dataverseClients, config.getTransfer().getDownload(), uowProxyFactory),
+            new ExecutorServiceTaskScheduler(config.getTransfer().getDownload().getTaskQueue().build(environment)));
+
         environment.lifecycle().manage(createUnitOfWorkAwareProxy(uowProxyFactory, inspectTaskExecutor));
+        environment.lifecycle().manage(createUnitOfWorkAwareProxy(uowProxyFactory, downloadTaskExecutor));
     }
 
     private <R> PollingTaskExecutor<R> createUnitOfWorkAwareProxy(UnitOfWorkAwareProxyFactory uowFactory, PollingTaskExecutor<R> executor) {

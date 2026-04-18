@@ -92,7 +92,7 @@ class TransfersResourceTest {
             .datastation("station1");
 
         TransferRequest existing = TransferRequest.builder()
-            .status(TransferStatus.DOWNLOADING)
+            .status(TransferStatus.PENDING)
             .sha1Sum("abc")
             .build();
 

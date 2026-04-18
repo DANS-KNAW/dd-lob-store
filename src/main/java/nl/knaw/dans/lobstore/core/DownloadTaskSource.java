@@ -15,13 +15,21 @@
  */
 package nl.knaw.dans.lobstore.core;
 
-public enum TransferStatus {
-    PENDING,
-    INSPECTED,
-    DOWNLOADED,
-    PACKAGED,
-    TRANSFERRED,
-    DONE,
-    REJECTED,
-    FAILED
+import lombok.RequiredArgsConstructor;
+import nl.knaw.dans.lib.util.pollingtaskexec.TaskSource;
+import nl.knaw.dans.lobstore.db.TransferRequestDao;
+
+import java.util.List;
+
+/**
+ * Returns {@link TransferRequest}s that are ready for download. The next inputs are ordered from older to newer.
+ */
+@RequiredArgsConstructor
+public class DownloadTaskSource implements TaskSource<TransferRequest> {
+    private final TransferRequestDao transferRequestDao;
+
+    @Override
+    public List<TransferRequest> nextInputs() {
+        return transferRequestDao.findNextDownloadableItem().stream().toList();
+    }
 }

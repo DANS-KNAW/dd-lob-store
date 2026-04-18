@@ -129,4 +129,24 @@ class TransferRequestDaoTest {
         assertThat(result).hasSize(2);
         assertThat(result).extracting(TransferRequest::getId).containsExactly(id1, id2);
     }
+    @Test
+    void findNextDownloadableItem_should_return_inspected_request() {
+        UUID id1 = UUID.randomUUID();
+        OffsetDateTime now = OffsetDateTime.now();
+
+        db.inTransaction(() -> {
+            dao.save(TransferRequest.builder()
+                .id(id1)
+                .dataverseFileId(1L)
+                .sha1Sum("sha1")
+                .datastation("station1")
+                .status(TransferStatus.INSPECTED)
+                .created(now.minusMinutes(10))
+                .build());
+        });
+
+        var result = dao.findNextDownloadableItem();
+        assertThat(result).isPresent();
+        assertThat(result.get().getId()).isEqualTo(id1);
+    }
 }

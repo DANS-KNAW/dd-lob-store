@@ -72,7 +72,7 @@ transfer:
   # Downloads the file in chunks, verifies the checksum and concatenates the chunks into a single file.
   download:
     chunkSize: 1G
-    downloadDirectory: /data/lob-transfer/download
+    downloadDirectory: data/download
     taskQueue:
       nameFormat: "download-worker-%d"
       maxQueueSize: 5000
@@ -85,7 +85,7 @@ transfer:
   # Packages files worth at least a minimal bucket size of data into a package.
   package:
     minimalBucketSize: 1G
-    uploadDirectory: /data/lob-transfer/upload
+    uploadDirectory: data/upload
     command: /usr/local/bin/package.sh
     taskQueue:
       nameFormat: "package-worker-%d"
