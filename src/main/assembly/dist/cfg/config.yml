@@ -32,14 +32,10 @@ database:
   user: dd_lob_store
   password: dd_lob_store
   url: jdbc:postgresql://localhost:5432/dd_lob_store
+  logValidationErrors: true
   properties:
-    charSet: UTF-8
-    hibernate.dialect: org.hibernate.dialect.PostgreSQLDialect
-  maxSize: 8
-  minSize: 2
-  checkConnectionWhileIdle: false
-  evictionInterval: 10s
-  minIdleTime: 1 minute
+    hibernate.dialect: 'org.hibernate.dialect.PostgreSQL95Dialect'
+    hibernate.hbm2ddl.auto: update
 
 httpClient:
   timeout: 500ms
@@ -55,8 +51,8 @@ httpClient:
 # Total about disk space to manage for the download.downloadDirectory and package.uploadDirectory. These directories must
 # be on the same filesystem. The total available space on this filesystem must be, at minimum, the sum of these two values.
 diskSpace:
-  download: 1.5T
-  upload: 1.5T
+  download: 1500GB
+  upload: 1500GB
 
 transfer:
   # Retrieves the file metadata from the targeted Data Station, verifies that the checksum given in the metadata matches the

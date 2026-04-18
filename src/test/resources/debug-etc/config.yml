@@ -18,14 +18,14 @@ server:
         timeZone: system
         currentLogFilename: /var/opt/dans.knaw.nl/log/dd-lob-store/request.log
 
-#dataStations:
-#  - name: archaeology
-#    baseUrl: https://dev.archaeology.datastations.nl
-#    apiKey: changeme
-#    lobStore:
-#      user: changeme
-#      host: archive.surfsara.nl
-#      path: archive/data-vault/archaelogy.lobs
+dataStations:
+  - name: archaeology
+    baseUrl: https://archaeology.datastations.nl
+    apiKey: changeme
+    lobStore:
+      user: changeme
+      host: archive.surfsara.nl
+      path: archive/data-vault/archaelogy.lobs
 
 database:
   driverClass: org.postgresql.Driver
@@ -48,56 +48,75 @@ httpClient:
   keepAlive: 0s
   userAgent: dd-lob-store
 
+# Total about disk space to manage for the download.downloadDirectory and package.uploadDirectory. These directories must
+# be on the same filesystem. The total available space on this filesystem must be, at minimum, the sum of these two values.
+diskSpace:
+  download: 1500GB
+  upload: 1500GB
+
 transfer:
+  # Retrieves the file metadata from the targeted Data Station, verifies that the checksum given in the metadata matches the
+  # one expected by the client and records the file length in the download request.
+  inspect:
+    taskQueue:
+      nameFormat: "inspect-worker-%d"
+      maxQueueSize: 5000
+      # Number of threads will be increased when maxQueueSize is exceeded.
+      minThreads: 1
+      # No more than maxThreads will be created, though
+      maxThreads: 3
+      # Threads will die after 60 seconds of idleness
+      keepAliveTime: 60 seconds
+  # Downloads the file in chunks, verifies the checksum and concatenates the chunks into a single file.
   download:
     chunkSize: 1G
-    baseDir: data/download
-    minimalBucketSize: 1G
-    quota: 100G
+    downloadDirectory: /data/lob-transfer/download
     taskQueue:
       nameFormat: "download-worker-%d"
       maxQueueSize: 5000
       # Number of threads will be increased when maxQueueSize is exceeded.
       minThreads: 1
-      # No more than maxThreads will be created though
+      # No more than maxThreads will be created, though
       maxThreads: 3
       # Threads will die after 60 seconds of idleness
       keepAliveTime: 60 seconds
-  packageConfig:
-    baseDir: /data/lob-transfer/upload
-    packageCommand: /usr/local/bin/package.sh
-    verifyCommand: /usr/local/bin/verify-package.sh
-    quota: 100G
+  # Packages files worth at least a minimal bucket size of data into a package.
+  package:
+    minimalBucketSize: 1G
+    uploadDirectory: /data/lob-transfer/upload
+    command: /usr/local/bin/package.sh
     taskQueue:
       nameFormat: "package-worker-%d"
       maxQueueSize: 5000
       # Number of threads will be increased when maxQueueSize is exceeded.
       minThreads: 1
-      # No more than maxThreads will be created though
+      # No more than maxThreads will be created, though
       maxThreads: 3
       # Threads will die after 60 seconds of idleness
       keepAliveTime: 60 seconds
-  transferJob:
-    transferCommand: /usr/local/bin/transfer.sh
+  # Uploads a package to the Data Archive
+  upload:
+    command: /usr/local/bin/transfer.sh
     destination: /data/vault
     taskQueue:
       nameFormat: "transfer-worker-%d"
       maxQueueSize: 5000
       # Number of threads will be increased when maxQueueSize is exceeded.
       minThreads: 1
-      # No more than maxThreads will be created though
+      # No more than maxThreads will be created, though
       maxThreads: 3
       # Threads will die after 60 seconds of idleness
       keepAliveTime: 60 seconds
+  # Verifies the integrity of the uploaded package.
   verify:
-    verifyCommand: /usr/local/bin/verify-transfer.sh
+    command: /usr/local/bin/verify-transfer.sh
     sshCommand: ssh
     taskQueue:
       nameFormat: "verify-worker-%d"
       maxQueueSize: 5000
       # Number of threads will be increased when maxQueueSize is exceeded.
       minThreads: 1
-      # No more than maxThreads will be created though
+      # No more than maxThreads will be created, though
       maxThreads: 3
       # Threads will die after 60 seconds of idleness
       keepAliveTime: 60 seconds

@@ -16,20 +16,18 @@
 
 package nl.knaw.dans.lobstore.config;
 
+import io.dropwizard.util.DataSize;
 import lombok.Data;
 import nl.knaw.dans.lib.util.ExecutorServiceFactory;
 
-import javax.validation.constraints.NotNull;
 import java.nio.file.Path;
 
 @Data
 public class PackageConfig {
-    @NotNull
-    private Path baseDir;
-    @NotNull
-    private String packageCommand;
-    @NotNull
-    private String verifyCommand;
-    @NotNull
+    private DataSize minimalBucketSize = DataSize.gigabytes(1);
+    private Path uploadDirectory;
+    private String command;
+    private String verifyCommand = "";
+    private DataSize quota;
     private ExecutorServiceFactory taskQueue;
 }

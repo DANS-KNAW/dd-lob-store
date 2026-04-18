@@ -19,14 +19,9 @@ package nl.knaw.dans.lobstore.config;
 import lombok.Data;
 import nl.knaw.dans.lib.util.ExecutorServiceFactory;
 
-import javax.validation.constraints.NotNull;
-
 @Data
 public class UploadConfig {
-    @NotNull
-    private String transferCommand;
-    @NotNull
-    private String destination;
-    @NotNull
+    private String command;
+    private String destination = "";
     private ExecutorServiceFactory taskQueue;
 }

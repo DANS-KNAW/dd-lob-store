@@ -16,13 +16,16 @@
 
 package nl.knaw.dans.lobstore.config;
 
+import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
 import com.fasterxml.jackson.annotation.JsonProperty;
 import lombok.Data;
 
 import javax.validation.constraints.NotNull;
 
 @Data
+@JsonIgnoreProperties(ignoreUnknown = true)
 public class TransferConfig {
+    private InspectConfig inspect;
     @NotNull
     private DownloadConfig download;
     @NotNull
@@ -32,4 +35,5 @@ public class TransferConfig {
     private UploadConfig upload;
     @NotNull
     private VerifyConfig verify;
+
 }
