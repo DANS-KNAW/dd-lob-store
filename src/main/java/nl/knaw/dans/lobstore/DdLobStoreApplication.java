@@ -20,7 +20,6 @@ import io.dropwizard.core.Application;
 import io.dropwizard.core.setup.Bootstrap;
 import io.dropwizard.core.setup.Environment;
 import io.dropwizard.hibernate.HibernateBundle;
-
 import io.dropwizard.hibernate.UnitOfWorkAwareProxyFactory;
 import nl.knaw.dans.lib.dataverse.DataverseClient;
 import nl.knaw.dans.lib.util.pollingtaskexec.ExecutorServiceTaskScheduler;
@@ -38,7 +37,6 @@ import nl.knaw.dans.lobstore.resources.DefaultResource;
 import nl.knaw.dans.lobstore.resources.LocationResource;
 import nl.knaw.dans.lobstore.resources.TransfersResource;
 
-import java.time.Duration;
 import java.util.Map;
 import java.util.stream.Collectors;
 
@@ -66,9 +64,8 @@ public class DdLobStoreApplication extends Application<DdLobStoreConfig> {
         final ClaimDao claimDao = new ClaimDao(hibernateBundle.getSessionFactory());
 
         var uowProxyFactory = new UnitOfWorkAwareProxyFactory(hibernateBundle);
-        final QuotaManager quotaManager = uowProxyFactory.create(QuotaManager.class,
-            new Class<?>[] { ClaimDao.class, Map.class },
-            new Object[] { claimDao, config.getDiskSpace() });
+        final QuotaManager quotaManager = new QuotaManager(claimDao,
+            config.getDiskSpace());
 
         environment.jersey().register(new TransfersResource(transferRequestDao));
         environment.jersey().register(new LocationResource());
@@ -91,8 +88,8 @@ public class DdLobStoreApplication extends Application<DdLobStoreConfig> {
             "DownloadTaskExecutor",
             environment.lifecycle().scheduledExecutorService("download-task-executor", true).build(),
             config.getTransfer().getDownload().getPollingInterval().toJavaDuration(),
-            new DownloadTaskSource(transferRequestDao),
-            new DownloadTaskFactory(transferRequestDao, dataverseClients, config.getTransfer().getDownload(), uowProxyFactory),
+            new DownloadTaskSource(transferRequestDao, quotaManager, config.getTransfer().getDownload().getMargin().toBytes()),
+            new DownloadTaskFactory(transferRequestDao, dataverseClients, config.getTransfer().getDownload(), quotaManager, uowProxyFactory),
             new ExecutorServiceTaskScheduler(config.getTransfer().getDownload().getTaskQueue().build(environment)));
 
         environment.lifecycle().manage(createUnitOfWorkAwareProxy(uowProxyFactory, inspectTaskExecutor));

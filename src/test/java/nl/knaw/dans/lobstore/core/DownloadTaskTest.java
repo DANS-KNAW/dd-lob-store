@@ -45,6 +45,7 @@ class DownloadTaskTest {
     private final DataverseClient dataverseClient = mock(DataverseClient.class);
     private final BasicFileAccessApi basicFileAccessApi = mock(BasicFileAccessApi.class);
     private final DownloadConfig downloadConfig = new DownloadConfig();
+    private final QuotaManager quotaManager = mock(QuotaManager.class);
 
     @TempDir
     Path tempDir;
@@ -76,7 +77,7 @@ class DownloadTaskTest {
             return handler.handleResponse(response);
         });
 
-        DownloadTask task = new DownloadTask(id, dao, dataverseClient, downloadConfig);
+        DownloadTask task = new DownloadTask(id, dao, dataverseClient, downloadConfig, quotaManager);
         task.run();
 
         assertThat(request.getStatus()).isEqualTo(TransferStatus.DOWNLOADED);
@@ -99,7 +100,7 @@ class DownloadTaskTest {
         when(dao.findById(id)).thenReturn(Optional.of(request));
         when(basicFileAccessApi.getFile(any(HttpClientResponseHandler.class))).thenThrow(new RuntimeException("Download failed"));
 
-        DownloadTask task = new DownloadTask(id, dao, dataverseClient, downloadConfig);
+        DownloadTask task = new DownloadTask(id, dao, dataverseClient, downloadConfig, quotaManager);
         try {
             task.run();
         } catch (RuntimeException e) {

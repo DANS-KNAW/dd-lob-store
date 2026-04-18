@@ -29,6 +29,7 @@ public class PackageConfig {
     @NotNull
     private Duration pollingInterval;
     private DataSize minimalBucketSize = DataSize.gigabytes(1);
+    private DataSize margin = DataSize.megabytes(10);
     @NotNull
     private Path uploadDirectory;
     @NotNull

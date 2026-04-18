@@ -26,10 +26,26 @@ import java.util.List;
  */
 @RequiredArgsConstructor
 public class DownloadTaskSource implements TaskSource<TransferRequest> {
+    private static final String TARGET_DOWNLOAD = "download";
+
     private final TransferRequestDao transferRequestDao;
+    private final QuotaManager quotaManager;
+    private final long margin;
 
     @Override
     public List<TransferRequest> nextInputs() {
-        return transferRequestDao.findNextDownloadableItem().stream().toList();
+        var optItem = transferRequestDao.findNextDownloadableItem();
+        if (optItem.isPresent()) {
+            var item = optItem.get();
+            if (quotaManager.claim(item.getId() + "/1", TARGET_DOWNLOAD, item.getFileSize())) {
+                if (quotaManager.claim(item.getId() + "/2", TARGET_DOWNLOAD, item.getFileSize() + margin)) {
+                    return List.of(item);
+                }
+                else {
+                    quotaManager.release(item.getId() + "/1", TARGET_DOWNLOAD);
+                }
+            }
+        }
+        return List.of();
     }
 }

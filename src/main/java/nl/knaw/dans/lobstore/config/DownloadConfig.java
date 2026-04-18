@@ -29,6 +29,8 @@ public class DownloadConfig {
     @NotNull
     private Duration pollingInterval;
     private DataSize chunkSize = DataSize.gigabytes(1);
+    private DataSize margin = DataSize.megabytes(10);
+
     @NotNull
     private Path downloadDirectory;
     @NotNull

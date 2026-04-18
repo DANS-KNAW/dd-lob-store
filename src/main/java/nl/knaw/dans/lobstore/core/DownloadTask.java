@@ -35,6 +35,7 @@ public class DownloadTask implements Runnable {
     private final TransferRequestDao transferRequestDao;
     private final DataverseClient dataverseClient;
     private final DownloadConfig downloadConfig;
+    private final QuotaManager quotaManager;
 
     @Override
     @UnitOfWork
@@ -57,6 +58,7 @@ public class DownloadTask implements Runnable {
 
             transferRequest.setStatus(TransferStatus.DOWNLOADED);
             transferRequestDao.save(transferRequest);
+            quotaManager.release(transferRequest.getId() + "/2", "download");
             log.info("Finished DOWNLOAD step for {}", transferRequestId);
         }
         catch (Exception e) {

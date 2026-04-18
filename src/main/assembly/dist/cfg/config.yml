@@ -73,6 +73,7 @@ transfer:
   download:
     pollingInterval: 5s
     chunkSize: 1G
+    margin: 5M
     downloadDirectory: /data/lob-transfer/download
     taskQueue:
       nameFormat: "download-worker-%d"
@@ -87,6 +88,7 @@ transfer:
   package:
     pollingInterval: 5s
     minimalBucketSize: 1G
+    margin: 5M
     uploadDirectory: /data/lob-transfer/upload
     command: /usr/local/bin/package.sh
     taskQueue:
