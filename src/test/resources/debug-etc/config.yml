@@ -18,14 +18,16 @@ server:
         timeZone: system
         currentLogFilename: /var/opt/dans.knaw.nl/log/dd-lob-store/request.log
 
-dataStations:
-  - name: archaeology
-    baseUrl: https://archaeology.datastations.nl
-    apiKey: changeme
-    lobStore:
-      user: changeme
-      host: archive.surfsara.nl
-      path: archive/data-vault/archaelogy.lobs
+datastations:
+  archaeology:
+    dataverse:
+      baseUrl: 'https://dev.archaeology.datastations.nl'
+      apiKey: 'changeme'
+    lobstore:
+      username: changeme
+      host: changeme@example.com
+      path: changeme
+
 
 database:
   driverClass: org.postgresql.Driver

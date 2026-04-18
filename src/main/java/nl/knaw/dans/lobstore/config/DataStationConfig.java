@@ -13,42 +13,18 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-
 package nl.knaw.dans.lobstore.config;
 
-import io.dropwizard.client.JerseyClientConfiguration;
-import io.dropwizard.core.Configuration;
-import io.dropwizard.db.DataSourceFactory;
-import io.dropwizard.util.DataSize;
 import lombok.Data;
-import lombok.EqualsAndHashCode;
 import nl.knaw.dans.lib.util.DataverseClientFactory;
 
-import javax.validation.Valid;
 import javax.validation.constraints.NotNull;
-import java.util.List;
-import java.util.Map;
 
 @Data
-@EqualsAndHashCode(callSuper = true)
-public class DdLobStoreConfig extends Configuration {
-
-    @Valid
+public class DataStationConfig {
     @NotNull
-    private DataSourceFactory database = new DataSourceFactory();
-
-    @Valid
-    @NotNull
-    private JerseyClientConfiguration httpClient = new JerseyClientConfiguration();
-
-    @Valid
-    @NotNull
-    private TransferConfig transfer;
-
-    @Valid
-    @NotNull
-    private Map<String, DataStationConfig> datastations;
+    private DataverseClientFactory dataverse;
 
     @NotNull
-    private Map<String, DataSize> diskSpace;
+    private LobStoreConfig lobstore;
 }
