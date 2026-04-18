@@ -38,6 +38,7 @@ import nl.knaw.dans.lobstore.resources.LocationResource;
 import nl.knaw.dans.lobstore.resources.TransfersResource;
 
 import java.util.Map;
+import java.util.concurrent.ExecutorService;
 import java.util.stream.Collectors;
 
 public class DdLobStoreApplication extends Application<DdLobStoreConfig> {
@@ -76,6 +77,12 @@ public class DdLobStoreApplication extends Application<DdLobStoreConfig> {
                 e.getValue().getDataverse().build(environment, e.getKey())))
             .collect(Collectors.toMap(Map.Entry::getKey, Map.Entry::getValue));
 
+        final ExecutorService chunkDownloadExecutor = environment.lifecycle()
+            .executorService("chunk-download-executor")
+            .minThreads(config.getTransfer().getDownload().getMaxTotalChunkThreads())
+            .maxThreads(config.getTransfer().getDownload().getMaxTotalChunkThreads())
+            .build();
+
         final PollingTaskExecutor<TransferRequest> inspectTaskExecutor = new PollingTaskExecutor<>(
             "InspectTaskExecutor",
             environment.lifecycle().scheduledExecutorService("inspect-task-executor", true).build(),
@@ -89,7 +96,7 @@ public class DdLobStoreApplication extends Application<DdLobStoreConfig> {
             environment.lifecycle().scheduledExecutorService("download-task-executor", true).build(),
             config.getTransfer().getDownload().getPollingInterval().toJavaDuration(),
             new DownloadTaskSource(transferRequestDao, quotaManager, config.getTransfer().getDownload().getMargin().toBytes()),
-            new DownloadTaskFactory(transferRequestDao, dataverseClients, config.getTransfer().getDownload(), quotaManager, uowProxyFactory),
+            new DownloadTaskFactory(transferRequestDao, dataverseClients, config.getTransfer().getDownload(), quotaManager, uowProxyFactory, chunkDownloadExecutor),
             new ExecutorServiceTaskScheduler(config.getTransfer().getDownload().getTaskQueue().build(environment)));
 
         environment.lifecycle().manage(createUnitOfWorkAwareProxy(uowProxyFactory, inspectTaskExecutor));

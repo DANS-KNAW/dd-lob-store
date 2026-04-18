@@ -25,6 +25,7 @@ import nl.knaw.dans.lobstore.db.TransferRequestDao;
 import java.util.List;
 import java.util.Map;
 import java.util.UUID;
+import java.util.concurrent.ExecutorService;
 
 @RequiredArgsConstructor
 public class DownloadTaskFactory implements TaskFactory<TransferRequest> {
@@ -33,6 +34,7 @@ public class DownloadTaskFactory implements TaskFactory<TransferRequest> {
     private final DownloadConfig downloadConfig;
     private final QuotaManager quotaManager;
     private final UnitOfWorkAwareProxyFactory unitOfWorkAwareProxyFactory;
+    private final ExecutorService chunkDownloadExecutor;
 
     @Override
     public Runnable create(List<TransferRequest> records) {
@@ -46,7 +48,7 @@ public class DownloadTaskFactory implements TaskFactory<TransferRequest> {
 
     private Runnable createUnitOfWorkAwareTask(UUID id, TransferRequestDao transferRequestDao, DataverseClient dataverseClient, DownloadConfig downloadConfig) {
         return unitOfWorkAwareProxyFactory.create(DownloadTask.class,
-            new Class[] { UUID.class, TransferRequestDao.class, DataverseClient.class, DownloadConfig.class, QuotaManager.class },
-            new Object[] { id, transferRequestDao, dataverseClient, downloadConfig, quotaManager });
+            new Class[] { UUID.class, TransferRequestDao.class, DataverseClient.class, DownloadConfig.class, QuotaManager.class, ExecutorService.class },
+            new Object[] { id, transferRequestDao, dataverseClient, downloadConfig, quotaManager, chunkDownloadExecutor });
     }
 }

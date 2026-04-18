@@ -35,4 +35,6 @@ public class DownloadConfig {
     private Path downloadDirectory;
     @NotNull
     private ExecutorServiceFactory taskQueue;
+    private int maxTotalChunkThreads = 20;
+    private int maxChunksPerFile = 4;
 }
