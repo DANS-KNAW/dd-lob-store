@@ -21,6 +21,10 @@ import io.dropwizard.core.setup.Bootstrap;
 import io.dropwizard.core.setup.Environment;
 import io.dropwizard.hibernate.HibernateBundle;
 import nl.knaw.dans.lobstore.config.DdLobStoreConfig;
+import nl.knaw.dans.lobstore.db.TransferRequestDao;
+import nl.knaw.dans.lobstore.resources.DefaultResource;
+import nl.knaw.dans.lobstore.resources.LocationResource;
+import nl.knaw.dans.lobstore.resources.TransfersResource;
 
 public class DdLobStoreApplication extends Application<DdLobStoreConfig> {
 
@@ -42,6 +46,9 @@ public class DdLobStoreApplication extends Application<DdLobStoreConfig> {
 
     @Override
     public void run(final DdLobStoreConfig config, final Environment environment) {
-
+        final TransferRequestDao transferRequestDao = new TransferRequestDao(hibernateBundle.getSessionFactory());
+        environment.jersey().register(new TransfersResource(transferRequestDao));
+        environment.jersey().register(new LocationResource());
+        environment.jersey().register(new DefaultResource());
     }
 }

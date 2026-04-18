@@ -13,20 +13,18 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package nl.knaw.dans.lobstore;
+package nl.knaw.dans.lobstore.resources;
 
-import io.dropwizard.db.PooledDataSourceFactory;
-import io.dropwizard.hibernate.HibernateBundle;
-import nl.knaw.dans.lobstore.config.DdLobStoreConfig;
-import nl.knaw.dans.lobstore.core.TransferRequest;
+import io.dropwizard.hibernate.UnitOfWork;
 
-public class DdLobStoreHibernateBundle extends HibernateBundle<DdLobStoreConfig> {
-    public DdLobStoreHibernateBundle() {
-        super(TransferRequest.class);
-    }
+import javax.validation.constraints.NotNull;
+import javax.ws.rs.core.Response;
+
+public class LocationResource implements LocationApi {
 
     @Override
-    public PooledDataSourceFactory getDataSourceFactory(DdLobStoreConfig configuration) {
-        return configuration.getDatabase();
+    @UnitOfWork
+    public Response getLocationByHash(@NotNull String hash) {
+        throw new UnsupportedOperationException("Not implemented yet");
     }
 }

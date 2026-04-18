@@ -13,20 +13,20 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package nl.knaw.dans.lobstore;
+package nl.knaw.dans.lobstore.core;
 
-import io.dropwizard.db.PooledDataSourceFactory;
-import io.dropwizard.hibernate.HibernateBundle;
-import nl.knaw.dans.lobstore.config.DdLobStoreConfig;
-import nl.knaw.dans.lobstore.core.TransferRequest;
-
-public class DdLobStoreHibernateBundle extends HibernateBundle<DdLobStoreConfig> {
-    public DdLobStoreHibernateBundle() {
-        super(TransferRequest.class);
-    }
-
-    @Override
-    public PooledDataSourceFactory getDataSourceFactory(DdLobStoreConfig configuration) {
-        return configuration.getDatabase();
-    }
+public enum TransferStatus {
+    PENDING,
+    INSPECTING,
+    INSPECTED,
+    DOWNLOADING,
+    DOWNLOADED,
+    PACKAGING,
+    PACKAGED,
+    TRANSFERRING,
+    TRANSFERRED,
+    VERIFYING,
+    DONE,
+    REJECTED,
+    FAILED
 }

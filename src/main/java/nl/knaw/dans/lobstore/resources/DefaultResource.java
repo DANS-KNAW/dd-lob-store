@@ -13,20 +13,14 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package nl.knaw.dans.lobstore;
+package nl.knaw.dans.lobstore.resources;
 
-import io.dropwizard.db.PooledDataSourceFactory;
-import io.dropwizard.hibernate.HibernateBundle;
-import nl.knaw.dans.lobstore.config.DdLobStoreConfig;
-import nl.knaw.dans.lobstore.core.TransferRequest;
+import javax.ws.rs.core.Response;
 
-public class DdLobStoreHibernateBundle extends HibernateBundle<DdLobStoreConfig> {
-    public DdLobStoreHibernateBundle() {
-        super(TransferRequest.class);
-    }
+public class DefaultResource implements DefaultApi {
 
     @Override
-    public PooledDataSourceFactory getDataSourceFactory(DdLobStoreConfig configuration) {
-        return configuration.getDatabase();
+    public Response rootGet() {
+        return Response.ok("LOB Store Running").build();
     }
 }
