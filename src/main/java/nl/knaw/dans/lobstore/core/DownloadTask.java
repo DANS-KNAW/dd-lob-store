@@ -57,50 +57,71 @@ public class DownloadTask implements Runnable {
     private final ExecutorService chunkDownloadExecutor;
 
     @Override
-    @UnitOfWork
     public void run() {
         log.info("Starting DOWNLOAD step for {}", transferRequestId);
-        TransferRequest transferRequest = null;
         try {
-            transferRequest = transferRequestDao.findById(transferRequestId)
-                .orElseThrow(() -> new RuntimeException("Transfer request with id " + transferRequestId + " not found"));
-
-            BasicFileAccessApi basicFileAccessApi = dataverseClient.basicFileAccess(transferRequest.getDataverseFileId());
-            Path downloadDir = downloadConfig.getDownloadDirectory().resolve(transferRequest.getId().toString());
-            Files.createDirectories(downloadDir);
-
-            long fileSize = transferRequest.getFileSize();
-            long chunkSize = downloadConfig.getChunkSize().toBytes();
-            String sha1 = transferRequest.getSha1Sum();
-
-            if (fileSize < chunkSize) {
-                downloadWholeFile(basicFileAccessApi, downloadDir.resolve(sha1));
-            }
-            else {
-                downloadInChunks(basicFileAccessApi, downloadDir, fileSize, chunkSize, sha1);
-                mergeChunks(downloadDir, sha1, fileSize, chunkSize);
-            }
-
-            verifySha1(downloadDir.resolve(sha1), sha1);
-
-            transferRequest.setStatus(TransferStatus.DOWNLOADED);
-            transferRequestDao.save(transferRequest);
-            quotaManager.release(transferRequest.getId() + "/2", "download");
+            prepareDownload();
+            executeDownload();
             log.info("Finished DOWNLOAD step for {}", transferRequestId);
         }
         catch (Throwable e) {
             log.error("Error downloading file for transfer request with id {}", transferRequestId, e);
-            if (transferRequest != null) {
-                transferRequest.setStatus(TransferStatus.FAILED);
-                String msg = e.getMessage();
-                if (e.getCause() != null) {
-                    msg += ": " + e.getCause().getMessage();
-                }
-                transferRequest.setMessage("Error downloading file: " + msg);
-                transferRequestDao.save(transferRequest);
-            }
+            handleFailure(e);
             throw new RuntimeException(e);
         }
+    }
+
+    @UnitOfWork
+    public void prepareDownload() throws IOException {
+        TransferRequest transferRequest = transferRequestDao.findById(transferRequestId)
+            .orElseThrow(() -> new RuntimeException("Transfer request with id " + transferRequestId + " not found"));
+
+        Path downloadDir = downloadConfig.getDownloadDirectory().resolve(transferRequest.getId().toString());
+        Files.createDirectories(downloadDir);
+
+        transferRequest.setStatus(TransferStatus.DOWNLOADING);
+        transferRequestDao.save(transferRequest);
+    }
+
+    @UnitOfWork
+    public void executeDownload() throws IOException, DataverseException, InterruptedException {
+        TransferRequest transferRequest = transferRequestDao.findById(transferRequestId)
+            .orElseThrow(() -> new RuntimeException("Transfer request with id " + transferRequestId + " not found"));
+
+        BasicFileAccessApi basicFileAccessApi = dataverseClient.basicFileAccess(transferRequest.getDataverseFileId());
+        Path downloadDir = downloadConfig.getDownloadDirectory().resolve(transferRequest.getId().toString());
+
+        long fileSize = transferRequest.getFileSize();
+        long chunkSize = downloadConfig.getChunkSize().toBytes();
+        String sha1 = transferRequest.getSha1Sum();
+
+        if (fileSize < chunkSize) {
+            downloadWholeFile(basicFileAccessApi, downloadDir.resolve(sha1));
+        }
+        else {
+            downloadInChunks(basicFileAccessApi, downloadDir, fileSize, chunkSize, sha1);
+            mergeChunks(downloadDir, sha1, fileSize, chunkSize);
+        }
+
+        verifySha1(downloadDir.resolve(sha1), sha1);
+        deleteChunks(downloadDir);
+
+        transferRequest.setStatus(TransferStatus.DOWNLOADED);
+        transferRequestDao.save(transferRequest);
+        quotaManager.release(transferRequest.getId() + "/2", "download");
+    }
+
+    @UnitOfWork
+    public void handleFailure(Throwable e) {
+        transferRequestDao.findById(transferRequestId).ifPresent(transferRequest -> {
+            transferRequest.setStatus(TransferStatus.FAILED);
+            String msg = e.getMessage();
+            if (e.getCause() != null) {
+                msg += ": " + e.getCause().getMessage();
+            }
+            transferRequest.setMessage("Error downloading file: " + msg);
+            transferRequestDao.save(transferRequest);
+        });
     }
 
     private void downloadWholeFile(BasicFileAccessApi api, Path outputFile) throws IOException, DataverseException {
@@ -167,6 +188,26 @@ public class DownloadTask implements Runnable {
 
         if (firstError.get() != null) {
             throw new RuntimeException("One or more chunks failed to download", firstError.get());
+        }
+    }
+    
+    private void deleteChunks(Path downloadDir) {
+        log.info("Deleting chunks in {}", downloadDir);
+        try (Stream<Path> files = Files.list(downloadDir)) {
+            files.filter(path -> {
+                String filename = path.getFileName().toString();
+                return filename.contains(".") && !filename.startsWith(".");
+            }).forEach(path -> {
+                try {
+                    Files.delete(path);
+                }
+                catch (IOException e) {
+                    log.warn("Could not delete chunk file {}", path, e);
+                }
+            });
+        }
+        catch (IOException e) {
+            log.error("Error listing files in {}", downloadDir, e);
         }
     }
 

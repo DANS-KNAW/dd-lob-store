@@ -88,6 +88,7 @@ class DownloadTaskTest {
         DownloadTask task = new DownloadTask(id, dao, dataverseClient, downloadConfig, quotaManager, executorService);
         task.run();
 
+        verify(dao, org.mockito.Mockito.atLeast(2)).save(request);
         assertThat(request.getStatus()).isEqualTo(TransferStatus.DOWNLOADED);
         Path outputFile = tempDir.resolve(id.toString()).resolve(sha1);
         assertThat(outputFile).exists().hasContent(content);
@@ -114,7 +115,7 @@ class DownloadTaskTest {
         when(basicFileAccessApi.getFile(any(GetFileRange.class), any(HttpClientResponseHandler.class))).thenAnswer(invocation -> {
             GetFileRange range = invocation.getArgument(0);
             HttpClientResponseHandler<?> handler = invocation.getArgument(1);
-            String chunkContent = content.substring((int) range.getStart(), (int) range.getEnd());
+            String chunkContent = content.substring((int) range.getStart(), (int) range.getEnd() + 1);
 
             ClassicHttpResponse response = mock(ClassicHttpResponse.class);
             HttpEntity entity = mock(HttpEntity.class);
@@ -126,12 +127,13 @@ class DownloadTaskTest {
         DownloadTask task = new DownloadTask(id, dao, dataverseClient, downloadConfig, quotaManager, executorService);
         task.run();
 
+        verify(dao, org.mockito.Mockito.atLeast(2)).save(request);
         assertThat(request.getStatus()).isEqualTo(TransferStatus.DOWNLOADED);
         Path downloadDir = tempDir.resolve(id.toString());
         assertThat(downloadDir.resolve(sha1)).exists().hasContent(content);
-        assertThat(downloadDir.resolve(sha1 + ".0")).exists().hasContent("123");
-        assertThat(downloadDir.resolve(sha1 + ".1")).exists().hasContent("456");
-        assertThat(downloadDir.resolve(sha1 + ".2")).exists().hasContent("789");
+        assertThat(downloadDir.resolve(sha1 + ".0")).doesNotExist();
+        assertThat(downloadDir.resolve(sha1 + ".1")).doesNotExist();
+        assertThat(downloadDir.resolve(sha1 + ".2")).doesNotExist();
     }
 
     @Test
@@ -161,7 +163,7 @@ class DownloadTaskTest {
         when(basicFileAccessApi.getFile(any(GetFileRange.class), any(HttpClientResponseHandler.class))).thenAnswer(invocation -> {
             GetFileRange range = invocation.getArgument(0);
             assertThat(range.getStart()).isEqualTo(3);
-            assertThat(range.getEnd()).isEqualTo(6);
+            assertThat(range.getEnd()).isEqualTo(5);
 
             HttpClientResponseHandler<?> handler = invocation.getArgument(1);
             ClassicHttpResponse response = mock(ClassicHttpResponse.class);
@@ -174,6 +176,7 @@ class DownloadTaskTest {
         DownloadTask task = new DownloadTask(id, dao, dataverseClient, downloadConfig, quotaManager, executorService);
         task.run();
 
+        verify(dao, org.mockito.Mockito.atLeast(2)).save(request);
         assertThat(request.getStatus()).isEqualTo(TransferStatus.DOWNLOADED);
         assertThat(downloadDir.resolve(sha1)).exists().hasContent(content);
     }

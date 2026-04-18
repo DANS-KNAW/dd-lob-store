@@ -18,6 +18,7 @@ package nl.knaw.dans.lobstore.core;
 public enum TransferStatus {
     PENDING,
     INSPECTED,
+    DOWNLOADING,
     DOWNLOADED,
     PACKAGED,
     TRANSFERRED,

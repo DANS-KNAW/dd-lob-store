@@ -65,7 +65,7 @@ public class TransferRequest {
 
     public boolean isInProgress() {
         return switch (status) {
-            case PENDING, INSPECTED, DOWNLOADED, PACKAGED, TRANSFERRED -> true;
+            case PENDING, INSPECTED, DOWNLOADING, DOWNLOADED, PACKAGED, TRANSFERRED -> true;
             case DONE, REJECTED, FAILED -> false;
         };
     }

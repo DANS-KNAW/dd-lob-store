@@ -26,6 +26,7 @@ class TransferRequestTest {
     void is_in_progress_should_return_true_for_progressing_statuses() {
         assertTrue(TransferRequest.builder().status(TransferStatus.PENDING).build().isInProgress());
         assertTrue(TransferRequest.builder().status(TransferStatus.INSPECTED).build().isInProgress());
+        assertTrue(TransferRequest.builder().status(TransferStatus.DOWNLOADING).build().isInProgress());
         assertTrue(TransferRequest.builder().status(TransferStatus.DOWNLOADED).build().isInProgress());
         assertTrue(TransferRequest.builder().status(TransferStatus.PACKAGED).build().isInProgress());
         assertTrue(TransferRequest.builder().status(TransferStatus.TRANSFERRED).build().isInProgress());
