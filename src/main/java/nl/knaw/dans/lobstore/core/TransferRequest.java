@@ -55,4 +55,11 @@ public class TransferRequest {
 
     @Column(name = "file_size")
     private Long fileSize;
+
+    public boolean isInProgress() {
+        return switch (status) {
+            case PENDING, INSPECTING, INSPECTED, DOWNLOADING, DOWNLOADED, PACKAGING, PACKAGED, TRANSFERRING, TRANSFERRED, VERIFYING -> true;
+            case DONE, REJECTED, FAILED -> false;
+        };
+    }
 }

@@ -29,7 +29,6 @@ import javax.validation.constraints.NotNull;
 import javax.ws.rs.WebApplicationException;
 import javax.ws.rs.core.Response;
 import java.util.List;
-import java.util.Set;
 import java.util.UUID;
 
 public class TransfersResource implements TransfersApi {
@@ -45,33 +44,15 @@ public class TransfersResource implements TransfersApi {
     public Response addTransfer(@Valid @NotNull TransferRequestDto transferRequestDto) {
         String sha1 = transferRequestDto.getSha1Sum();
 
-        // Check if a transfer request for the same SHA-1 is already present with a status other than FAILED, REJECTED or DONE.
-        // If so, return 409 Conflict.
         List<TransferRequest> existingRequests = transferRequestDao.findBySha1Sum(sha1);
-        Set<TransferStatus> inProgressStatuses = Set.of(
-            TransferStatus.PENDING,
-            TransferStatus.INSPECTING,
-            TransferStatus.INSPECTED,
-            TransferStatus.DOWNLOADING,
-            TransferStatus.DOWNLOADED,
-            TransferStatus.PACKAGING,
-            TransferStatus.PACKAGED,
-            TransferStatus.TRANSFERRING,
-            TransferStatus.TRANSFERRED,
-            TransferStatus.VERIFYING
-        );
 
-        boolean inProgress = existingRequests.stream()
-            .anyMatch(r -> inProgressStatuses.contains(r.getStatus()));
-
-        if (inProgress) {
+        if (existingRequests.stream()
+            .anyMatch(TransferRequest::isInProgress)) {
             return Response.status(Response.Status.CONFLICT)
                 .entity("Transfer already in progress for the given SHA-1")
                 .build();
         }
 
-        // Check whether the SHA-1 checksum is already present in the targeted LOB-store (status DONE).
-        // If so, the transfer request is immediately changed to DONE.
         boolean alreadyDone = existingRequests.stream()
             .anyMatch(r -> r.getStatus() == TransferStatus.DONE);
 
