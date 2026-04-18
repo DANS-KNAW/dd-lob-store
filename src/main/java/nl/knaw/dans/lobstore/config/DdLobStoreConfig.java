@@ -44,7 +44,10 @@ public class DdLobStoreConfig extends Configuration {
     @NotNull
     private TransferConfig transfer;
 
+    @Valid
+    @NotNull
     private List<Map<String, Object>> dataStations;
 
+    @NotNull
     private Map<String, DataSize> diskSpace;
 }

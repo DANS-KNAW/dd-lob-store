@@ -20,20 +20,27 @@ import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
 import com.fasterxml.jackson.annotation.JsonProperty;
 import lombok.Data;
 
+import javax.validation.Valid;
 import javax.validation.constraints.NotNull;
 
 @Data
 @JsonIgnoreProperties(ignoreUnknown = true)
 public class TransferConfig {
+    @NotNull
+    @Valid
     private InspectConfig inspect;
     @NotNull
+    @Valid
     private DownloadConfig download;
     @NotNull
+    @Valid
     @JsonProperty("package")
     private PackageConfig packageConfig;
     @NotNull
+    @Valid
     private UploadConfig upload;
     @NotNull
+    @Valid
     private VerifyConfig verify;
 
 }

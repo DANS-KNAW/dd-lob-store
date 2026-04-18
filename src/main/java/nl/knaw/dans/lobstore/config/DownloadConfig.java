@@ -20,13 +20,14 @@ import io.dropwizard.util.DataSize;
 import lombok.Data;
 import nl.knaw.dans.lib.util.ExecutorServiceFactory;
 
+import javax.validation.constraints.NotNull;
 import java.nio.file.Path;
 
 @Data
 public class DownloadConfig {
-    private DataSize chunkSize;
+    private DataSize chunkSize = DataSize.gigabytes(1);
+    @NotNull
     private Path downloadDirectory;
-    private DataSize minimalBucketSize;
-    private DataSize quota;
+    @NotNull
     private ExecutorServiceFactory taskQueue;
 }

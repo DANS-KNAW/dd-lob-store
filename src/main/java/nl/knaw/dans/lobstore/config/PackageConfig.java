@@ -20,14 +20,18 @@ import io.dropwizard.util.DataSize;
 import lombok.Data;
 import nl.knaw.dans.lib.util.ExecutorServiceFactory;
 
+import javax.validation.constraints.NotNull;
 import java.nio.file.Path;
 
 @Data
 public class PackageConfig {
     private DataSize minimalBucketSize = DataSize.gigabytes(1);
+    @NotNull
     private Path uploadDirectory;
+    @NotNull
     private String command;
-    private String verifyCommand = "";
-    private DataSize quota;
+    @NotNull
+    private String verifyCommand;
+    @NotNull
     private ExecutorServiceFactory taskQueue;
 }
