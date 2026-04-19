@@ -30,6 +30,7 @@ public class DownloadTaskSource implements TaskSource<TransferRequest> {
 
     private final TransferRequestDao transferRequestDao;
     private final QuotaManager quotaManager;
+    private final ActiveTaskRegistry activeTaskRegistry;
     private final long margin;
 
     @Override
@@ -37,19 +38,21 @@ public class DownloadTaskSource implements TaskSource<TransferRequest> {
         var optItem = transferRequestDao.findNextDownloadableItem();
         if (optItem.isPresent()) {
             var item = optItem.get();
-            if (quotaManager.ensureClaimed(item.getId() + "/base", TARGET_DOWNLOAD, item.getFileSize())) {
-                if (quotaManager.ensureClaimed(item.getId() + "/extra", TARGET_DOWNLOAD, item.getFileSize() + margin)) {
-                    item.setStatus(TransferStatus.DOWNLOADING);
-                    transferRequestDao.save(item);
-                    return List.of(item);
+            if (activeTaskRegistry.add(item.getId())) {
+                if (quotaManager.ensureClaimed(item.getId() + "/base", TARGET_DOWNLOAD, item.getFileSize())) {
+                    if (quotaManager.ensureClaimed(item.getId() + "/extra", TARGET_DOWNLOAD, item.getFileSize() + margin)) {
+                        item.setStatus(TransferStatus.DOWNLOADING);
+                        transferRequestDao.save(item);
+                        return List.of(item);
+                    }
+                    // DO NOT DELETE: IMPORTANT EXPLANATION FOR FUTURE MAINTENANCE.
+                    // else {
+                    // We DO NOT release the base claim because the same items will be selected in the next try. If the selection
+                    // were to become non-deterministic, we would need to release the base claim here to prevent a leak
+                    // }
                 }
-                //else {
-                /*
-                 * Since the next downloadable item will be the same one in the next try, we keep the base claim around.
-                 * If the selection criteria were to change, we would need to release the base claim here to make sure it
-                 * is not leaked.
-                 */
-                //}
+                // If we couldn't proceed (e.g., quota check failed), we remove it from the registry so it can be picked up again.
+                activeTaskRegistry.remove(item.getId());
             }
         }
         return List.of();

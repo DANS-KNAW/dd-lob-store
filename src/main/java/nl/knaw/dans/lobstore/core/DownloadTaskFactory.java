@@ -33,6 +33,7 @@ public class DownloadTaskFactory implements TaskFactory<TransferRequest> {
     private final Map<String, DataverseClient> dataverseClients;
     private final DownloadConfig downloadConfig;
     private final QuotaManager quotaManager;
+    private final ActiveTaskRegistry activeTaskRegistry;
     private final UnitOfWorkAwareProxyFactory unitOfWorkAwareProxyFactory;
     private final ExecutorService chunkDownloadExecutor;
 
@@ -48,7 +49,7 @@ public class DownloadTaskFactory implements TaskFactory<TransferRequest> {
 
     private Runnable createUnitOfWorkAwareTask(UUID id, TransferRequestDao transferRequestDao, DataverseClient dataverseClient, DownloadConfig downloadConfig) {
         return unitOfWorkAwareProxyFactory.create(DownloadTask.class,
-            new Class[] { UUID.class, TransferRequestDao.class, DataverseClient.class, DownloadConfig.class, QuotaManager.class, ExecutorService.class },
-            new Object[] { id, transferRequestDao, dataverseClient, downloadConfig, quotaManager, chunkDownloadExecutor });
+            new Class[] { UUID.class, TransferRequestDao.class, DataverseClient.class, DownloadConfig.class, QuotaManager.class, ActiveTaskRegistry.class, ExecutorService.class },
+            new Object[] { id, transferRequestDao, dataverseClient, downloadConfig, quotaManager, activeTaskRegistry, chunkDownloadExecutor });
     }
 }

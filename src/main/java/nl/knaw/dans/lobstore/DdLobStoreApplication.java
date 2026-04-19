@@ -25,6 +25,7 @@ import nl.knaw.dans.lib.dataverse.DataverseClient;
 import nl.knaw.dans.lib.util.pollingtaskexec.ExecutorServiceTaskScheduler;
 import nl.knaw.dans.lib.util.pollingtaskexec.PollingTaskExecutor;
 import nl.knaw.dans.lobstore.config.DdLobStoreConfig;
+import nl.knaw.dans.lobstore.core.ActiveTaskRegistry;
 import nl.knaw.dans.lobstore.core.DownloadTaskFactory;
 import nl.knaw.dans.lobstore.core.DownloadTaskSource;
 import nl.knaw.dans.lobstore.core.InspectTaskFactory;
@@ -68,6 +69,8 @@ public class DdLobStoreApplication extends Application<DdLobStoreConfig> {
         final QuotaManager quotaManager = new QuotaManager(claimDao,
             config.getDiskSpace());
 
+        final ActiveTaskRegistry downloadActiveTaskRegistry = new ActiveTaskRegistry();
+
         environment.jersey().register(new TransfersResource(transferRequestDao));
         environment.jersey().register(new LocationResource());
         environment.jersey().register(new DefaultResource());
@@ -95,8 +98,8 @@ public class DdLobStoreApplication extends Application<DdLobStoreConfig> {
             "DownloadTaskExecutor",
             environment.lifecycle().scheduledExecutorService("download-task-executor", true).build(),
             config.getTransfer().getDownload().getPollingInterval().toJavaDuration(),
-            new DownloadTaskSource(transferRequestDao, quotaManager, config.getTransfer().getDownload().getMargin().toBytes()),
-            new DownloadTaskFactory(transferRequestDao, dataverseClients, config.getTransfer().getDownload(), quotaManager, uowProxyFactory, chunkDownloadExecutor),
+            new DownloadTaskSource(transferRequestDao, quotaManager, downloadActiveTaskRegistry, config.getTransfer().getDownload().getMargin().toBytes()),
+            new DownloadTaskFactory(transferRequestDao, dataverseClients, config.getTransfer().getDownload(), quotaManager, downloadActiveTaskRegistry, uowProxyFactory, chunkDownloadExecutor),
             new ExecutorServiceTaskScheduler(config.getTransfer().getDownload().getTaskQueue().build(environment)));
 
         environment.lifecycle().manage(createUnitOfWorkAwareProxy(uowProxyFactory, inspectTaskExecutor));
