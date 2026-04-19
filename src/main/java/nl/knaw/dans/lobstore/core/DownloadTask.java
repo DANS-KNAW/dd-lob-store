@@ -55,6 +55,7 @@ public class DownloadTask implements Runnable {
     private final ExecutorService chunkDownloadExecutor;
 
     @Override
+    @UnitOfWork
     public void run() {
         log.info("Starting DOWNLOAD step for {}", transferRequestId);
         try {
@@ -63,41 +64,37 @@ public class DownloadTask implements Runnable {
 
             Path downloadDir = downloadConfig.getDownloadDirectory().resolve(transferRequest.getId().toString());
             Files.createDirectories(downloadDir);
-            TransferRequest transferRequest1 = transferRequestDao.findById(transferRequestId)
-                .orElseThrow(() -> new RuntimeException("Transfer request with id " + transferRequestId + " not found"));
 
-            BasicFileAccessApi basicFileAccessApi = dataverseClient.basicFileAccess(transferRequest1.getDataverseFileId());
-            Path downloadDir1 = downloadConfig.getDownloadDirectory().resolve(transferRequest1.getId().toString());
-
-            long fileSize = transferRequest1.getFileSize();
+            BasicFileAccessApi basicFileAccessApi = dataverseClient.basicFileAccess(transferRequest.getDataverseFileId());
+            long fileSize = transferRequest.getFileSize();
             long chunkSize = downloadConfig.getChunkSize().toBytes();
-            String sha1 = transferRequest1.getSha1Sum();
+            String sha1 = transferRequest.getSha1Sum();
+            Path outputFile = downloadDir.resolve(sha1);
 
             if (fileSize < chunkSize) {
-                downloadWholeFile(basicFileAccessApi, downloadDir1.resolve(sha1));
+                downloadWholeFile(basicFileAccessApi, outputFile);
             }
             else {
-                downloadInChunks(basicFileAccessApi, downloadDir1, fileSize, chunkSize, sha1);
-                mergeChunks(downloadDir1, sha1, fileSize, chunkSize);
+                downloadInChunks(basicFileAccessApi, downloadDir, fileSize, chunkSize, sha1);
+                mergeChunks(downloadDir, sha1, fileSize, chunkSize);
             }
 
-            verifySha1(downloadDir1.resolve(sha1), sha1);
-            deleteChunks(downloadDir1);
+            verifySha1(outputFile, sha1);
+            deleteChunks(downloadDir);
 
-            transferRequest1.setStatus(TransferStatus.DOWNLOADED);
-            transferRequestDao.save(transferRequest1);
-            quotaManager.release(transferRequest1.getId() + "/2", "download");
+            transferRequest.setStatus(TransferStatus.DOWNLOADED);
+            transferRequestDao.save(transferRequest);
+            quotaManager.release(transferRequest.getId() + "/2", "download");
             log.info("Finished DOWNLOAD step for {}", transferRequestId);
         }
-        catch (Throwable e) {
+        catch (Exception e) {
             log.error("Error downloading file for transfer request with id {}", transferRequestId, e);
             handleFailure(e);
-            throw new RuntimeException(e);
+            // Do not rethrow to avoid the database transaction from being rolled back.
         }
     }
 
-    @UnitOfWork
-    public void handleFailure(Throwable e) {
+    private void handleFailure(Throwable e) {
         transferRequestDao.findById(transferRequestId).ifPresent(transferRequest -> {
             transferRequest.setStatus(TransferStatus.FAILED);
             String msg = e.getMessage();
