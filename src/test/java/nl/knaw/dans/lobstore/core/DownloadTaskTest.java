@@ -15,6 +15,7 @@
  */
 package nl.knaw.dans.lobstore.core;
 
+import io.dropwizard.util.DataSize;
 import nl.knaw.dans.lib.dataverse.BasicFileAccessApi;
 import nl.knaw.dans.lib.dataverse.DataverseClient;
 import nl.knaw.dans.lib.dataverse.GetFileRange;
@@ -30,6 +31,7 @@ import org.junit.jupiter.api.io.TempDir;
 import org.mockito.ArgumentCaptor;
 
 import java.io.ByteArrayInputStream;
+import java.nio.file.Files;
 import java.nio.file.Path;
 import java.util.Optional;
 import java.util.UUID;
@@ -39,6 +41,7 @@ import java.util.concurrent.Executors;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.anyLong;
+import static org.mockito.Mockito.atLeast;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
@@ -88,7 +91,7 @@ class DownloadTaskTest {
         DownloadTask task = new DownloadTask(id, dao, dataverseClient, downloadConfig, quotaManager, executorService);
         task.run();
 
-        verify(dao, org.mockito.Mockito.atLeast(1)).save(request);
+        verify(dao, atLeast(1)).save(request);
         assertThat(request.getStatus()).isEqualTo(TransferStatus.DOWNLOADED);
         Path outputFile = tempDir.resolve(id.toString()).resolve(sha1);
         assertThat(outputFile).exists().hasContent(content);
@@ -100,7 +103,7 @@ class DownloadTaskTest {
         // 3 chunks of 3 bytes each
         String content = "123456789";
         String sha1 = DigestUtils.sha1Hex(content);
-        downloadConfig.setChunkSize(io.dropwizard.util.DataSize.bytes(3));
+        downloadConfig.setChunkSize(DataSize.bytes(3));
 
         TransferRequest request = TransferRequest.builder()
             .id(id)
@@ -127,7 +130,7 @@ class DownloadTaskTest {
         DownloadTask task = new DownloadTask(id, dao, dataverseClient, downloadConfig, quotaManager, executorService);
         task.run();
 
-        verify(dao, org.mockito.Mockito.atLeast(1)).save(request);
+        verify(dao, atLeast(1)).save(request);
         assertThat(request.getStatus()).isEqualTo(TransferStatus.DOWNLOADED);
         Path downloadDir = tempDir.resolve(id.toString());
         assertThat(downloadDir.resolve(sha1)).exists().hasContent(content);
@@ -141,13 +144,13 @@ class DownloadTaskTest {
         UUID id = UUID.randomUUID();
         String content = "123456789";
         String sha1 = DigestUtils.sha1Hex(content);
-        downloadConfig.setChunkSize(io.dropwizard.util.DataSize.bytes(3));
+        downloadConfig.setChunkSize(DataSize.bytes(3));
 
         Path downloadDir = tempDir.resolve(id.toString());
-        java.nio.file.Files.createDirectories(downloadDir);
+        Files.createDirectories(downloadDir);
         // Pre-create chunk 0 and 2
-        java.nio.file.Files.writeString(downloadDir.resolve(sha1 + ".0"), "123");
-        java.nio.file.Files.writeString(downloadDir.resolve(sha1 + ".2"), "789");
+        Files.writeString(downloadDir.resolve(sha1 + ".0"), "123");
+        Files.writeString(downloadDir.resolve(sha1 + ".2"), "789");
 
         TransferRequest request = TransferRequest.builder()
             .id(id)
@@ -176,7 +179,7 @@ class DownloadTaskTest {
         DownloadTask task = new DownloadTask(id, dao, dataverseClient, downloadConfig, quotaManager, executorService);
         task.run();
 
-        verify(dao, org.mockito.Mockito.atLeast(1)).save(request);
+        verify(dao, atLeast(1)).save(request);
         assertThat(request.getStatus()).isEqualTo(TransferStatus.DOWNLOADED);
         assertThat(downloadDir.resolve(sha1)).exists().hasContent(content);
     }
