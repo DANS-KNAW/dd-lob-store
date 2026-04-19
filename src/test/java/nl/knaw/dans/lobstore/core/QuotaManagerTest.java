@@ -150,4 +150,64 @@ class QuotaManagerTest {
 
         verify(claimDao, never()).delete(any(Claim.class));
     }
+
+    @Test
+    void ensureClaimed_should_return_true_if_claim_already_exists_and_is_sufficient() {
+        String id = "test-id";
+        String target = "download";
+        long size = 1024L;
+        Claim existingClaim = new Claim(id, target, size);
+
+        when(claimDao.findById(id)).thenReturn(Optional.of(existingClaim));
+
+        boolean result = quotaManager.ensureClaimed(id, target, size);
+
+        assertThat(result).isTrue();
+        verify(claimDao, never()).save(any(Claim.class));
+    }
+
+    @Test
+    void ensureClaimed_should_return_false_if_claim_already_exists_but_is_insufficient() {
+        String id = "test-id";
+        String target = "download";
+        long size = 2048L;
+        Claim existingClaim = new Claim(id, target, 1024L);
+
+        when(claimDao.findById(id)).thenReturn(Optional.of(existingClaim));
+
+        boolean result = quotaManager.ensureClaimed(id, target, size);
+
+        assertThat(result).isFalse();
+        verify(claimDao, never()).save(any(Claim.class));
+    }
+
+    @Test
+    void ensureClaimed_should_return_false_if_claim_already_exists_but_for_different_target() {
+        String id = "test-id";
+        String target = "download";
+        long size = 1024L;
+        Claim existingClaim = new Claim(id, "upload", size);
+
+        when(claimDao.findById(id)).thenReturn(Optional.of(existingClaim));
+
+        boolean result = quotaManager.ensureClaimed(id, target, size);
+
+        assertThat(result).isFalse();
+        verify(claimDao, never()).save(any(Claim.class));
+    }
+
+    @Test
+    void ensureClaimed_should_claim_if_not_exists() {
+        String id = "test-id";
+        String target = "download";
+        long size = 1024L;
+
+        when(claimDao.findById(id)).thenReturn(Optional.empty());
+        when(claimDao.sumSizeByTarget(target)).thenReturn(0L);
+
+        boolean result = quotaManager.ensureClaimed(id, target, size);
+
+        assertThat(result).isTrue();
+        verify(claimDao).save(any(Claim.class));
+    }
 }

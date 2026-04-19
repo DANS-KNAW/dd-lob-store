@@ -37,15 +37,19 @@ public class DownloadTaskSource implements TaskSource<TransferRequest> {
         var optItem = transferRequestDao.findNextDownloadableItem();
         if (optItem.isPresent()) {
             var item = optItem.get();
-            if (quotaManager.claim(item.getId() + "/1", TARGET_DOWNLOAD, item.getFileSize())) {
-                if (quotaManager.claim(item.getId() + "/2", TARGET_DOWNLOAD, item.getFileSize() + margin)) {
+            if (quotaManager.ensureClaimed(item.getId() + "/base", TARGET_DOWNLOAD, item.getFileSize())) {
+                if (quotaManager.ensureClaimed(item.getId() + "/extra", TARGET_DOWNLOAD, item.getFileSize() + margin)) {
                     item.setStatus(TransferStatus.DOWNLOADING);
                     transferRequestDao.save(item);
                     return List.of(item);
                 }
-                else {
-                    quotaManager.release(item.getId() + "/1", TARGET_DOWNLOAD);
-                }
+                //else {
+                /*
+                 * Since the next downloadable item will be the same one in the next try, we keep the base claim around.
+                 * If the selection criteria were to change, we would need to release the base claim here to make sure it
+                 * is not leaked.
+                 */
+                //}
             }
         }
         return List.of();

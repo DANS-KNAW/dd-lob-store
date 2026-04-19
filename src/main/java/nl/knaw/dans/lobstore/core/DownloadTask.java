@@ -63,7 +63,12 @@ public class DownloadTask implements Runnable {
                 .orElseThrow(() -> new RuntimeException("Transfer request with id " + transferRequestId + " not found"));
 
             Path downloadDir = downloadConfig.getDownloadDirectory().resolve(transferRequest.getId().toString());
-            Files.createDirectories(downloadDir);
+            if (Files.exists(downloadDir)) {
+                log.info("Download directory {} already exists, resuming download...", downloadDir);
+            }
+            else {
+                Files.createDirectories(downloadDir);
+            }
 
             BasicFileAccessApi basicFileAccessApi = dataverseClient.basicFileAccess(transferRequest.getDataverseFileId());
             long fileSize = transferRequest.getFileSize();
@@ -84,7 +89,7 @@ public class DownloadTask implements Runnable {
 
             transferRequest.setStatus(TransferStatus.DOWNLOADED);
             transferRequestDao.save(transferRequest);
-            quotaManager.release(transferRequest.getId() + "/2", "download");
+            quotaManager.release(transferRequest.getId() + "/extra", "download");
             log.info("Finished DOWNLOAD step for {}", transferRequestId);
         }
         catch (Exception e) {
@@ -140,7 +145,7 @@ public class DownloadTask implements Runnable {
                 continue;
             }
 
-            GetFileRange range = new GetFileRange(start, end -1);
+            GetFileRange range = new GetFileRange(start, end - 1);
             semaphore.acquire();
             CompletableFuture<Void> future = CompletableFuture.runAsync(() -> {
                 try {
@@ -172,7 +177,7 @@ public class DownloadTask implements Runnable {
             throw new RuntimeException("One or more chunks failed to download", firstError.get());
         }
     }
-    
+
     private void deleteChunks(Path downloadDir) {
         log.info("Deleting chunks in {}", downloadDir);
         try (Stream<Path> files = Files.list(downloadDir)) {

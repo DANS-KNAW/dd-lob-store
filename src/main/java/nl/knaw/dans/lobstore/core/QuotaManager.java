@@ -64,6 +64,21 @@ public class QuotaManager {
     }
 
     @UnitOfWork
+    public boolean ensureClaimed(String id, String target, long size) {
+        Optional<Claim> existingClaim = claimDao.findById(id);
+        if (existingClaim.isPresent()) {
+            Claim claim = existingClaim.get();
+            if (claim.getTarget().equals(target) && claim.getSize() >= size) {
+                log.info("Claim with id '{}' already exists and is sufficient", id);
+                return true;
+            }
+            log.warn("Claim with id '{}' exists but is insufficient or for a different target", id);
+            return false;
+        }
+        return claim(id, target, size);
+    }
+
+    @UnitOfWork
     public void release(String id, String target) {
         log.debug("Releasing claim with id '{}' for target '{}'", id, target);
 
