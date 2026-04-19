@@ -86,7 +86,7 @@ public class DownloadTask implements Runnable {
             }
 
             verifySha1(outputFile, sha1);
-            deleteChunks(downloadDir);
+            deleteChunks(downloadDir, sha1);
 
             transferRequest.setStatus(TransferStatus.DOWNLOADED);
             transferRequestDao.save(transferRequest);
@@ -143,12 +143,19 @@ public class DownloadTask implements Runnable {
             long end = Math.min(start + chunkSize, fileSize);
             int chunkIndex = (int) (start / chunkSize);
             Path chunkFile = downloadDir.resolve(sha1 + "." + chunkIndex);
+            Path chunkFilePartial = chunkFile.resolveSibling(chunkFile.getFileName() + ".part");
 
             if (Files.exists(chunkFile)) {
                 log.debug("Chunk {} already exists, skipping", chunkFile);
                 continue;
             }
 
+            try {
+                Files.deleteIfExists(chunkFilePartial);
+            }
+            catch (IOException e) {
+                log.warn("Could not delete partial chunk file {}", chunkFilePartial, e);
+            }
             GetFileRange range = new GetFileRange(start, end - 1);
             semaphore.acquire();
             CompletableFuture<Void> future = CompletableFuture.runAsync(() -> {
@@ -159,7 +166,8 @@ public class DownloadTask implements Runnable {
                     log.debug("Downloading chunk {} ({}-{}) for {}", chunkIndex, range.getStart(), range.getEnd(), transferRequestId);
                     api.getFile(range, response -> {
                         try (InputStream is = response.getEntity().getContent()) {
-                            FileUtils.copyInputStreamToFile(is, chunkFile.toFile());
+                            FileUtils.copyInputStreamToFile(is, chunkFilePartial.toFile());
+                            Files.move(chunkFilePartial, chunkFile);
                         }
                         return null;
                     });
@@ -182,12 +190,12 @@ public class DownloadTask implements Runnable {
         }
     }
 
-    private void deleteChunks(Path downloadDir) {
+    private void deleteChunks(Path downloadDir, String sha1) {
         log.info("Deleting chunks in {}", downloadDir);
         try (Stream<Path> files = Files.list(downloadDir)) {
             files.filter(path -> {
                 String filename = path.getFileName().toString();
-                return filename.contains(".") && !filename.startsWith(".");
+                return filename.startsWith(sha1 + ".");
             }).forEach(path -> {
                 try {
                     Files.delete(path);
