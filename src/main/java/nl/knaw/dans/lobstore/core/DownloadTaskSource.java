@@ -39,6 +39,8 @@ public class DownloadTaskSource implements TaskSource<TransferRequest> {
             var item = optItem.get();
             if (quotaManager.claim(item.getId() + "/1", TARGET_DOWNLOAD, item.getFileSize())) {
                 if (quotaManager.claim(item.getId() + "/2", TARGET_DOWNLOAD, item.getFileSize() + margin)) {
+                    item.setStatus(TransferStatus.DOWNLOADING);
+                    transferRequestDao.save(item);
                     return List.of(item);
                 }
                 else {

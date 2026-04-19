@@ -88,7 +88,7 @@ class DownloadTaskTest {
         DownloadTask task = new DownloadTask(id, dao, dataverseClient, downloadConfig, quotaManager, executorService);
         task.run();
 
-        verify(dao, org.mockito.Mockito.atLeast(2)).save(request);
+        verify(dao, org.mockito.Mockito.atLeast(1)).save(request);
         assertThat(request.getStatus()).isEqualTo(TransferStatus.DOWNLOADED);
         Path outputFile = tempDir.resolve(id.toString()).resolve(sha1);
         assertThat(outputFile).exists().hasContent(content);
@@ -127,7 +127,7 @@ class DownloadTaskTest {
         DownloadTask task = new DownloadTask(id, dao, dataverseClient, downloadConfig, quotaManager, executorService);
         task.run();
 
-        verify(dao, org.mockito.Mockito.atLeast(2)).save(request);
+        verify(dao, org.mockito.Mockito.atLeast(1)).save(request);
         assertThat(request.getStatus()).isEqualTo(TransferStatus.DOWNLOADED);
         Path downloadDir = tempDir.resolve(id.toString());
         assertThat(downloadDir.resolve(sha1)).exists().hasContent(content);
@@ -176,7 +176,7 @@ class DownloadTaskTest {
         DownloadTask task = new DownloadTask(id, dao, dataverseClient, downloadConfig, quotaManager, executorService);
         task.run();
 
-        verify(dao, org.mockito.Mockito.atLeast(2)).save(request);
+        verify(dao, org.mockito.Mockito.atLeast(1)).save(request);
         assertThat(request.getStatus()).isEqualTo(TransferStatus.DOWNLOADED);
         assertThat(downloadDir.resolve(sha1)).exists().hasContent(content);
     }
