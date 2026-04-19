@@ -70,6 +70,7 @@ public class DdLobStoreApplication extends Application<DdLobStoreConfig> {
             config.getDiskSpace());
 
         final ActiveTaskRegistry downloadActiveTaskRegistry = new ActiveTaskRegistry();
+        final ActiveTaskRegistry inspectActiveTaskRegistry = new ActiveTaskRegistry();
 
         environment.jersey().register(new TransfersResource(transferRequestDao));
         environment.jersey().register(new LocationResource());
@@ -90,8 +91,8 @@ public class DdLobStoreApplication extends Application<DdLobStoreConfig> {
             "InspectTaskExecutor",
             environment.lifecycle().scheduledExecutorService("inspect-task-executor", true).build(),
             config.getTransfer().getInspect().getPollingInterval().toJavaDuration(),
-            new InspectTaskSource(transferRequestDao),
-            new InspectTaskFactory(transferRequestDao, dataverseClients, uowProxyFactory),
+            new InspectTaskSource(transferRequestDao, inspectActiveTaskRegistry),
+            new InspectTaskFactory(transferRequestDao, dataverseClients, inspectActiveTaskRegistry, uowProxyFactory),
             new ExecutorServiceTaskScheduler(config.getTransfer().getInspect().getTaskQueue().build(environment)));
 
         final PollingTaskExecutor<TransferRequest> downloadTaskExecutor = new PollingTaskExecutor<>(

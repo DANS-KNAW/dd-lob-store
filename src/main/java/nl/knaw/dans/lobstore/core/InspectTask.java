@@ -19,8 +19,11 @@ import io.dropwizard.hibernate.UnitOfWork;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import nl.knaw.dans.lib.dataverse.DataverseClient;
+import nl.knaw.dans.lib.dataverse.DataverseException;
 import nl.knaw.dans.lobstore.db.TransferRequestDao;
+import org.hibernate.HibernateException;
 
+import java.io.IOException;
 import java.util.UUID;
 
 @Slf4j
@@ -29,6 +32,7 @@ public class InspectTask implements Runnable {
     private final UUID transferRequestId;
     private final TransferRequestDao transferRequestDao;
     private final DataverseClient dataverseClient;
+    private final ActiveTaskRegistry activeTaskRegistry;
 
     @Override
     @UnitOfWork
@@ -50,15 +54,53 @@ public class InspectTask implements Runnable {
             transferRequestDao.save(transferRequest);
             log.info("Finished INSPECT step for {}", transferRequestId);
         }
-        catch (Exception e) {
-            log.error("Error inspecting transfer request with id {}", transferRequestId, e);
-            if (transferRequest != null) {
-                transferRequest.setStatus(TransferStatus.FAILED);
-                transferRequest.setMessage("Error inspecting transfer request: " + e.getMessage());
-                transferRequestDao.save(transferRequest);
+        catch (DataverseException e) {
+            if (isRecoverable(e.getStatus())) {
+                log.warn("Recoverable Dataverse error ({}) for {}: {}, will retry", e.getStatus(), transferRequestId, e.getMessage());
             }
+            else {
+                log.error("Permanent Dataverse error ({}) for {}: {}", e.getStatus(), transferRequestId, e.getMessage());
+                handleFailure(transferRequest, e);
+            }
+        }
+        catch (IOException | HibernateException e) {
+            log.warn("Transient error occurred during inspection for {}: {}, will retry later", transferRequestId, e.getMessage());
+        }
+        catch (Exception e) {
+            if (isInterrupted(e)) {
+                log.warn("Inspect task for {} was interrupted", transferRequestId);
+                Thread.currentThread().interrupt();
+            }
+            else {
+                log.error("Error inspecting transfer request with id {}", transferRequestId, e);
+                handleFailure(transferRequest, e);
+                throw new RuntimeException(e);
+            }
+        }
+        finally {
+            activeTaskRegistry.remove(transferRequestId);
+        }
+    }
 
-            throw new RuntimeException(e);
+    private boolean isInterrupted(Throwable e) {
+        if (e instanceof InterruptedException) {
+            return true;
+        }
+        if (e.getCause() != null && e.getCause() != e) {
+            return isInterrupted(e.getCause());
+        }
+        return false;
+    }
+
+    private boolean isRecoverable(int status) {
+        return status == 429 || status == 502 || status == 503 || status == 504;
+    }
+
+    private void handleFailure(TransferRequest transferRequest, Exception e) {
+        if (transferRequest != null) {
+            transferRequest.setStatus(TransferStatus.FAILED);
+            transferRequest.setMessage("Error inspecting transfer request: " + e.getMessage());
+            transferRequestDao.save(transferRequest);
         }
     }
 }

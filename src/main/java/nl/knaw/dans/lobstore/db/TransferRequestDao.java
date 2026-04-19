@@ -67,7 +67,12 @@ public class TransferRequestDao extends AbstractDAO<TransferRequest> {
     }
 
     public Optional<TransferRequest> findNextInspectableItem() {
-        return findNextItemWithStatus(TransferStatus.PENDING);
+        CriteriaBuilder cb = currentSession().getCriteriaBuilder();
+        CriteriaQuery<TransferRequest> cq = cb.createQuery(TransferRequest.class);
+        Root<TransferRequest> root = cq.from(TransferRequest.class);
+        cq.where(root.get("status").in(TransferStatus.PENDING));
+        cq.orderBy(cb.asc(root.get("created")));
+        return currentSession().createQuery(cq).setMaxResults(1).uniqueResultOptional();
     }
 
     public Optional<TransferRequest> findNextDownloadableItem() {

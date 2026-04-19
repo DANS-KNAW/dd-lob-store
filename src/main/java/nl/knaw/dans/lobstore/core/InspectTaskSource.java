@@ -27,9 +27,17 @@ import java.util.List;
 @RequiredArgsConstructor
 public class InspectTaskSource implements TaskSource<TransferRequest> {
     private final TransferRequestDao transferRequestDao;
+    private final ActiveTaskRegistry activeTaskRegistry;
 
     @Override
     public List<TransferRequest> nextInputs() {
-        return transferRequestDao.findNextInspectableItem().stream().toList();
+        var optItem = transferRequestDao.findNextInspectableItem();
+        if (optItem.isPresent()) {
+            var item = optItem.get();
+            if (activeTaskRegistry.add(item.getId())) {
+                return List.of(item);
+            }
+        }
+        return List.of();
     }
 }

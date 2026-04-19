@@ -26,6 +26,7 @@ import nl.knaw.dans.lobstore.config.DownloadConfig;
 import nl.knaw.dans.lobstore.db.TransferRequestDao;
 import org.apache.commons.codec.digest.DigestUtils;
 import org.apache.commons.io.FileUtils;
+import org.hibernate.HibernateException;
 
 import java.io.BufferedInputStream;
 import java.io.FileInputStream;
@@ -93,14 +94,46 @@ public class DownloadTask implements Runnable {
             quotaManager.release(transferRequest.getId() + "/extra", "download");
             log.info("Finished DOWNLOAD step for {}", transferRequestId);
         }
+        catch (DataverseException e) {
+            if (isRecoverable(e.getStatus())) {
+                log.warn("Recoverable Dataverse error ({}) for {}: {}, will retry", e.getStatus(), transferRequestId, e.getMessage());
+            }
+            else {
+                log.error("Permanent Dataverse error ({}) for {}: {}", e.getStatus(), transferRequestId, e.getMessage());
+                handleFailure(e);
+            }
+        }
+        catch (IOException | HibernateException e) {
+            log.warn("Transient error occurred during download for {}: {}, will retry later", transferRequestId, e.getMessage());
+        }
         catch (Exception e) {
-            log.error("Error downloading file for transfer request with id {}", transferRequestId, e);
-            handleFailure(e);
-            // Do not rethrow to avoid the database transaction from being rolled back.
+            if (isInterrupted(e)) {
+                log.warn("Download task for {} was interrupted", transferRequestId);
+                Thread.currentThread().interrupt();
+            }
+            else {
+                log.error("Error downloading file for transfer request with id {}", transferRequestId, e);
+                handleFailure(e);
+                // Do not rethrow to avoid the database transaction from being rolled back.
+            }
         }
         finally {
             activeTaskRegistry.remove(transferRequestId);
         }
+    }
+
+    private boolean isInterrupted(Throwable e) {
+        if (e instanceof InterruptedException) {
+            return true;
+        }
+        if (e.getCause() != null && e.getCause() != e) {
+            return isInterrupted(e.getCause());
+        }
+        return false;
+    }
+
+    private boolean isRecoverable(int status) {
+        return status == 429 || status == 502 || status == 503 || status == 504;
     }
 
     private void handleFailure(Throwable e) {

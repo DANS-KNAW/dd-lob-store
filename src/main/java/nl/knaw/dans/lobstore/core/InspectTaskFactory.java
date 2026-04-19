@@ -29,6 +29,7 @@ import java.util.UUID;
 public class InspectTaskFactory implements TaskFactory<TransferRequest> {
     private final TransferRequestDao transferRequestDao;
     private final Map<String, DataverseClient> dataverseClients;
+    private final ActiveTaskRegistry activeTaskRegistry;
     private final UnitOfWorkAwareProxyFactory unitOfWorkAwareProxyFactory;
 
     @Override
@@ -42,8 +43,7 @@ public class InspectTaskFactory implements TaskFactory<TransferRequest> {
 
     private Runnable createUnitOfWorkAwareTask(UUID id, TransferRequestDao transferRequestDao, DataverseClient dataverseClient) {
         return unitOfWorkAwareProxyFactory.create(InspectTask.class,
-            new Class[] { UUID.class, TransferRequestDao.class, DataverseClient.class },
-            new Object[] { id, transferRequestDao, dataverseClient });
+            new Class[] { UUID.class, TransferRequestDao.class, DataverseClient.class, ActiveTaskRegistry.class },
+            new Object[] { id, transferRequestDao, dataverseClient, activeTaskRegistry });
     }
-
 }
