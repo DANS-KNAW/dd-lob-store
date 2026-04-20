@@ -41,6 +41,7 @@ import nl.knaw.dans.lobstore.core.QuotaManager;
 import nl.knaw.dans.lobstore.core.TransferRequest;
 import nl.knaw.dans.lobstore.db.BucketDao;
 import nl.knaw.dans.lobstore.db.ClaimDao;
+import nl.knaw.dans.lobstore.db.LocationDao;
 import nl.knaw.dans.lobstore.db.TransferRequestDao;
 import nl.knaw.dans.lobstore.resources.DefaultResource;
 import nl.knaw.dans.lobstore.resources.LocationResource;
@@ -73,6 +74,7 @@ public class DdLobStoreApplication extends Application<DdLobStoreConfig> {
         final TransferRequestDao transferRequestDao = new TransferRequestDao(hibernateBundle.getSessionFactory());
         final ClaimDao claimDao = new ClaimDao(hibernateBundle.getSessionFactory());
         final BucketDao bucketDao = new BucketDao(hibernateBundle.getSessionFactory());
+        final LocationDao locationDao = new LocationDao(hibernateBundle.getSessionFactory());
 
         var uowProxyFactory = new UnitOfWorkAwareProxyFactory(hibernateBundle);
         final QuotaManager quotaManager = new QuotaManager(claimDao,
@@ -85,7 +87,7 @@ public class DdLobStoreApplication extends Application<DdLobStoreConfig> {
         final ActiveTaskRegistry verifyActiveTaskRegistry = new ActiveTaskRegistry();
 
         environment.jersey().register(new TransfersResource(transferRequestDao));
-        environment.jersey().register(new LocationResource());
+        environment.jersey().register(new LocationResource(locationDao));
         environment.jersey().register(new DefaultResource());
 
         Map<String, DataverseClient> dataverseClients = config.getDatastations().entrySet().stream()
@@ -140,7 +142,7 @@ public class DdLobStoreApplication extends Application<DdLobStoreConfig> {
             environment.lifecycle().scheduledExecutorService("verify-task-executor", true).build(),
             config.getTransfer().getVerify().getPollingInterval().toJavaDuration(),
             new VerifyTaskSource(bucketDao, verifyActiveTaskRegistry),
-            new VerifyTaskFactory(bucketDao, config.getTransfer().getVerify().getCommand(),
+            new VerifyTaskFactory(bucketDao, locationDao, config.getTransfer().getVerify().getCommand(),
                 config.getDatastations(), config.getTransfer().getPackageConfig().getUploadDirectory(), quotaManager, verifyActiveTaskRegistry, uowProxyFactory),
             new ExecutorServiceTaskScheduler(config.getTransfer().getVerify().getTaskQueue().build(environment)));
 

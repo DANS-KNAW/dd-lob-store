@@ -20,11 +20,12 @@ import io.dropwizard.hibernate.HibernateBundle;
 import nl.knaw.dans.lobstore.config.DdLobStoreConfig;
 import nl.knaw.dans.lobstore.core.Bucket;
 import nl.knaw.dans.lobstore.core.Claim;
+import nl.knaw.dans.lobstore.core.Location;
 import nl.knaw.dans.lobstore.core.TransferRequest;
 
 public class DdLobStoreHibernateBundle extends HibernateBundle<DdLobStoreConfig> {
     public DdLobStoreHibernateBundle() {
-        super(TransferRequest.class, Claim.class, Bucket.class);
+        super(TransferRequest.class, Claim.class, Bucket.class, Location.class);
     }
 
     @Override

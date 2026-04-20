@@ -20,6 +20,7 @@ import lombok.RequiredArgsConstructor;
 import nl.knaw.dans.lib.util.pollingtaskexec.TaskFactory;
 import nl.knaw.dans.lobstore.config.DataStationConfig;
 import nl.knaw.dans.lobstore.db.BucketDao;
+import nl.knaw.dans.lobstore.db.LocationDao;
 
 import java.nio.file.Path;
 import java.util.List;
@@ -29,6 +30,7 @@ import java.util.UUID;
 @RequiredArgsConstructor
 public class VerifyTaskFactory implements TaskFactory<Bucket> {
     private final BucketDao bucketDao;
+    private final LocationDao locationDao;
     private final String verifyCommand;
     private final Map<String, DataStationConfig> datastations;
     private final Path uploadDir;
@@ -42,12 +44,12 @@ public class VerifyTaskFactory implements TaskFactory<Bucket> {
             throw new IllegalArgumentException("At least one record is expected");
         }
         UUID bucketId = records.get(0).getId();
-        return createUnitOfWorkAwareTask(bucketId, bucketDao, verifyCommand, datastations, uploadDir, quotaManager, activeTaskRegistry);
+        return createUnitOfWorkAwareTask(bucketId, bucketDao, locationDao, verifyCommand, datastations, uploadDir, quotaManager, activeTaskRegistry);
     }
 
-    private Runnable createUnitOfWorkAwareTask(UUID bucketId, BucketDao bucketDao, String verifyCommand, Map<String, DataStationConfig> datastations, Path uploadDir, QuotaManager quotaManager, ActiveTaskRegistry activeTaskRegistry) {
+    private Runnable createUnitOfWorkAwareTask(UUID bucketId, BucketDao bucketDao, LocationDao locationDao, String verifyCommand, Map<String, DataStationConfig> datastations, Path uploadDir, QuotaManager quotaManager, ActiveTaskRegistry activeTaskRegistry) {
         return unitOfWorkAwareProxyFactory.create(VerifyTask.class,
-            new Class[] { UUID.class, BucketDao.class, String.class, Map.class, Path.class, QuotaManager.class, ActiveTaskRegistry.class },
-            new Object[] { bucketId, bucketDao, verifyCommand, datastations, uploadDir, quotaManager, activeTaskRegistry });
+            new Class[] { UUID.class, BucketDao.class, LocationDao.class, String.class, Map.class, Path.class, QuotaManager.class, ActiveTaskRegistry.class },
+            new Object[] { bucketId, bucketDao, locationDao, verifyCommand, datastations, uploadDir, quotaManager, activeTaskRegistry });
     }
 }

@@ -16,15 +16,22 @@
 package nl.knaw.dans.lobstore.resources;
 
 import io.dropwizard.hibernate.UnitOfWork;
+import lombok.RequiredArgsConstructor;
+import nl.knaw.dans.lobstore.api.LocationResponseDto;
+import nl.knaw.dans.lobstore.db.LocationDao;
 
 import javax.validation.constraints.NotNull;
 import javax.ws.rs.core.Response;
 
+@RequiredArgsConstructor
 public class LocationResource implements LocationApi {
+    private final LocationDao locationDao;
 
     @Override
     @UnitOfWork
-    public Response getLocationByHash(@NotNull String hash) {
-        throw new UnsupportedOperationException("Not implemented yet");
+    public Response getLocationByHash(@NotNull String store, @NotNull String hash) {
+        return locationDao.findByDatastationAndSha1Sum(store, hash)
+            .map(location -> Response.ok(new LocationResponseDto(location.getDatastation(), location.getBucketName())).build())
+            .orElseGet(() -> Response.status(Response.Status.NOT_FOUND).build());
     }
 }

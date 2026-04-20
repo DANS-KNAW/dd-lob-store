@@ -18,6 +18,7 @@ package nl.knaw.dans.lobstore.core;
 import nl.knaw.dans.lobstore.config.DataStationConfig;
 import nl.knaw.dans.lobstore.config.LobStoreConfig;
 import nl.knaw.dans.lobstore.db.BucketDao;
+import nl.knaw.dans.lobstore.db.LocationDao;
 import org.apache.commons.io.FileUtils;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
@@ -37,6 +38,7 @@ import static org.mockito.Mockito.*;
 class VerifyTaskTest {
 
     private final BucketDao bucketDao = mock(BucketDao.class);
+    private final LocationDao locationDao = mock(LocationDao.class);
     private final QuotaManager quotaManager = mock(QuotaManager.class);
     private final ActiveTaskRegistry activeTaskRegistry = mock(ActiveTaskRegistry.class);
     private final Path uploadDir = Path.of("target/test/VerifyTaskTest/upload");
@@ -60,6 +62,7 @@ class VerifyTaskTest {
         UUID tr1Id = UUID.randomUUID();
         TransferRequest tr1 = new TransferRequest();
         tr1.setId(tr1Id);
+        tr1.setSha1Sum("sha1-1");
         
         Bucket bucket = Bucket.builder()
             .id(bucketId)
@@ -84,12 +87,17 @@ class VerifyTaskTest {
         Files.createFile(bucketFile);
 
         String verifyCommand = "echo ${bucketname} ${datastation} ${user} ${host} ${path}";
-        VerifyTask task = new VerifyTask(bucketId, bucketDao, verifyCommand, datastations, uploadDir, quotaManager, activeTaskRegistry);
+        VerifyTask task = new VerifyTask(bucketId, bucketDao, locationDao, verifyCommand, datastations, uploadDir, quotaManager, activeTaskRegistry);
 
         task.run();
 
         assertThat(bucket.getStatus()).isEqualTo(BucketStatus.DONE);
         verify(bucketDao).save(bucket);
+        verify(locationDao).save(Location.builder()
+            .datastation(datastationName)
+            .sha1Sum("sha1-1")
+            .bucketName(bucketId.toString())
+            .build());
         verify(activeTaskRegistry).remove(bucketId);
         verify(quotaManager).release(tr1Id + "/base", "download");
         assertThat(Files.exists(bucketFile)).isFalse();
@@ -122,7 +130,7 @@ class VerifyTaskTest {
 
         // Command that fails
         String verifyCommand = "false";
-        VerifyTask task = new VerifyTask(bucketId, bucketDao, verifyCommand, datastations, uploadDir, quotaManager, activeTaskRegistry);
+        VerifyTask task = new VerifyTask(bucketId, bucketDao, locationDao, verifyCommand, datastations, uploadDir, quotaManager, activeTaskRegistry);
 
         task.run();
 

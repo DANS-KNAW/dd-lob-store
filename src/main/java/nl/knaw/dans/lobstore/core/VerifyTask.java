@@ -20,6 +20,7 @@ import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import nl.knaw.dans.lobstore.config.DataStationConfig;
 import nl.knaw.dans.lobstore.db.BucketDao;
+import nl.knaw.dans.lobstore.db.LocationDao;
 import org.apache.commons.exec.CommandLine;
 import org.apache.commons.exec.DefaultExecutor;
 import org.apache.commons.exec.ExecuteException;
@@ -36,6 +37,7 @@ import java.util.UUID;
 public class VerifyTask implements Runnable {
     private final UUID bucketId;
     private final BucketDao bucketDao;
+    private final LocationDao locationDao;
     private final String verifyCommand;
     private final Map<String, DataStationConfig> datastations;
     private final Path uploadDir;
@@ -66,6 +68,14 @@ public class VerifyTask implements Runnable {
 
             bucket.setStatus(BucketStatus.DONE);
             bucketDao.save(bucket);
+
+            for (var tr : bucket.getTransferRequests()) {
+                locationDao.save(Location.builder()
+                    .datastation(datastationName)
+                    .sha1Sum(tr.getSha1Sum())
+                    .bucketName(bucketId.toString())
+                    .build());
+            }
 
             // If the command exits with success the local bucket should be removed
             Path bucketFile = uploadDir.resolve(bucketId.toString() + ".tar");
