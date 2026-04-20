@@ -33,6 +33,8 @@ import nl.knaw.dans.lobstore.core.InspectTaskFactory;
 import nl.knaw.dans.lobstore.core.InspectTaskSource;
 import nl.knaw.dans.lobstore.core.PackagingTaskFactory;
 import nl.knaw.dans.lobstore.core.PackagingTaskSource;
+import nl.knaw.dans.lobstore.core.UploadTaskFactory;
+import nl.knaw.dans.lobstore.core.UploadTaskSource;
 import nl.knaw.dans.lobstore.core.QuotaManager;
 import nl.knaw.dans.lobstore.core.TransferRequest;
 import nl.knaw.dans.lobstore.db.BucketDao;
@@ -77,6 +79,7 @@ public class DdLobStoreApplication extends Application<DdLobStoreConfig> {
         final ActiveTaskRegistry downloadActiveTaskRegistry = new ActiveTaskRegistry();
         final ActiveTaskRegistry inspectActiveTaskRegistry = new ActiveTaskRegistry();
         final ActiveTaskRegistry packagingActiveTaskRegistry = new ActiveTaskRegistry();
+        final ActiveTaskRegistry uploadActiveTaskRegistry = new ActiveTaskRegistry();
 
         environment.jersey().register(new TransfersResource(transferRequestDao));
         environment.jersey().register(new LocationResource());
@@ -120,9 +123,19 @@ public class DdLobStoreApplication extends Application<DdLobStoreConfig> {
                 config.getTransfer().getPackageConfig(), quotaManager, packagingActiveTaskRegistry, uowProxyFactory),
             new ExecutorServiceTaskScheduler(config.getTransfer().getPackageConfig().getTaskQueue().build(environment)));
 
+        final PollingTaskExecutor<Bucket> uploadTaskExecutor = new PollingTaskExecutor<>(
+            "UploadTaskExecutor",
+            environment.lifecycle().scheduledExecutorService("upload-task-executor", true).build(),
+            config.getTransfer().getUpload().getPollingInterval().toJavaDuration(),
+            new UploadTaskSource(bucketDao, uploadActiveTaskRegistry),
+            new UploadTaskFactory(bucketDao, config.getTransfer().getUpload().getCommand(),
+                config.getDatastations(), uploadActiveTaskRegistry, uowProxyFactory),
+            new ExecutorServiceTaskScheduler(config.getTransfer().getUpload().getTaskQueue().build(environment)));
+
         environment.lifecycle().manage(createUnitOfWorkAwareProxy(uowProxyFactory, inspectTaskExecutor));
         environment.lifecycle().manage(createUnitOfWorkAwareProxy(uowProxyFactory, downloadTaskExecutor));
         environment.lifecycle().manage(createUnitOfWorkAwareProxy(uowProxyFactory, packagingTaskExecutor));
+        environment.lifecycle().manage(createUnitOfWorkAwareProxy(uowProxyFactory, uploadTaskExecutor));
     }
 
     private <R> PollingTaskExecutor<R> createUnitOfWorkAwareProxy(UnitOfWorkAwareProxyFactory uowFactory, PollingTaskExecutor<R> executor) {

@@ -102,7 +102,7 @@ transfer:
   # Uploads a package to the Data Archive
   upload:
     pollingInterval: 5s
-    command: /usr/local/bin/transfer.sh
+    command: rsync -av --partial --append data/upload/${bucketname}.dmftar ${user}@{host}:archive/data-vault/${path}/${bucketname}.dmftar
     destination: /data/vault
     taskQueue:
       nameFormat: "transfer-worker-%d"
