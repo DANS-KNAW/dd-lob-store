@@ -15,14 +15,11 @@
  */
 package nl.knaw.dans.lobstore.core;
 
-public enum TransferStatus {
+public enum TransferRequestStatus {
     PENDING,
     INSPECTED,
     DOWNLOADING,
     DOWNLOADED,
-    PACKAGED,
-    TRANSFERRED,
-    DONE,
     REJECTED,
     FAILED
 }

@@ -89,7 +89,7 @@ public class DownloadTask implements Runnable {
             verifySha1(outputFile, sha1);
             deleteChunks(downloadDir, sha1);
 
-            transferRequest.setStatus(TransferStatus.DOWNLOADED);
+            transferRequest.setStatus(TransferRequestStatus.DOWNLOADED);
             transferRequestDao.save(transferRequest);
             quotaManager.release(transferRequest.getId() + "/extra", "download");
             log.info("Finished DOWNLOAD step for {}", transferRequestId);
@@ -138,7 +138,7 @@ public class DownloadTask implements Runnable {
 
     private void handleFailure(Throwable e) {
         transferRequestDao.findById(transferRequestId).ifPresent(transferRequest -> {
-            transferRequest.setStatus(TransferStatus.FAILED);
+            transferRequest.setStatus(TransferRequestStatus.FAILED);
             String msg = e.getMessage();
             if (e.getCause() != null) {
                 msg += ": " + e.getCause().getMessage();

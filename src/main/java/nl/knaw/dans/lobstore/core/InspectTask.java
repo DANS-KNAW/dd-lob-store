@@ -45,10 +45,10 @@ public class InspectTask implements Runnable {
             String sha1SumDataverse = r.getData().getDataFile().getChecksum().getValue();
             if (sha1SumDataverse.equals(transferRequest.getSha1Sum())) {
                 transferRequest.setFileSize(r.getData().getDataFile().getFilesize());
-                transferRequest.setStatus(TransferStatus.INSPECTED);
+                transferRequest.setStatus(TransferRequestStatus.INSPECTED);
             }
             else {
-                transferRequest.setStatus(TransferStatus.REJECTED);
+                transferRequest.setStatus(TransferRequestStatus.REJECTED);
                 transferRequest.setMessage("SHA-1 in request " + transferRequest.getSha1Sum() + " does not match SHA-1 in Dataverse " + sha1SumDataverse);
             }
             transferRequestDao.save(transferRequest);
@@ -98,7 +98,7 @@ public class InspectTask implements Runnable {
 
     private void handleFailure(TransferRequest transferRequest, Exception e) {
         if (transferRequest != null) {
-            transferRequest.setStatus(TransferStatus.FAILED);
+            transferRequest.setStatus(TransferRequestStatus.FAILED);
             transferRequest.setMessage("Error inspecting transfer request: " + e.getMessage());
             transferRequestDao.save(transferRequest);
         }

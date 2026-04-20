@@ -41,7 +41,7 @@ public class DownloadTaskSource implements TaskSource<TransferRequest> {
             if (activeTaskRegistry.add(item.getId())) {
                 if (quotaManager.ensureClaimed(item.getId() + "/base", TARGET_DOWNLOAD, item.getFileSize())) {
                     if (quotaManager.ensureClaimed(item.getId() + "/extra", TARGET_DOWNLOAD, item.getFileSize() + margin)) {
-                        item.setStatus(TransferStatus.DOWNLOADING);
+                        item.setStatus(TransferRequestStatus.DOWNLOADING);
                         transferRequestDao.save(item);
                         return List.of(item);
                     }

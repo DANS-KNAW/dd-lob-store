@@ -18,12 +18,13 @@ package nl.knaw.dans.lobstore;
 import io.dropwizard.db.PooledDataSourceFactory;
 import io.dropwizard.hibernate.HibernateBundle;
 import nl.knaw.dans.lobstore.config.DdLobStoreConfig;
+import nl.knaw.dans.lobstore.core.Bucket;
 import nl.knaw.dans.lobstore.core.Claim;
 import nl.knaw.dans.lobstore.core.TransferRequest;
 
 public class DdLobStoreHibernateBundle extends HibernateBundle<DdLobStoreConfig> {
     public DdLobStoreHibernateBundle() {
-        super(TransferRequest.class, Claim.class);
+        super(TransferRequest.class, Claim.class, Bucket.class);
     }
 
     @Override

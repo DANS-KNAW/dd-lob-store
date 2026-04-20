@@ -17,7 +17,7 @@ package nl.knaw.dans.lobstore.db;
 
 import io.dropwizard.hibernate.AbstractDAO;
 import nl.knaw.dans.lobstore.core.TransferRequest;
-import nl.knaw.dans.lobstore.core.TransferStatus;
+import nl.knaw.dans.lobstore.core.TransferRequestStatus;
 import org.hibernate.SessionFactory;
 
 import javax.persistence.criteria.CriteriaBuilder;
@@ -61,7 +61,7 @@ public class TransferRequestDao extends AbstractDAO<TransferRequest> {
         CriteriaBuilder cb = currentSession().getCriteriaBuilder();
         CriteriaQuery<TransferRequest> cq = cb.createQuery(TransferRequest.class);
         Root<TransferRequest> root = cq.from(TransferRequest.class);
-        cq.where(cb.equal(root.get("status"), TransferStatus.PENDING));
+        cq.where(cb.equal(root.get("status"), TransferRequestStatus.PENDING));
         cq.orderBy(cb.asc(root.get("created")));
         return currentSession().createQuery(cq).getResultList();
     }
@@ -70,7 +70,7 @@ public class TransferRequestDao extends AbstractDAO<TransferRequest> {
         CriteriaBuilder cb = currentSession().getCriteriaBuilder();
         CriteriaQuery<TransferRequest> cq = cb.createQuery(TransferRequest.class);
         Root<TransferRequest> root = cq.from(TransferRequest.class);
-        cq.where(root.get("status").in(TransferStatus.PENDING));
+        cq.where(root.get("status").in(TransferRequestStatus.PENDING));
         cq.orderBy(cb.asc(root.get("created")));
         return currentSession().createQuery(cq).setMaxResults(1).uniqueResultOptional();
     }
@@ -79,12 +79,12 @@ public class TransferRequestDao extends AbstractDAO<TransferRequest> {
         CriteriaBuilder cb = currentSession().getCriteriaBuilder();
         CriteriaQuery<TransferRequest> cq = cb.createQuery(TransferRequest.class);
         Root<TransferRequest> root = cq.from(TransferRequest.class);
-        cq.where(root.get("status").in(TransferStatus.INSPECTED, TransferStatus.DOWNLOADING));
+        cq.where(root.get("status").in(TransferRequestStatus.INSPECTED, TransferRequestStatus.DOWNLOADING));
         cq.orderBy(cb.asc(root.get("created")));
         return currentSession().createQuery(cq).setMaxResults(1).uniqueResultOptional();
     }
 
-    private Optional<TransferRequest> findNextItemWithStatus(TransferStatus status) {
+    private Optional<TransferRequest> findNextItemWithStatus(TransferRequestStatus status) {
         CriteriaBuilder cb = currentSession().getCriteriaBuilder();
         CriteriaQuery<TransferRequest> cq = cb.createQuery(TransferRequest.class);
         Root<TransferRequest> root = cq.from(TransferRequest.class);

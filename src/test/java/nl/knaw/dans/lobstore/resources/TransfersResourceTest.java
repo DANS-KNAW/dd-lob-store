@@ -19,10 +19,10 @@ import io.dropwizard.testing.junit5.DropwizardExtensionsSupport;
 import io.dropwizard.testing.junit5.ResourceExtension;
 import nl.knaw.dans.lobstore.api.TransferRequestDto;
 import nl.knaw.dans.lobstore.api.TransferResponseDto;
-import nl.knaw.dans.lobstore.api.TransferStatusDto;
-import nl.knaw.dans.lobstore.api.TransferStatusInfoDto;
+import nl.knaw.dans.lobstore.core.Bucket;
+import nl.knaw.dans.lobstore.core.BucketStatus;
 import nl.knaw.dans.lobstore.core.TransferRequest;
-import nl.knaw.dans.lobstore.core.TransferStatus;
+import nl.knaw.dans.lobstore.core.TransferRequestStatus;
 import nl.knaw.dans.lobstore.db.TransferRequestDao;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
@@ -35,7 +35,6 @@ import javax.ws.rs.core.MediaType;
 import javax.ws.rs.core.Response;
 import java.util.Collections;
 import java.util.List;
-import java.util.UUID;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.mockito.ArgumentMatchers.any;
@@ -80,7 +79,7 @@ class TransfersResourceTest {
 
         ArgumentCaptor<TransferRequest> captor = ArgumentCaptor.forClass(TransferRequest.class);
         verify(dao).save(captor.capture());
-        assertThat(captor.getValue().getStatus()).isEqualTo(TransferStatus.PENDING);
+        assertThat(captor.getValue().getStatus()).isEqualTo(TransferRequestStatus.PENDING);
         assertThat(captor.getValue().getSha1Sum()).isEqualTo("abc");
     }
 
@@ -92,7 +91,7 @@ class TransfersResourceTest {
             .datastation("station1");
 
         TransferRequest existing = TransferRequest.builder()
-            .status(TransferStatus.PENDING)
+            .status(TransferRequestStatus.PENDING)
             .sha1Sum("abc")
             .build();
 
@@ -106,27 +105,33 @@ class TransfersResourceTest {
     }
 
     @Test
-    void add_transfer_should_return_201_and_set_status_to_DONE_if_already_done() {
+    void add_transfer_should_return_303_if_already_done() {
         TransferRequestDto dto = new TransferRequestDto()
             .dataverseFileId(123L)
             .sha1Sum("abc")
             .datastation("station1");
 
+        java.util.UUID existingId = java.util.UUID.randomUUID();
+        Bucket bucket = Bucket.builder()
+            .status(BucketStatus.DONE)
+            .build();
+
         TransferRequest existing = TransferRequest.builder()
-            .status(TransferStatus.DONE)
+            .id(existingId)
+            .bucket(bucket)
             .sha1Sum("abc")
             .build();
 
         when(dao.findBySha1Sum("abc")).thenReturn(List.of(existing));
 
         Response response = EXT.target("/transfers")
+            .property(org.glassfish.jersey.client.ClientProperties.FOLLOW_REDIRECTS, false)
             .request(MediaType.APPLICATION_JSON)
             .post(Entity.entity(dto, MediaType.APPLICATION_JSON));
 
-        assertThat(response.getStatus()).isEqualTo(201);
-        
-        ArgumentCaptor<TransferRequest> captor = ArgumentCaptor.forClass(TransferRequest.class);
-        verify(dao).save(captor.capture());
-        assertThat(captor.getValue().getStatus()).isEqualTo(TransferStatus.DONE);
+        assertThat(response.getStatus()).isEqualTo(303);
+        assertThat(response.getLocation().toString()).endsWith("/transfers/" + existingId);
+
+        verify(dao, org.mockito.Mockito.never()).save(any());
     }
 }

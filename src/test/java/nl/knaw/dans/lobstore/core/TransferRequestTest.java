@@ -24,18 +24,21 @@ class TransferRequestTest {
 
     @Test
     void is_in_progress_should_return_true_for_progressing_statuses() {
-        assertTrue(TransferRequest.builder().status(TransferStatus.PENDING).build().isInProgress());
-        assertTrue(TransferRequest.builder().status(TransferStatus.INSPECTED).build().isInProgress());
-        assertTrue(TransferRequest.builder().status(TransferStatus.DOWNLOADING).build().isInProgress());
-        assertTrue(TransferRequest.builder().status(TransferStatus.DOWNLOADED).build().isInProgress());
-        assertTrue(TransferRequest.builder().status(TransferStatus.PACKAGED).build().isInProgress());
-        assertTrue(TransferRequest.builder().status(TransferStatus.TRANSFERRED).build().isInProgress());
+        assertTrue(TransferRequest.builder().status(TransferRequestStatus.PENDING).build().isInProgress());
+        assertTrue(TransferRequest.builder().status(TransferRequestStatus.INSPECTED).build().isInProgress());
+        assertTrue(TransferRequest.builder().status(TransferRequestStatus.DOWNLOADING).build().isInProgress());
+        assertTrue(TransferRequest.builder().status(TransferRequestStatus.DOWNLOADED).build().isInProgress());
+        
+        Bucket bucket = Bucket.builder().status(BucketStatus.PACKAGING).build();
+        assertTrue(TransferRequest.builder().bucket(bucket).build().isInProgress());
     }
 
     @Test
     void is_in_progress_should_return_false_for_final_statuses() {
-        assertFalse(TransferRequest.builder().status(TransferStatus.DONE).build().isInProgress());
-        assertFalse(TransferRequest.builder().status(TransferStatus.REJECTED).build().isInProgress());
-        assertFalse(TransferRequest.builder().status(TransferStatus.FAILED).build().isInProgress());
+        assertFalse(TransferRequest.builder().status(TransferRequestStatus.REJECTED).build().isInProgress());
+        assertFalse(TransferRequest.builder().status(TransferRequestStatus.FAILED).build().isInProgress());
+
+        Bucket bucket = Bucket.builder().status(BucketStatus.DONE).build();
+        assertFalse(TransferRequest.builder().bucket(bucket).build().isInProgress());
     }
 }

@@ -17,8 +17,9 @@ package nl.knaw.dans.lobstore.db;
 
 import io.dropwizard.testing.junit5.DAOTestExtension;
 import io.dropwizard.testing.junit5.DropwizardExtensionsSupport;
+import nl.knaw.dans.lobstore.core.Bucket;
 import nl.knaw.dans.lobstore.core.TransferRequest;
-import nl.knaw.dans.lobstore.core.TransferStatus;
+import nl.knaw.dans.lobstore.core.TransferRequestStatus;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
@@ -34,6 +35,7 @@ class TransferRequestDaoTest {
 
     private final DAOTestExtension db = DAOTestExtension.newBuilder()
         .addEntityClass(TransferRequest.class)
+        .addEntityClass(Bucket.class)
         .build();
 
     private TransferRequestDao dao;
@@ -55,7 +57,7 @@ class TransferRequestDaoTest {
                 .dataverseFileId(fileId)
                 .sha1Sum("sha1")
                 .datastation("station1")
-                .status(TransferStatus.PENDING)
+                .status(TransferRequestStatus.PENDING)
                 .created(OffsetDateTime.now())
                 .build());
 
@@ -64,7 +66,7 @@ class TransferRequestDaoTest {
                 .dataverseFileId(fileId)
                 .sha1Sum("sha2")
                 .datastation("station1")
-                .status(TransferStatus.DONE)
+                .status(TransferRequestStatus.FAILED)
                 .created(OffsetDateTime.now())
                 .build());
 
@@ -73,7 +75,7 @@ class TransferRequestDaoTest {
                 .dataverseFileId(456L)
                 .sha1Sum("sha3")
                 .datastation("station1")
-                .status(TransferStatus.PENDING)
+                .status(TransferRequestStatus.PENDING)
                 .created(OffsetDateTime.now())
                 .build());
         });
@@ -102,7 +104,7 @@ class TransferRequestDaoTest {
                 .dataverseFileId(1L)
                 .sha1Sum("sha1")
                 .datastation("station1")
-                .status(TransferStatus.PENDING)
+                .status(TransferRequestStatus.PENDING)
                 .created(now.minusMinutes(10))
                 .build());
 
@@ -111,7 +113,7 @@ class TransferRequestDaoTest {
                 .dataverseFileId(2L)
                 .sha1Sum("sha2")
                 .datastation("station1")
-                .status(TransferStatus.PENDING)
+                .status(TransferRequestStatus.PENDING)
                 .created(now.minusMinutes(5))
                 .build());
 
@@ -120,7 +122,7 @@ class TransferRequestDaoTest {
                 .dataverseFileId(3L)
                 .sha1Sum("sha3")
                 .datastation("station1")
-                .status(TransferStatus.DONE)
+                .status(TransferRequestStatus.FAILED)
                 .created(now.minusMinutes(15))
                 .build());
         });
@@ -140,7 +142,7 @@ class TransferRequestDaoTest {
                 .dataverseFileId(1L)
                 .sha1Sum("sha1")
                 .datastation("station1")
-                .status(TransferStatus.INSPECTED)
+                .status(TransferRequestStatus.INSPECTED)
                 .created(now.minusMinutes(10))
                 .build());
         });

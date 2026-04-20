@@ -25,60 +25,27 @@ import javax.persistence.Entity;
 import javax.persistence.EnumType;
 import javax.persistence.Enumerated;
 import javax.persistence.Id;
-import javax.persistence.JoinColumn;
-import javax.persistence.ManyToOne;
+import javax.persistence.OneToMany;
 import javax.persistence.Table;
-import java.time.OffsetDateTime;
+import java.util.List;
 import java.util.UUID;
 
 @Entity
-@Table(name = "transfer_request")
+@Table(name = "bucket")
 @Data
 @Builder
 @NoArgsConstructor
 @AllArgsConstructor
-public class TransferRequest {
+public class Bucket {
 
     @Id
     @Column(name = "id")
     private UUID id;
 
-    @Column(name = "dataverse_file_id", nullable = false)
-    private Long dataverseFileId;
-
-    @Column(name = "sha1_sum", nullable = false)
-    private String sha1Sum;
-
-    @Column(name = "datastation", nullable = false)
-    private String datastation;
-
     @Enumerated(EnumType.STRING)
     @Column(name = "status", nullable = false)
-    private TransferRequestStatus status;
+    private BucketStatus status;
 
-    @Column(name = "message")
-    private String message;
-
-    @Column(name = "file_size")
-    private Long fileSize;
-
-    @Column(name = "created", nullable = false)
-    private OffsetDateTime created;
-
-    @ManyToOne
-    @JoinColumn(name = "bucket_id")
-    private Bucket bucket;
-
-    public boolean isInProgress() {
-        if (bucket != null) {
-            return switch (bucket.getStatus()) {
-                case DONE, FAILED -> false;
-                default -> true;
-            };
-        }
-        return switch (status) {
-            case PENDING, INSPECTED, DOWNLOADING, DOWNLOADED -> true;
-            case REJECTED, FAILED -> false;
-        };
-    }
+    @OneToMany(mappedBy = "bucket")
+    private List<TransferRequest> transferRequests;
 }

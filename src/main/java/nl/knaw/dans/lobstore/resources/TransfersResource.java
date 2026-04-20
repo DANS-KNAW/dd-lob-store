@@ -16,24 +16,28 @@
 package nl.knaw.dans.lobstore.resources;
 
 import io.dropwizard.hibernate.UnitOfWork;
+import nl.knaw.dans.lobstore.Conversions;
 import nl.knaw.dans.lobstore.api.TransferRequestDto;
 import nl.knaw.dans.lobstore.api.TransferResponseDto;
 import nl.knaw.dans.lobstore.api.TransferStatusDto;
 import nl.knaw.dans.lobstore.api.TransferStatusInfoDto;
+import nl.knaw.dans.lobstore.core.BucketStatus;
 import nl.knaw.dans.lobstore.core.TransferRequest;
-import nl.knaw.dans.lobstore.core.TransferStatus;
+import nl.knaw.dans.lobstore.core.TransferRequestStatus;
 import nl.knaw.dans.lobstore.db.TransferRequestDao;
+import org.mapstruct.factory.Mappers;
 
 import javax.validation.Valid;
 import javax.validation.constraints.NotNull;
 import javax.ws.rs.WebApplicationException;
 import javax.ws.rs.core.Response;
+import java.net.URI;
 import java.time.OffsetDateTime;
 import java.util.List;
 import java.util.UUID;
 
 public class TransfersResource implements TransfersApi {
-
+    private final Conversions conversions = Mappers.getMapper(Conversions.class);
     private final TransferRequestDao transferRequestDao;
 
     public TransfersResource(TransferRequestDao transferRequestDao) {
@@ -61,15 +65,21 @@ public class TransfersResource implements TransfersApi {
                 .build();
         }
 
-        boolean alreadyDone = existingRequestsForSha1.stream()
-            .anyMatch(r -> r.getStatus() == TransferStatus.DONE);
+        var existingDoneRequest = existingRequestsForSha1.stream()
+            .filter(r -> (r.getBucket() != null && r.getBucket().getStatus() == BucketStatus.DONE))
+            .findFirst();
+
+        if (existingDoneRequest.isPresent()) {
+            return Response.seeOther(URI.create("/transfers/" + existingDoneRequest.get().getId()))
+                .build();
+        }
 
         TransferRequest newRequest = TransferRequest.builder()
             .id(UUID.randomUUID())
             .dataverseFileId(transferRequestDto.getDataverseFileId())
             .sha1Sum(sha1)
             .datastation(transferRequestDto.getDatastation())
-            .status(alreadyDone ? TransferStatus.DONE : TransferStatus.PENDING)
+            .status(TransferRequestStatus.PENDING)
             .created(OffsetDateTime.now())
             .build();
 
@@ -84,9 +94,8 @@ public class TransfersResource implements TransfersApi {
     @UnitOfWork
     public Response getTransferStatus(@NotNull UUID id) {
         return transferRequestDao.findById(id)
-            .map(r -> Response.ok(new TransferStatusInfoDto()
-                .id(r.getId())
-                .status(TransferStatusDto.fromValue(r.getStatus().name()))).build())
+            .map(conversions::convert)
+            .map(statusInfo -> Response.ok(statusInfo).build())
             .orElseThrow(() -> new WebApplicationException("Transfer not found", Response.Status.NOT_FOUND));
     }
 }

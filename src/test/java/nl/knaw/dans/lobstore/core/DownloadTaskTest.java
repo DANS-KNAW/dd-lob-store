@@ -28,7 +28,6 @@ import org.apache.hc.core5.http.io.HttpClientResponseHandler;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.io.TempDir;
-import org.mockito.ArgumentCaptor;
 
 import java.io.ByteArrayInputStream;
 import java.nio.file.Files;
@@ -73,7 +72,7 @@ class DownloadTaskTest {
         TransferRequest request = TransferRequest.builder()
             .id(id)
             .dataverseFileId(123L)
-            .status(TransferStatus.INSPECTED)
+            .status(TransferRequestStatus.INSPECTED)
             .fileSize((long) content.length())
             .sha1Sum(sha1)
             .build();
@@ -93,7 +92,7 @@ class DownloadTaskTest {
         task.run();
 
         verify(dao, atLeast(1)).save(request);
-        assertThat(request.getStatus()).isEqualTo(TransferStatus.DOWNLOADED);
+        assertThat(request.getStatus()).isEqualTo(TransferRequestStatus.DOWNLOADED);
         Path outputFile = tempDir.resolve(id.toString()).resolve(sha1);
         assertThat(outputFile).exists().hasContent(content);
     }
@@ -109,7 +108,7 @@ class DownloadTaskTest {
         TransferRequest request = TransferRequest.builder()
             .id(id)
             .dataverseFileId(123L)
-            .status(TransferStatus.INSPECTED)
+            .status(TransferRequestStatus.INSPECTED)
             .fileSize((long) content.length())
             .sha1Sum(sha1)
             .build();
@@ -132,7 +131,7 @@ class DownloadTaskTest {
         task.run();
 
         verify(dao, atLeast(1)).save(request);
-        assertThat(request.getStatus()).isEqualTo(TransferStatus.DOWNLOADED);
+        assertThat(request.getStatus()).isEqualTo(TransferRequestStatus.DOWNLOADED);
         Path downloadDir = tempDir.resolve(id.toString());
         assertThat(downloadDir.resolve(sha1)).exists().hasContent(content);
         assertThat(downloadDir.resolve(sha1 + ".0")).doesNotExist();
@@ -156,7 +155,7 @@ class DownloadTaskTest {
         TransferRequest request = TransferRequest.builder()
             .id(id)
             .dataverseFileId(123L)
-            .status(TransferStatus.INSPECTED)
+            .status(TransferRequestStatus.INSPECTED)
             .fileSize((long) content.length())
             .sha1Sum(sha1)
             .build();
@@ -181,7 +180,7 @@ class DownloadTaskTest {
         task.run();
 
         verify(dao, atLeast(1)).save(request);
-        assertThat(request.getStatus()).isEqualTo(TransferStatus.DOWNLOADED);
+        assertThat(request.getStatus()).isEqualTo(TransferRequestStatus.DOWNLOADED);
         assertThat(downloadDir.resolve(sha1)).exists().hasContent(content);
     }
 
@@ -195,7 +194,7 @@ class DownloadTaskTest {
         TransferRequest request = TransferRequest.builder()
             .id(id)
             .dataverseFileId(123L)
-            .status(TransferStatus.INSPECTED)
+            .status(TransferRequestStatus.INSPECTED)
             .fileSize((long) content.length())
             .sha1Sum(wrongSha1)
             .build();
@@ -218,7 +217,7 @@ class DownloadTaskTest {
             // expected
         }
 
-        assertThat(request.getStatus()).isEqualTo(TransferStatus.FAILED);
+        assertThat(request.getStatus()).isEqualTo(TransferRequestStatus.FAILED);
         assertThat(request.getMessage()).contains("SHA-1 mismatch");
     }
 
@@ -228,7 +227,7 @@ class DownloadTaskTest {
         TransferRequest request = TransferRequest.builder()
             .id(id)
             .dataverseFileId(123L)
-            .status(TransferStatus.INSPECTED)
+            .status(TransferRequestStatus.INSPECTED)
             .fileSize(9L)
             .sha1Sum("some-sha1")
             .build();
@@ -243,7 +242,7 @@ class DownloadTaskTest {
             // expected
         }
 
-        assertThat(request.getStatus()).isEqualTo(TransferStatus.FAILED);
+        assertThat(request.getStatus()).isEqualTo(TransferRequestStatus.FAILED);
         assertThat(request.getMessage()).contains("Download failed");
     }
 }
