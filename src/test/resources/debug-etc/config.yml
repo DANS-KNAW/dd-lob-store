@@ -124,8 +124,7 @@ transfer:
   # Verifies the integrity of the uploaded package.
   verify:
     pollingInterval: 5s
-    command: /usr/local/bin/verify-transfer.sh
-    sshCommand: ssh
+    command: dmftar --verify -f ${user}@${host}:${path}/${bucketname.dmftar}
     taskQueue:
       nameFormat: "verify-worker-%d"
       maxQueueSize: 5000

@@ -29,7 +29,5 @@ public class VerifyConfig {
     @NotNull
     private String command;
     @NotNull
-    private String sshCommand;
-    @NotNull
     private ExecutorServiceFactory taskQueue;
 }
