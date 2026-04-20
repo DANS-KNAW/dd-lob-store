@@ -35,6 +35,8 @@ import nl.knaw.dans.lobstore.core.PackagingTaskFactory;
 import nl.knaw.dans.lobstore.core.PackagingTaskSource;
 import nl.knaw.dans.lobstore.core.UploadTaskFactory;
 import nl.knaw.dans.lobstore.core.UploadTaskSource;
+import nl.knaw.dans.lobstore.core.VerifyTaskFactory;
+import nl.knaw.dans.lobstore.core.VerifyTaskSource;
 import nl.knaw.dans.lobstore.core.QuotaManager;
 import nl.knaw.dans.lobstore.core.TransferRequest;
 import nl.knaw.dans.lobstore.db.BucketDao;
@@ -80,6 +82,7 @@ public class DdLobStoreApplication extends Application<DdLobStoreConfig> {
         final ActiveTaskRegistry inspectActiveTaskRegistry = new ActiveTaskRegistry();
         final ActiveTaskRegistry packagingActiveTaskRegistry = new ActiveTaskRegistry();
         final ActiveTaskRegistry uploadActiveTaskRegistry = new ActiveTaskRegistry();
+        final ActiveTaskRegistry verifyActiveTaskRegistry = new ActiveTaskRegistry();
 
         environment.jersey().register(new TransfersResource(transferRequestDao));
         environment.jersey().register(new LocationResource());
@@ -132,10 +135,20 @@ public class DdLobStoreApplication extends Application<DdLobStoreConfig> {
                 config.getDatastations(), uploadActiveTaskRegistry, uowProxyFactory),
             new ExecutorServiceTaskScheduler(config.getTransfer().getUpload().getTaskQueue().build(environment)));
 
+        final PollingTaskExecutor<Bucket> verifyTaskExecutor = new PollingTaskExecutor<>(
+            "VerifyTaskExecutor",
+            environment.lifecycle().scheduledExecutorService("verify-task-executor", true).build(),
+            config.getTransfer().getVerify().getPollingInterval().toJavaDuration(),
+            new VerifyTaskSource(bucketDao, verifyActiveTaskRegistry),
+            new VerifyTaskFactory(bucketDao, config.getTransfer().getVerify().getCommand(),
+                config.getDatastations(), config.getTransfer().getPackageConfig().getUploadDirectory(), quotaManager, verifyActiveTaskRegistry, uowProxyFactory),
+            new ExecutorServiceTaskScheduler(config.getTransfer().getVerify().getTaskQueue().build(environment)));
+
         environment.lifecycle().manage(createUnitOfWorkAwareProxy(uowProxyFactory, inspectTaskExecutor));
         environment.lifecycle().manage(createUnitOfWorkAwareProxy(uowProxyFactory, downloadTaskExecutor));
         environment.lifecycle().manage(createUnitOfWorkAwareProxy(uowProxyFactory, packagingTaskExecutor));
         environment.lifecycle().manage(createUnitOfWorkAwareProxy(uowProxyFactory, uploadTaskExecutor));
+        environment.lifecycle().manage(createUnitOfWorkAwareProxy(uowProxyFactory, verifyTaskExecutor));
     }
 
     private <R> PollingTaskExecutor<R> createUnitOfWorkAwareProxy(UnitOfWorkAwareProxyFactory uowFactory, PollingTaskExecutor<R> executor) {
