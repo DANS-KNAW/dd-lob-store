@@ -28,9 +28,8 @@ import java.util.List;
 import java.util.UUID;
 
 @RequiredArgsConstructor
-public class PackagingTaskFactory implements TaskFactory<TransferRequest> {
+public class PackagingTaskFactory implements TaskFactory<Bucket> {
     private final BucketDao bucketDao;
-    private final TransferRequestDao transferRequestDao;
     private final DownloadConfig downloadConfig;
     private final PackageConfig packageConfig;
     private final QuotaManager quotaManager;
@@ -38,19 +37,19 @@ public class PackagingTaskFactory implements TaskFactory<TransferRequest> {
     private final UnitOfWorkAwareProxyFactory unitOfWorkAwareProxyFactory;
 
     @Override
-    public Runnable create(List<TransferRequest> records) {
+    public Runnable create(List<Bucket> records) {
         if (records.isEmpty()) {
             throw new IllegalArgumentException("At least one record is expected");
         }
-        UUID bucketId = records.get(0).getBucket().getId();
-        return createUnitOfWorkAwareTask(bucketId, bucketDao, transferRequestDao, 
+        UUID bucketId = records.get(0).getId();
+        return createUnitOfWorkAwareTask(bucketId, bucketDao,
             downloadConfig.getDownloadDirectory(), packageConfig.getUploadDirectory(), 
             packageConfig.getCommand(), quotaManager, activeTaskRegistry);
     }
 
-    private Runnable createUnitOfWorkAwareTask(UUID bucketId, BucketDao bucketDao, TransferRequestDao transferRequestDao, Path downloadDir, Path uploadDir, String packagingCommand, QuotaManager quotaManager, ActiveTaskRegistry activeTaskRegistry) {
+    private Runnable createUnitOfWorkAwareTask(UUID bucketId, BucketDao bucketDao, Path downloadDir, Path uploadDir, String packagingCommand, QuotaManager quotaManager, ActiveTaskRegistry activeTaskRegistry) {
         return unitOfWorkAwareProxyFactory.create(PackagingTask.class,
-            new Class[] { UUID.class, BucketDao.class, TransferRequestDao.class, Path.class, Path.class, String.class, QuotaManager.class, ActiveTaskRegistry.class },
-            new Object[] { bucketId, bucketDao, transferRequestDao, downloadDir, uploadDir, packagingCommand, quotaManager, activeTaskRegistry });
+            new Class[] { UUID.class, BucketDao.class, Path.class, Path.class, String.class, QuotaManager.class, ActiveTaskRegistry.class },
+            new Object[] { bucketId, bucketDao, downloadDir, uploadDir, packagingCommand, quotaManager, activeTaskRegistry });
     }
 }

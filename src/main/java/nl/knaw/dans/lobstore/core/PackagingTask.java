@@ -34,7 +34,6 @@ public class PackagingTask implements Runnable {
 
     private final UUID bucketId;
     private final BucketDao bucketDao;
-    private final TransferRequestDao transferRequestDao;
     private final Path downloadDir;
     private final Path uploadDir;
     private final String packagingCommand;
@@ -83,8 +82,6 @@ public class PackagingTask implements Runnable {
         catch (IOException e) {
             log.error("IO error during packaging for bucket {}", bucketId, e);
             // Re-throw to allow for retries or manual intervention if it's considered recoverable
-            // The prompt says: "If it fails because of a recoverable problem it leaves the state as PACKAGING, otherwise it changes it to FAILED."
-            // For now, let's assume IO errors might be transient, so we don't change state to FAILED.
         }
         catch (Exception e) {
             log.error("Error during packaging for bucket {}", bucketId, e);

@@ -26,6 +26,7 @@ import nl.knaw.dans.lib.util.pollingtaskexec.ExecutorServiceTaskScheduler;
 import nl.knaw.dans.lib.util.pollingtaskexec.PollingTaskExecutor;
 import nl.knaw.dans.lobstore.config.DdLobStoreConfig;
 import nl.knaw.dans.lobstore.core.ActiveTaskRegistry;
+import nl.knaw.dans.lobstore.core.Bucket;
 import nl.knaw.dans.lobstore.core.DownloadTaskFactory;
 import nl.knaw.dans.lobstore.core.DownloadTaskSource;
 import nl.knaw.dans.lobstore.core.InspectTaskFactory;
@@ -108,14 +109,14 @@ public class DdLobStoreApplication extends Application<DdLobStoreConfig> {
             new DownloadTaskFactory(transferRequestDao, dataverseClients, config.getTransfer().getDownload(), quotaManager, downloadActiveTaskRegistry, uowProxyFactory, chunkDownloadExecutor),
             new ExecutorServiceTaskScheduler(config.getTransfer().getDownload().getTaskQueue().build(environment)));
 
-        final PollingTaskExecutor<TransferRequest> packagingTaskExecutor = new PollingTaskExecutor<>(
+        final PollingTaskExecutor<Bucket> packagingTaskExecutor = new PollingTaskExecutor<>(
             "PackagingTaskExecutor",
             environment.lifecycle().scheduledExecutorService("packaging-task-executor", true).build(),
             config.getTransfer().getPackageConfig().getPollingInterval().toJavaDuration(),
             new PackagingTaskSource(transferRequestDao, bucketDao, quotaManager, packagingActiveTaskRegistry,
                 config.getTransfer().getPackageConfig().getMinimalBucketSize().toBytes(),
                 config.getTransfer().getPackageConfig().getMargin().toBytes()),
-            new PackagingTaskFactory(bucketDao, transferRequestDao, config.getTransfer().getDownload(),
+            new PackagingTaskFactory(bucketDao, config.getTransfer().getDownload(),
                 config.getTransfer().getPackageConfig(), quotaManager, packagingActiveTaskRegistry, uowProxyFactory),
             new ExecutorServiceTaskScheduler(config.getTransfer().getPackageConfig().getTaskQueue().build(environment)));
 

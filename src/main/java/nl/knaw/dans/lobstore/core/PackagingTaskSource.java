@@ -29,7 +29,7 @@ import java.util.stream.Collectors;
 
 @Slf4j
 @RequiredArgsConstructor
-public class PackagingTaskSource implements TaskSource<TransferRequest> {
+public class PackagingTaskSource implements TaskSource<Bucket> {
     private static final String TARGET_PACKAGING = "packaging";
 
     private final TransferRequestDao transferRequestDao;
@@ -40,14 +40,14 @@ public class PackagingTaskSource implements TaskSource<TransferRequest> {
     private final long margin;
 
     @Override
-    public List<TransferRequest> nextInputs() {
+    public List<Bucket> nextInputs() {
         // 1. Check for interrupted buckets
         var interruptedBuckets = bucketDao.findByStatus(BucketStatus.PACKAGING);
         for (var bucket : interruptedBuckets) {
             if (!activeTaskRegistry.contains(bucket.getId())) {
                 log.info("Restarting interrupted packaging task for bucket {}", bucket.getId());
                 activeTaskRegistry.add(bucket.getId());
-                return bucket.getTransferRequests();
+                return List.of(bucket);
             }
         }
 
@@ -87,9 +87,13 @@ public class PackagingTaskSource implements TaskSource<TransferRequest> {
                 item.setBucket(bucket);
                 transferRequestDao.save(item);
             }
+            
+            // Ensure the bucket object has the transfer requests populated if needed later, 
+            // though PackagingTask fetches it from DB anyway.
+            bucket.setTransferRequests(itemsToPackage);
 
             activeTaskRegistry.add(bucketId);
-            return itemsToPackage;
+            return List.of(bucket);
         }
 
         return List.of();

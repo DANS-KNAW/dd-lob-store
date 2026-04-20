@@ -48,9 +48,9 @@ class PackagingTaskSourceTest {
 
         PackagingTaskSource source = new PackagingTaskSource(transferRequestDao, bucketDao, quotaManager, activeTaskRegistry, 1000, 100);
         
-        List<TransferRequest> result = source.nextInputs();
+        List<Bucket> result = source.nextInputs();
         
-        assertThat(result).containsExactly(tr);
+        assertThat(result).containsExactly(interruptedBucket);
         assertThat(activeTaskRegistry.contains(interruptedBucketId)).isTrue();
     }
 
@@ -71,7 +71,7 @@ class PackagingTaskSourceTest {
 
         PackagingTaskSource source = new PackagingTaskSource(transferRequestDao, bucketDao, quotaManager, activeTaskRegistry, 1000, 100);
         
-        List<TransferRequest> result = source.nextInputs();
+        List<Bucket> result = source.nextInputs();
         
         assertThat(result).isEmpty();
     }
