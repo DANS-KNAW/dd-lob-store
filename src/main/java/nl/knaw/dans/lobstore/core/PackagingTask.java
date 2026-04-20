@@ -15,6 +15,11 @@
  */
 package nl.knaw.dans.lobstore.core;
 
+import org.apache.commons.exec.CommandLine;
+import org.apache.commons.exec.DefaultExecutor;
+import org.apache.commons.exec.DefaultExecutor.Builder;
+import org.apache.commons.exec.ExecuteException;
+import org.apache.commons.exec.PumpStreamHandler;
 import io.dropwizard.hibernate.UnitOfWork;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -67,8 +72,18 @@ public class PackagingTask implements Runnable {
                 quotaManager.release(tr.getId() + "/base", TARGET_DOWNLOAD);
             }
 
-            // Call packaging command with path to bucket
-            executePackagingCommand(bucketFolder);
+            // Replace ${bucketname} and handle partial output deletion
+            String bucketName = bucketId.toString();
+            String command = packagingCommand.replace("${bucketname}", bucketName);
+            Path outputFile = uploadDir.resolve(bucketName + ".tar");
+
+            if (Files.exists(outputFile)) {
+                log.info("Deleting partial output file from previous attempt: {}", outputFile);
+                Files.delete(outputFile);
+            }
+
+            // Call packaging command
+            executePackagingCommand(command);
 
             bucket.setStatus(BucketStatus.PACKAGED);
             bucketDao.save(bucket);
@@ -95,17 +110,22 @@ public class PackagingTask implements Runnable {
         }
     }
 
-    private void executePackagingCommand(Path bucketFolder) throws IOException, InterruptedException {
-        log.debug("Executing packaging command: {} {}", packagingCommand, bucketFolder);
-        ProcessBuilder pb = new ProcessBuilder(packagingCommand, bucketFolder.toAbsolutePath().toString());
-        pb.inheritIO();
-        Process process = pb.start();
-        int exitCode = process.waitFor();
+    private void executePackagingCommand(String command) throws IOException {
+        log.debug("Executing packaging command: {}", command);
+        CommandLine commandLine = new CommandLine("sh");
+        commandLine.addArgument("-c");
+        commandLine.addArgument(command, false);
+
+        DefaultExecutor executor = new Builder<>().get();
+        executor.setStreamHandler(new PumpStreamHandler(System.out, System.err));
         
-        if (exitCode != 0) {
-            // Check if it's a recoverable problem.
-            // For now we assume non-zero is non-recoverable unless we have more info.
-            throw new RuntimeException("Packaging command failed with exit code " + exitCode);
+        try {
+            int exitCode = executor.execute(commandLine);
+            if (exitCode != 0) {
+                throw new RuntimeException("Packaging command failed with exit code " + exitCode);
+            }
+        } catch (ExecuteException e) {
+            throw new RuntimeException("Packaging command failed", e);
         }
     }
 }

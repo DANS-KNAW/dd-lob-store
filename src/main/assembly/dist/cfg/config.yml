@@ -90,7 +90,7 @@ transfer:
     minimalBucketSize: 1G
     margin: 5M
     uploadDirectory: /data/lob-transfer/upload
-    command: /usr/local/bin/package.sh
+    command: tar -cf /data/lob-transfer/upload/${bucketname}.tar -C /data/lob-transfer/upload/${bucketname} .
     taskQueue:
       nameFormat: "package-worker-%d"
       maxQueueSize: 5000
