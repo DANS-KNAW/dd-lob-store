@@ -24,7 +24,7 @@ datastations:
       baseUrl: 'https://archaeology.datastations.nl'
       apiKey: 'changeme'
     lobstore:
-      username: changeme
+      user: changeme
       host: changeme@example.com
       path: changeme
 
@@ -104,7 +104,8 @@ transfer:
   # Uploads a package to the Data Archive
   upload:
     pollingInterval: 5s
-    command: /usr/local/bin/transfer.sh
+    resumable: true
+    command: rsync -av --partial --append /data/lob-transfer/upload/${bucketname}.dmftar ${user}@{host}:archive/data-vault/${datastation}.lobs/${bucketname}.dmftar
     destination: /data/vault
     taskQueue:
       nameFormat: "transfer-worker-%d"

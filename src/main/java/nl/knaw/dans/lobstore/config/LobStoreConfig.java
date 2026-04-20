@@ -23,7 +23,7 @@ import java.nio.file.Path;
 @Data
 public class LobStoreConfig {
     @NotNull
-    private String username;
+    private String user;
 
     @NotNull
     private String host;

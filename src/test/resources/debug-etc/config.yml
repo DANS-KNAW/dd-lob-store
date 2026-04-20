@@ -24,7 +24,7 @@ datastations:
       baseUrl: 'https://dev.archaeology.datastations.nl'
       apiKey: 'changeme'
     lobstore:
-      username: changeme
+      user: changeme
       host: changeme@example.com
       path: changeme
 
