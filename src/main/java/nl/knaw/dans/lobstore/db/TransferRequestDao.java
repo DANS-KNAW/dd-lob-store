@@ -84,6 +84,16 @@ public class TransferRequestDao extends AbstractDAO<TransferRequest> {
         return currentSession().createQuery(cq).setMaxResults(1).uniqueResultOptional();
     }
 
+    public List<TransferRequest> findPackagableItems() {
+        CriteriaBuilder cb = currentSession().getCriteriaBuilder();
+        CriteriaQuery<TransferRequest> cq = cb.createQuery(TransferRequest.class);
+        Root<TransferRequest> root = cq.from(TransferRequest.class);
+        cq.where(cb.equal(root.get("status"), TransferRequestStatus.DOWNLOADED),
+            cb.isNull(root.get("bucket")));
+        cq.orderBy(cb.asc(root.get("created")));
+        return currentSession().createQuery(cq).getResultList();
+    }
+
     private Optional<TransferRequest> findNextItemWithStatus(TransferRequestStatus status) {
         CriteriaBuilder cb = currentSession().getCriteriaBuilder();
         CriteriaQuery<TransferRequest> cq = cb.createQuery(TransferRequest.class);

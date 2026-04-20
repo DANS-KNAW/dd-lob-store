@@ -46,4 +46,8 @@ public class ActiveTaskRegistry {
     public void remove(UUID id) {
         activeIds.remove(id);
     }
+
+    public boolean contains(UUID id) {
+        return activeIds.contains(id);
+    }
 }

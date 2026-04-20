@@ -30,8 +30,11 @@ import nl.knaw.dans.lobstore.core.DownloadTaskFactory;
 import nl.knaw.dans.lobstore.core.DownloadTaskSource;
 import nl.knaw.dans.lobstore.core.InspectTaskFactory;
 import nl.knaw.dans.lobstore.core.InspectTaskSource;
+import nl.knaw.dans.lobstore.core.PackagingTaskFactory;
+import nl.knaw.dans.lobstore.core.PackagingTaskSource;
 import nl.knaw.dans.lobstore.core.QuotaManager;
 import nl.knaw.dans.lobstore.core.TransferRequest;
+import nl.knaw.dans.lobstore.db.BucketDao;
 import nl.knaw.dans.lobstore.db.ClaimDao;
 import nl.knaw.dans.lobstore.db.TransferRequestDao;
 import nl.knaw.dans.lobstore.resources.DefaultResource;
@@ -64,6 +67,7 @@ public class DdLobStoreApplication extends Application<DdLobStoreConfig> {
     public void run(final DdLobStoreConfig config, final Environment environment) {
         final TransferRequestDao transferRequestDao = new TransferRequestDao(hibernateBundle.getSessionFactory());
         final ClaimDao claimDao = new ClaimDao(hibernateBundle.getSessionFactory());
+        final BucketDao bucketDao = new BucketDao(hibernateBundle.getSessionFactory());
 
         var uowProxyFactory = new UnitOfWorkAwareProxyFactory(hibernateBundle);
         final QuotaManager quotaManager = new QuotaManager(claimDao,
@@ -71,6 +75,7 @@ public class DdLobStoreApplication extends Application<DdLobStoreConfig> {
 
         final ActiveTaskRegistry downloadActiveTaskRegistry = new ActiveTaskRegistry();
         final ActiveTaskRegistry inspectActiveTaskRegistry = new ActiveTaskRegistry();
+        final ActiveTaskRegistry packagingActiveTaskRegistry = new ActiveTaskRegistry();
 
         environment.jersey().register(new TransfersResource(transferRequestDao));
         environment.jersey().register(new LocationResource());
@@ -103,8 +108,20 @@ public class DdLobStoreApplication extends Application<DdLobStoreConfig> {
             new DownloadTaskFactory(transferRequestDao, dataverseClients, config.getTransfer().getDownload(), quotaManager, downloadActiveTaskRegistry, uowProxyFactory, chunkDownloadExecutor),
             new ExecutorServiceTaskScheduler(config.getTransfer().getDownload().getTaskQueue().build(environment)));
 
+        final PollingTaskExecutor<TransferRequest> packagingTaskExecutor = new PollingTaskExecutor<>(
+            "PackagingTaskExecutor",
+            environment.lifecycle().scheduledExecutorService("packaging-task-executor", true).build(),
+            config.getTransfer().getPackageConfig().getPollingInterval().toJavaDuration(),
+            new PackagingTaskSource(transferRequestDao, bucketDao, quotaManager, packagingActiveTaskRegistry,
+                config.getTransfer().getPackageConfig().getMinimalBucketSize().toBytes(),
+                config.getTransfer().getPackageConfig().getMargin().toBytes()),
+            new PackagingTaskFactory(bucketDao, transferRequestDao, config.getTransfer().getDownload(),
+                config.getTransfer().getPackageConfig(), quotaManager, packagingActiveTaskRegistry, uowProxyFactory),
+            new ExecutorServiceTaskScheduler(config.getTransfer().getPackageConfig().getTaskQueue().build(environment)));
+
         environment.lifecycle().manage(createUnitOfWorkAwareProxy(uowProxyFactory, inspectTaskExecutor));
         environment.lifecycle().manage(createUnitOfWorkAwareProxy(uowProxyFactory, downloadTaskExecutor));
+        environment.lifecycle().manage(createUnitOfWorkAwareProxy(uowProxyFactory, packagingTaskExecutor));
     }
 
     private <R> PollingTaskExecutor<R> createUnitOfWorkAwareProxy(UnitOfWorkAwareProxyFactory uowFactory, PollingTaskExecutor<R> executor) {

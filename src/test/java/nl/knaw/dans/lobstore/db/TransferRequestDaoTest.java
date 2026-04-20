@@ -151,4 +151,44 @@ class TransferRequestDaoTest {
         assertThat(result).isPresent();
         assertThat(result.get().getId()).isEqualTo(id1);
     }
+
+    @Test
+    void findPackagableItems_should_return_downloaded_requests_without_bucket() {
+        UUID id1 = UUID.randomUUID();
+        UUID id2 = UUID.randomUUID();
+        OffsetDateTime now = OffsetDateTime.now();
+
+        db.inTransaction(() -> {
+            dao.save(TransferRequest.builder()
+                .id(id1)
+                .dataverseFileId(1L)
+                .sha1Sum("sha1")
+                .datastation("station1")
+                .status(TransferRequestStatus.DOWNLOADED)
+                .created(now.minusMinutes(10))
+                .build());
+
+            dao.save(TransferRequest.builder()
+                .id(id2)
+                .dataverseFileId(2L)
+                .sha1Sum("sha2")
+                .datastation("station1")
+                .status(TransferRequestStatus.DOWNLOADED)
+                .created(now.minusMinutes(5))
+                .build());
+
+            dao.save(TransferRequest.builder()
+                .id(UUID.randomUUID())
+                .dataverseFileId(3L)
+                .sha1Sum("sha3")
+                .datastation("station1")
+                .status(TransferRequestStatus.INSPECTED)
+                .created(now.minusMinutes(15))
+                .build());
+        });
+
+        List<TransferRequest> result = dao.findPackagableItems();
+        assertThat(result).hasSize(2);
+        assertThat(result).extracting(TransferRequest::getId).containsExactly(id1, id2);
+    }
 }
