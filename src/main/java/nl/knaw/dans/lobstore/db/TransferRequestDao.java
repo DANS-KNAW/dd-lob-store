@@ -23,6 +23,7 @@ import org.hibernate.SessionFactory;
 import javax.persistence.criteria.CriteriaBuilder;
 import javax.persistence.criteria.CriteriaQuery;
 import javax.persistence.criteria.Root;
+import java.time.OffsetDateTime;
 import java.util.List;
 import java.util.Optional;
 import java.util.UUID;
@@ -91,6 +92,46 @@ public class TransferRequestDao extends AbstractDAO<TransferRequest> {
         cq.where(cb.equal(root.get("status"), TransferRequestStatus.DOWNLOADED),
             cb.isNull(root.get("bucket")));
         cq.orderBy(cb.asc(root.get("created")));
+        return currentSession().createQuery(cq).getResultList();
+    }
+
+    public List<String> findDatastationsReadyForPackaging(long minimalBucketSize) {
+        CriteriaBuilder cb = currentSession().getCriteriaBuilder();
+        CriteriaQuery<String> cq = cb.createQuery(String.class);
+        Root<TransferRequest> root = cq.from(TransferRequest.class);
+
+        // Filter: DOWNLOADED status and no bucket assigned
+        cq.where(
+            cb.equal(root.get("status"), TransferRequestStatus.DOWNLOADED),
+            cb.isNull(root.get("bucket"))
+        );
+
+        // Group by datastation
+        cq.select(root.get("datastation"));
+        cq.groupBy(root.get("datastation"));
+
+        // Having sum(fileSize) >= minimalBucketSize
+        cq.having(cb.ge(cb.sum(root.get("fileSize")), minimalBucketSize));
+
+        // Order by the oldest created date in the group (MIN(created))
+        cq.orderBy(cb.asc(cb.least(root.get("created").as(OffsetDateTime.class))));
+
+        return currentSession().createQuery(cq).getResultList();
+    }
+
+    public List<TransferRequest> findPackagableItemsByDatastation(String datastation) {
+        CriteriaBuilder cb = currentSession().getCriteriaBuilder();
+        CriteriaQuery<TransferRequest> cq = cb.createQuery(TransferRequest.class);
+        Root<TransferRequest> root = cq.from(TransferRequest.class);
+
+        cq.where(
+            cb.equal(root.get("status"), TransferRequestStatus.DOWNLOADED),
+            cb.isNull(root.get("bucket")),
+            cb.equal(root.get("datastation"), datastation)
+        );
+
+        cq.orderBy(cb.asc(root.get("created")));
+
         return currentSession().createQuery(cq).getResultList();
     }
 

@@ -50,27 +50,17 @@ public class PackagingTaskSource implements TaskSource<Bucket> {
             }
         }
 
-        // 2. Existing logic for creating new buckets
-        var packagableItems = transferRequestDao.findPackagableItems();
-        if (packagableItems.isEmpty()) {
+        // 2. Ask the DAO for datastations that have enough data
+        var readyDatastations = transferRequestDao.findDatastationsReadyForPackaging(minimalBucketSize);
+        if (readyDatastations.isEmpty()) {
+            log.debug("No datastations meet the minimal bucket size ({})", minimalBucketSize);
             return List.of();
         }
 
-        long currentTotalSize = 0;
-        List<TransferRequest> itemsToPackage = new ArrayList<>();
-        
-        for (var item : packagableItems) {
-            itemsToPackage.add(item);
-            currentTotalSize += item.getFileSize();
-            if (currentTotalSize >= minimalBucketSize) {
-                break;
-            }
-        }
-
-        if (currentTotalSize < minimalBucketSize) {
-            log.debug("Total size of packagable items ({}) is less than minimal bucket size ({})", currentTotalSize, minimalBucketSize);
-            return List.of();
-        }
+        // 3. Take the first ready datastation (the one with the oldest pending item)
+        String targetDatastation = readyDatastations.get(0);
+        var itemsToPackage = transferRequestDao.findPackagableItemsByDatastation(targetDatastation);
+        long currentTotalSize = itemsToPackage.stream().mapToLong(TransferRequest::getFileSize).sum();
 
         UUID bucketId = UUID.randomUUID();
         // Claim both /base and /extra on the upload folder.
