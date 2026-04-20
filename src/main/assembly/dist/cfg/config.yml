@@ -104,11 +104,10 @@ transfer:
   # Uploads a package to the Data Archive
   upload:
     pollingInterval: 5s
-    resumable: true
     command: rsync -av --partial --append /data/lob-transfer/upload/${bucketname}.dmftar ${user}@{host}:archive/data-vault/${datastation}.lobs/${bucketname}.dmftar
     destination: /data/vault
     taskQueue:
-      nameFormat: "transfer-worker-%d"
+      nameFormat: "upload-worker-%d"
       maxQueueSize: 5000
       # Number of threads will be increased when maxQueueSize is exceeded.
       minThreads: 1

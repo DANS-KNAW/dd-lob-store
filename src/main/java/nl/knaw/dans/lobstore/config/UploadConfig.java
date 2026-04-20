@@ -28,7 +28,6 @@ public class UploadConfig {
     private Duration pollingInterval;
     @NotNull
     private String command;
-    private boolean resumable;
     @NotNull
     private String destination;
     @NotNull
