@@ -39,9 +39,9 @@ datastations:
 
 database:
   driverClass: org.postgresql.Driver
-  user: dd_lob_store_test
-  password: dd_lob_store_test
-  url: jdbc:postgresql://dev.transfer.dans-data.nl:5432/dd_lob_store_test
+  user: dd_lob_store_local_test
+  password: dd_lob_store_local_test
+  url: jdbc:postgresql://dev.transfer.dans-data.nl:5432/dd_lob_store_local_test
   logValidationErrors: true
   properties:
     hibernate.dialect: 'org.hibernate.dialect.PostgreSQL95Dialect'
