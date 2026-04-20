@@ -53,6 +53,17 @@ public class PackagingTask implements Runnable {
         try {
             log.info("Starting PACKAGING task for bucket {}", bucketId);
             Bucket bucket = bucketDao.findById(bucketId).orElseThrow(() -> new RuntimeException("Bucket not found: " + bucketId));
+
+            // Sanity check: all transfer requests must have the same datastation
+            String datastation = bucket.getDatastation();
+            for (var tr : bucket.getTransferRequests()) {
+                if (!tr.getDatastation().equals(datastation)) {
+                    log.error("Sanity check failed: TransferRequest {} has datastation {}, but bucket {} has datastation {}",
+                        tr.getId(), tr.getDatastation(), bucketId, datastation);
+                    throw new IllegalStateException("Mixed datastations in bucket " + bucketId);
+                }
+            }
+
             Path bucketFolder = uploadDir.resolve(bucketId.toString());
 
             if (!Files.exists(bucketFolder)) {

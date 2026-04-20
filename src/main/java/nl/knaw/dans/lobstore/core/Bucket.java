@@ -46,6 +46,9 @@ public class Bucket {
     @Column(name = "status", nullable = false)
     private BucketStatus status;
 
+    @Column(name = "datastation")
+    private String datastation;
+
     @OneToMany(mappedBy = "bucket")
     private List<TransferRequest> transferRequests;
 }

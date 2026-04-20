@@ -69,6 +69,7 @@ public class PackagingTaskSource implements TaskSource<Bucket> {
             Bucket bucket = Bucket.builder()
                 .id(bucketId)
                 .status(BucketStatus.PACKAGING)
+                .datastation(targetDatastation)
                 .build();
             bucketDao.save(bucket);
             
