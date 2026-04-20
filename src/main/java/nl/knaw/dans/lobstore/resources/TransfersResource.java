@@ -24,6 +24,7 @@ import nl.knaw.dans.lobstore.api.TransferStatusInfoDto;
 import nl.knaw.dans.lobstore.core.BucketStatus;
 import nl.knaw.dans.lobstore.core.TransferRequest;
 import nl.knaw.dans.lobstore.core.TransferRequestStatus;
+import nl.knaw.dans.lobstore.db.LocationDao;
 import nl.knaw.dans.lobstore.db.TransferRequestDao;
 import org.mapstruct.factory.Mappers;
 
@@ -39,9 +40,11 @@ import java.util.UUID;
 public class TransfersResource implements TransfersApi {
     private final Conversions conversions = Mappers.getMapper(Conversions.class);
     private final TransferRequestDao transferRequestDao;
+    private final LocationDao locationDao;
 
-    public TransfersResource(TransferRequestDao transferRequestDao) {
+    public TransfersResource(TransferRequestDao transferRequestDao, LocationDao locationDao) {
         this.transferRequestDao = transferRequestDao;
+        this.locationDao = locationDao;
     }
 
     @Override
@@ -65,12 +68,11 @@ public class TransfersResource implements TransfersApi {
                 .build();
         }
 
-        var existingDoneRequest = existingRequestsForSha1.stream()
-            .filter(r -> (r.getBucket() != null && r.getBucket().getStatus() == BucketStatus.DONE))
-            .findFirst();
+        var existingLocation = locationDao.findByDatastationAndSha1Sum(transferRequestDto.getDatastation(), sha1);
 
-        if (existingDoneRequest.isPresent()) {
-            return Response.seeOther(URI.create("/transfers/" + existingDoneRequest.get().getId()))
+        if (existingLocation.isPresent()) {
+            return Response.status(Response.Status.CONFLICT)
+                .entity("The file is already in the LOB-store")
                 .build();
         }
 

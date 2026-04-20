@@ -21,8 +21,10 @@ import nl.knaw.dans.lobstore.api.TransferRequestDto;
 import nl.knaw.dans.lobstore.api.TransferResponseDto;
 import nl.knaw.dans.lobstore.core.Bucket;
 import nl.knaw.dans.lobstore.core.BucketStatus;
+import nl.knaw.dans.lobstore.core.Location;
 import nl.knaw.dans.lobstore.core.TransferRequest;
 import nl.knaw.dans.lobstore.core.TransferRequestStatus;
+import nl.knaw.dans.lobstore.db.LocationDao;
 import nl.knaw.dans.lobstore.db.TransferRequestDao;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
@@ -47,8 +49,9 @@ import static org.mockito.Mockito.when;
 class TransfersResourceTest {
 
     private static final TransferRequestDao dao = mock(TransferRequestDao.class);
+    private static final LocationDao locationDao = mock(LocationDao.class);
     private static final ResourceExtension EXT = ResourceExtension.builder()
-        .addResource(new TransfersResource(dao))
+        .addResource(new TransfersResource(dao, locationDao))
         .build();
 
     @BeforeEach
@@ -58,6 +61,7 @@ class TransfersResourceTest {
     @AfterEach
     void tearDown() {
         reset(dao);
+        reset(locationDao);
     }
 
     @Test
@@ -105,32 +109,27 @@ class TransfersResourceTest {
     }
 
     @Test
-    void add_transfer_should_return_303_if_already_done() {
+    void add_transfer_should_return_409_if_already_done() {
         TransferRequestDto dto = new TransferRequestDto()
             .dataverseFileId(123L)
             .sha1Sum("abc")
             .datastation("station1");
 
-        java.util.UUID existingId = java.util.UUID.randomUUID();
-        Bucket bucket = Bucket.builder()
-            .status(BucketStatus.DONE)
-            .build();
-
-        TransferRequest existing = TransferRequest.builder()
-            .id(existingId)
-            .bucket(bucket)
+        Location existingLocation = Location.builder()
+            .datastation("station1")
             .sha1Sum("abc")
+            .bucketName("bucket1")
             .build();
 
-        when(dao.findBySha1Sum("abc")).thenReturn(List.of(existing));
+        when(dao.findBySha1Sum("abc")).thenReturn(Collections.emptyList());
+        when(locationDao.findByDatastationAndSha1Sum("station1", "abc")).thenReturn(java.util.Optional.of(existingLocation));
 
         Response response = EXT.target("/transfers")
-            .property(org.glassfish.jersey.client.ClientProperties.FOLLOW_REDIRECTS, false)
             .request(MediaType.APPLICATION_JSON)
             .post(Entity.entity(dto, MediaType.APPLICATION_JSON));
 
-        assertThat(response.getStatus()).isEqualTo(303);
-        assertThat(response.getLocation().toString()).endsWith("/transfers/" + existingId);
+        assertThat(response.getStatus()).isEqualTo(409);
+        assertThat(response.readEntity(String.class)).contains("already in the LOB-store");
 
         verify(dao, org.mockito.Mockito.never()).save(any());
     }

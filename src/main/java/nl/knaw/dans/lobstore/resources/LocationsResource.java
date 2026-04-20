@@ -24,7 +24,7 @@ import javax.validation.constraints.NotNull;
 import javax.ws.rs.core.Response;
 
 @RequiredArgsConstructor
-public class LocationResource implements LocationApi {
+public class LocationsResource implements LocationsApi {
     private final LocationDao locationDao;
 
     @Override

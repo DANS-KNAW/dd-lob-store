@@ -33,11 +33,11 @@ import static org.mockito.Mockito.reset;
 import static org.mockito.Mockito.when;
 
 @ExtendWith(DropwizardExtensionsSupport.class)
-class LocationResourceTest {
+class LocationsResourceTest {
 
     private static final LocationDao dao = mock(LocationDao.class);
     private static final ResourceExtension EXT = ResourceExtension.builder()
-        .addResource(new LocationResource(dao))
+        .addResource(new LocationsResource(dao))
         .build();
 
     @AfterEach
@@ -57,7 +57,7 @@ class LocationResourceTest {
 
         when(dao.findByDatastationAndSha1Sum(store, hash)).thenReturn(Optional.of(location));
 
-        Response response = EXT.target("/location/" + store + "/" + hash).request().get();
+        Response response = EXT.target("/locations/" + store + "/" + hash).request().get();
 
         assertThat(response.getStatus()).isEqualTo(200);
         LocationResponseDto result = response.readEntity(LocationResponseDto.class);
@@ -72,7 +72,7 @@ class LocationResourceTest {
 
         when(dao.findByDatastationAndSha1Sum(store, hash)).thenReturn(Optional.empty());
 
-        Response response = EXT.target("/location/" + store + "/" + hash).request().get();
+        Response response = EXT.target("/locations/" + store + "/" + hash).request().get();
 
         assertThat(response.getStatus()).isEqualTo(404);
     }

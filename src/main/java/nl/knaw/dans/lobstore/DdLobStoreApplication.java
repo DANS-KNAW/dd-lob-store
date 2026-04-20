@@ -44,7 +44,7 @@ import nl.knaw.dans.lobstore.db.ClaimDao;
 import nl.knaw.dans.lobstore.db.LocationDao;
 import nl.knaw.dans.lobstore.db.TransferRequestDao;
 import nl.knaw.dans.lobstore.resources.DefaultResource;
-import nl.knaw.dans.lobstore.resources.LocationResource;
+import nl.knaw.dans.lobstore.resources.LocationsResource;
 import nl.knaw.dans.lobstore.resources.TransfersResource;
 
 import java.util.Map;
@@ -86,8 +86,8 @@ public class DdLobStoreApplication extends Application<DdLobStoreConfig> {
         final ActiveTaskRegistry uploadActiveTaskRegistry = new ActiveTaskRegistry();
         final ActiveTaskRegistry verifyActiveTaskRegistry = new ActiveTaskRegistry();
 
-        environment.jersey().register(new TransfersResource(transferRequestDao));
-        environment.jersey().register(new LocationResource(locationDao));
+        environment.jersey().register(new TransfersResource(transferRequestDao, locationDao));
+        environment.jersey().register(new LocationsResource(locationDao));
         environment.jersey().register(new DefaultResource());
 
         Map<String, DataverseClient> dataverseClients = config.getDatastations().entrySet().stream()
