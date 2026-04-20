@@ -87,7 +87,7 @@ transfer:
   # Packages files worth at least a minimal bucket size of data into a package.
   package:
     pollingInterval: 5s
-    minimalBucketSize: 1G
+    minimalBucketSize: 1Kb
     margin: 5M
     uploadDirectory: /data/lob-transfer/upload
     command: tar -cf /data/lob-transfer/upload/${bucketname}.tar -C /data/lob-transfer/upload/${bucketname} .

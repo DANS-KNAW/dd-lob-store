@@ -23,14 +23,13 @@ import nl.knaw.dans.lobstore.db.TransferRequestDao;
 
 import java.util.ArrayList;
 import java.util.List;
-import java.util.Optional;
 import java.util.UUID;
-import java.util.stream.Collectors;
 
 @Slf4j
 @RequiredArgsConstructor
 public class PackagingTaskSource implements TaskSource<Bucket> {
-    private static final String TARGET_PACKAGING = "packaging";
+    // Packaging is done in the upload directory
+    private static final String TARGET_UPLOAD = "upload";
 
     private final TransferRequestDao transferRequestDao;
     private final BucketDao bucketDao;
@@ -75,8 +74,8 @@ public class PackagingTaskSource implements TaskSource<Bucket> {
 
         UUID bucketId = UUID.randomUUID();
         // Claim both /base and /extra on the upload folder.
-        if (quotaManager.ensureClaimed(bucketId + "/base", TARGET_PACKAGING, currentTotalSize) &&
-            quotaManager.ensureClaimed(bucketId + "/extra", TARGET_PACKAGING, currentTotalSize + margin)) {
+        if (quotaManager.ensureClaimed(bucketId + "/base", TARGET_UPLOAD, currentTotalSize) &&
+            quotaManager.ensureClaimed(bucketId + "/extra", TARGET_UPLOAD, currentTotalSize + margin)) {
             Bucket bucket = Bucket.builder()
                 .id(bucketId)
                 .status(BucketStatus.PACKAGING)

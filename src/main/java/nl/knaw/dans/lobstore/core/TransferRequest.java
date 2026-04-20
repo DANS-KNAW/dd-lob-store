@@ -18,7 +18,9 @@ package nl.knaw.dans.lobstore.core;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
 import lombok.Data;
+import lombok.EqualsAndHashCode;
 import lombok.NoArgsConstructor;
+import lombok.ToString;
 
 import javax.persistence.Column;
 import javax.persistence.Entity;
@@ -66,6 +68,8 @@ public class TransferRequest {
     private OffsetDateTime created;
 
     @ManyToOne
+    @ToString.Exclude
+    @EqualsAndHashCode.Exclude
     @JoinColumn(name = "bucket_id")
     private Bucket bucket;
 

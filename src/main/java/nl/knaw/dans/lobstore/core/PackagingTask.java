@@ -25,8 +25,10 @@ import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import nl.knaw.dans.lobstore.db.BucketDao;
 import nl.knaw.dans.lobstore.db.TransferRequestDao;
+import org.apache.commons.io.FileUtils;
 
 import java.io.IOException;
+import java.nio.file.DirectoryNotEmptyException;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.util.UUID;
@@ -59,11 +61,20 @@ public class PackagingTask implements Runnable {
 
             for (var tr : bucket.getTransferRequests()) {
                 Path sourceFile = downloadDir.resolve(tr.getId().toString()).resolve(tr.getSha1Sum());
-                Path targetFile = bucketFolder.resolve(tr.getId().toString());
+                Path targetFile = bucketFolder.resolve(tr.getSha1Sum());
 
                 if (!Files.exists(targetFile)) {
                     log.debug("Moving file from {} to {}", sourceFile, targetFile);
                     Files.move(sourceFile, targetFile);
+                    Path parentDir = sourceFile.getParent();
+                    try {
+                        Files.delete(parentDir);
+                        log.debug("Deleted empty download directory: {}", parentDir);
+                    } catch (DirectoryNotEmptyException e) {
+                        log.warn("Download directory is not empty and was not deleted: {}", parentDir);
+                    } catch (IOException e) {
+                        log.error("Failed to delete download directory: {}", parentDir, e);
+                    }
                 } else {
                     log.debug("Target file already exists: {}", targetFile);
                 }
@@ -87,9 +98,8 @@ public class PackagingTask implements Runnable {
 
             bucket.setStatus(BucketStatus.PACKAGED);
             bucketDao.save(bucket);
-            
-            // Release both /base and /extra claims on the upload folder
-            quotaManager.release(bucketId + "/base", TARGET_UPLOAD);
+
+            FileUtils.deleteDirectory(bucketFolder.toFile());
             quotaManager.release(bucketId + "/extra", TARGET_UPLOAD);
             
             log.info("Successfully finished PACKAGING task for bucket {}", bucketId);
