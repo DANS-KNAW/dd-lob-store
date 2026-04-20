@@ -90,7 +90,8 @@ transfer:
     minimalBucketSize: 1Kb
     margin: 5M
     uploadDirectory: /data/lob-transfer/upload
-    command: tar -cf /data/lob-transfer/upload/${bucketname}.tar -C /data/lob-transfer/upload/${bucketname} .
+    #command: tar -cf /data/lob-transfer/upload/${bucketname}.tar -C /data/lob-transfer/upload/${bucketname} .
+    command: dmftar -cf /data/lob-transfer/upload/${bucketname}.dmftar --options='-C /data/lob-transfer/upload/${bucketname}' .
     taskQueue:
       nameFormat: "package-worker-%d"
       maxQueueSize: 5000
