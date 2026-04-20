@@ -26,7 +26,7 @@ datastations:
     lobstore:
       user: changeme
       host: changeme@example.com
-      path: changeme
+      path: 'archive/data-vault/archaeology.lobs'
 
 database:
   driverClass: org.postgresql.Driver
@@ -87,7 +87,7 @@ transfer:
   # Packages files worth at least a minimal bucket size of data into a package.
   package:
     pollingInterval: 5s
-    minimalBucketSize: 1Kb
+    minimalBucketSize: 1G
     margin: 5M
     uploadDirectory: /data/lob-transfer/upload
     #command: tar -cf /data/lob-transfer/upload/${bucketname}.tar -C /data/lob-transfer/upload/${bucketname} .
@@ -104,7 +104,7 @@ transfer:
   # Uploads a package to the Data Archive
   upload:
     pollingInterval: 5s
-    command: rsync -av --partial --append /data/lob-transfer/upload/${bucketname}.dmftar ${user}@{host}:archive/data-vault/${datastation}.lobs/${bucketname}.dmftar
+    command: rsync -av --partial --append /data/lob-transfer/upload/${bucketname}.dmftar ${user}@${host}:${path}/
     destination: /data/vault
     taskQueue:
       nameFormat: "upload-worker-%d"

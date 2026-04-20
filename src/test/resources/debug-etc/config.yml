@@ -27,6 +27,14 @@ datastations:
       user: changeme
       host: changeme@example.com
       path: changeme
+  test_archaeology:
+    dataverse:
+      baseUrl: 'https://test.archaeology.datastations.nl'
+      apiKey: changeme
+    lobstore:
+      user: danstst0
+      host: archive.surfsara.nl
+      path: 'archive/data-vault/test/archaeology.lobs'
 
 
 database:
@@ -89,7 +97,7 @@ transfer:
     pollingInterval: 5s
     minimalBucketSize: 1G
     uploadDirectory: data/upload
-    command: /usr/local/bin/package.sh
+    command: dmftar -cf data/upload/${bucketname}.dmftar --options='-C data/upload/${bucketname}' .
     taskQueue:
       nameFormat: "package-worker-%d"
       maxQueueSize: 5000
@@ -102,10 +110,10 @@ transfer:
   # Uploads a package to the Data Archive
   upload:
     pollingInterval: 5s
-    command: rsync -av --partial --append data/upload/${bucketname}.dmftar ${user}@{host}:archive/data-vault/${path}/${bucketname}.dmftar
+    command: rsync -av --partial --append data/upload/${bucketname}.dmftar ${user}@${host}:${path}/
     destination: /data/vault
     taskQueue:
-      nameFormat: "transfer-worker-%d"
+      nameFormat: "upload-worker-%d"
       maxQueueSize: 5000
       # Number of threads will be increased when maxQueueSize is exceeded.
       minThreads: 1
