@@ -54,6 +54,7 @@ public class TransfersResource implements TransfersApi {
 
         List<TransferRequest> existingRequestsForSha1 = transferRequestDao.findBySha1Sum(sha1);
         if (existingRequestsForSha1.stream()
+            .filter(request -> request.getDatastation().equals(transferRequestDto.getDatastation()))
             .anyMatch(TransferRequest::isInProgress)) {
             return Response.status(Response.Status.CONFLICT)
                 .entity("Transfer(s) already in progress for the given SHA-1")
@@ -62,6 +63,7 @@ public class TransfersResource implements TransfersApi {
 
         List<TransferRequest> existingRequestsForFileId = transferRequestDao.findByDataverseFileId(transferRequestDto.getDataverseFileId());
         if (existingRequestsForFileId.stream()
+            .filter(request -> request.getDatastation().equals(transferRequestDto.getDatastation()))
             .anyMatch(TransferRequest::isInProgress)) {
             return Response.status(Response.Status.CONFLICT)
                 .entity("Transfer(s) already in progress for the given Dataverse file ID")
@@ -71,8 +73,7 @@ public class TransfersResource implements TransfersApi {
         var existingLocation = locationDao.findByDatastationAndSha1Sum(transferRequestDto.getDatastation(), sha1);
 
         if (existingLocation.isPresent()) {
-            return Response.status(Response.Status.CONFLICT)
-                .entity("The file is already in the LOB-store")
+            return Response.seeOther(URI.create(String.format("/locations/%s/%s", transferRequestDto.getDatastation(), sha1)))
                 .build();
         }
 

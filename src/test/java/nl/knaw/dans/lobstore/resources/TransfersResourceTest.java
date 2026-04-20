@@ -26,6 +26,7 @@ import nl.knaw.dans.lobstore.core.TransferRequest;
 import nl.knaw.dans.lobstore.core.TransferRequestStatus;
 import nl.knaw.dans.lobstore.db.LocationDao;
 import nl.knaw.dans.lobstore.db.TransferRequestDao;
+import org.glassfish.jersey.client.ClientProperties;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
@@ -88,7 +89,7 @@ class TransfersResourceTest {
     }
 
     @Test
-    void add_transfer_should_return_409_if_already_in_progress() {
+    void add_transfer_should_return_409_if_already_in_progress_for_same_datastation() {
         TransferRequestDto dto = new TransferRequestDto()
             .dataverseFileId(123L)
             .sha1Sum("abc")
@@ -97,6 +98,7 @@ class TransfersResourceTest {
         TransferRequest existing = TransferRequest.builder()
             .status(TransferRequestStatus.PENDING)
             .sha1Sum("abc")
+            .datastation("station1")
             .build();
 
         when(dao.findBySha1Sum("abc")).thenReturn(List.of(existing));
@@ -109,7 +111,29 @@ class TransfersResourceTest {
     }
 
     @Test
-    void add_transfer_should_return_409_if_already_done() {
+    void add_transfer_should_return_201_if_already_in_progress_for_different_datastation() {
+        TransferRequestDto dto = new TransferRequestDto()
+            .dataverseFileId(123L)
+            .sha1Sum("abc")
+            .datastation("station1");
+
+        TransferRequest existing = TransferRequest.builder()
+            .status(TransferRequestStatus.PENDING)
+            .sha1Sum("abc")
+            .datastation("station2")
+            .build();
+
+        when(dao.findBySha1Sum("abc")).thenReturn(List.of(existing));
+
+        Response response = EXT.target("/transfers")
+            .request(MediaType.APPLICATION_JSON)
+            .post(Entity.entity(dto, MediaType.APPLICATION_JSON));
+
+        assertThat(response.getStatus()).isEqualTo(201);
+    }
+
+    @Test
+    void add_transfer_should_return_303_if_already_done_for_same_datastation() {
         TransferRequestDto dto = new TransferRequestDto()
             .dataverseFileId(123L)
             .sha1Sum("abc")
@@ -125,12 +149,31 @@ class TransfersResourceTest {
         when(locationDao.findByDatastationAndSha1Sum("station1", "abc")).thenReturn(java.util.Optional.of(existingLocation));
 
         Response response = EXT.target("/transfers")
+            .property(ClientProperties.FOLLOW_REDIRECTS, false)
             .request(MediaType.APPLICATION_JSON)
             .post(Entity.entity(dto, MediaType.APPLICATION_JSON));
 
-        assertThat(response.getStatus()).isEqualTo(409);
-        assertThat(response.readEntity(String.class)).contains("already in the LOB-store");
+        assertThat(response.getStatus()).isEqualTo(303);
+        assertThat(response.getHeaderString("Location")).endsWith("/locations/station1/abc");
 
         verify(dao, org.mockito.Mockito.never()).save(any());
+    }
+
+    @Test
+    void add_transfer_should_return_201_if_already_done_for_different_datastation() {
+        TransferRequestDto dto = new TransferRequestDto()
+            .dataverseFileId(123L)
+            .sha1Sum("abc")
+            .datastation("station1");
+
+        when(dao.findBySha1Sum("abc")).thenReturn(Collections.emptyList());
+        // Location for different datastation should NOT trigger 303 for THIS request
+        when(locationDao.findByDatastationAndSha1Sum("station1", "abc")).thenReturn(java.util.Optional.empty());
+
+        Response response = EXT.target("/transfers")
+            .request(MediaType.APPLICATION_JSON)
+            .post(Entity.entity(dto, MediaType.APPLICATION_JSON));
+
+        assertThat(response.getStatus()).isEqualTo(201);
     }
 }
