@@ -16,6 +16,7 @@
 package nl.knaw.dans.lobstore.core;
 
 import nl.knaw.dans.lobstore.config.DataStationConfig;
+import nl.knaw.dans.lobstore.config.ExternalCommandConfig;
 import nl.knaw.dans.lobstore.config.LobStoreConfig;
 import nl.knaw.dans.lobstore.db.BucketDao;
 import nl.knaw.dans.lobstore.db.LocationDao;
@@ -83,10 +84,12 @@ class VerifyTaskTest {
 
         Map<String, DataStationConfig> datastations = Map.of(datastationName, dsConfig);
 
-        Path bucketFile = uploadDir.resolve(bucketId.toString() + ".tar");
+        Path bucketFile = uploadDir.resolve(bucketId.toString() + ".dmftar");
         Files.createFile(bucketFile);
 
-        String verifyCommand = "echo ${bucketname} ${datastation} ${user} ${host} ${path}";
+        ExternalCommandConfig verifyCommand = new ExternalCommandConfig();
+        verifyCommand.setExecutable("echo");
+        verifyCommand.setArgs(List.of("${bucketname}", "${datastation}", "${user}", "${host}", "${path}"));
         VerifyTask task = new VerifyTask(bucketId, bucketDao, locationDao, verifyCommand, datastations, uploadDir, quotaManager, activeTaskRegistry);
 
         task.run();
@@ -125,11 +128,12 @@ class VerifyTaskTest {
 
         Map<String, DataStationConfig> datastations = Map.of(datastationName, dsConfig);
 
-        Path bucketFile = uploadDir.resolve(bucketId.toString() + ".tar");
+        Path bucketFile = uploadDir.resolve(bucketId.toString() + ".dmftar");
         Files.createFile(bucketFile);
 
         // Command that fails
-        String verifyCommand = "false";
+        ExternalCommandConfig verifyCommand = new ExternalCommandConfig();
+        verifyCommand.setExecutable("false");
         VerifyTask task = new VerifyTask(bucketId, bucketDao, locationDao, verifyCommand, datastations, uploadDir, quotaManager, activeTaskRegistry);
 
         task.run();

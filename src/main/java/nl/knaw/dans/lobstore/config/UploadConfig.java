@@ -27,7 +27,7 @@ public class UploadConfig {
     @NotNull
     private Duration pollingInterval;
     @NotNull
-    private String command;
+    private ExternalCommandConfig command;
     @NotNull
     private String destination;
     @NotNull

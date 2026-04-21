@@ -19,6 +19,7 @@ import io.dropwizard.hibernate.UnitOfWorkAwareProxyFactory;
 import lombok.RequiredArgsConstructor;
 import nl.knaw.dans.lib.util.pollingtaskexec.TaskFactory;
 import nl.knaw.dans.lobstore.config.DataStationConfig;
+import nl.knaw.dans.lobstore.config.ExternalCommandConfig;
 import nl.knaw.dans.lobstore.db.BucketDao;
 
 import java.util.List;
@@ -28,7 +29,7 @@ import java.util.UUID;
 @RequiredArgsConstructor
 public class UploadTaskFactory implements TaskFactory<Bucket> {
     private final BucketDao bucketDao;
-    private final String uploadCommand;
+    private final ExternalCommandConfig uploadCommand;
     private final Map<String, DataStationConfig> datastations;
     private final ActiveTaskRegistry activeTaskRegistry;
     private final UnitOfWorkAwareProxyFactory unitOfWorkAwareProxyFactory;
@@ -42,9 +43,9 @@ public class UploadTaskFactory implements TaskFactory<Bucket> {
         return createUnitOfWorkAwareTask(bucketId, bucketDao, uploadCommand, datastations, activeTaskRegistry);
     }
 
-    private Runnable createUnitOfWorkAwareTask(UUID bucketId, BucketDao bucketDao, String uploadCommand, Map<String, DataStationConfig> datastations, ActiveTaskRegistry activeTaskRegistry) {
+    private Runnable createUnitOfWorkAwareTask(UUID bucketId, BucketDao bucketDao, ExternalCommandConfig uploadCommand, Map<String, DataStationConfig> datastations, ActiveTaskRegistry activeTaskRegistry) {
         return unitOfWorkAwareProxyFactory.create(UploadTask.class,
-            new Class[] { UUID.class, BucketDao.class, String.class, Map.class, ActiveTaskRegistry.class },
+            new Class[] { UUID.class, BucketDao.class, ExternalCommandConfig.class, Map.class, ActiveTaskRegistry.class },
             new Object[] { bucketId, bucketDao, uploadCommand, datastations, activeTaskRegistry });
     }
 }

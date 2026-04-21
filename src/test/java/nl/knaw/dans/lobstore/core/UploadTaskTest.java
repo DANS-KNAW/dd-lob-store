@@ -16,11 +16,13 @@
 package nl.knaw.dans.lobstore.core;
 
 import nl.knaw.dans.lobstore.config.DataStationConfig;
+import nl.knaw.dans.lobstore.config.ExternalCommandConfig;
 import nl.knaw.dans.lobstore.config.LobStoreConfig;
 import nl.knaw.dans.lobstore.db.BucketDao;
 import org.junit.jupiter.api.Test;
 
 import java.nio.file.Path;
+import java.util.List;
 import java.util.Map;
 import java.util.Optional;
 import java.util.UUID;
@@ -56,7 +58,9 @@ class UploadTaskTest {
         Map<String, DataStationConfig> datastations = Map.of(datastationName, dsConfig);
 
         // We use "true" as the command so it always succeeds on Linux/macOS
-        String uploadCommand = "echo ${bucketname} ${datastation} ${user} ${host} ${path}";
+        ExternalCommandConfig uploadCommand = new ExternalCommandConfig();
+        uploadCommand.setExecutable("echo");
+        uploadCommand.setArgs(List.of("${bucketname}", "${datastation}", "${user}", "${host}", "${path}"));
         UploadTask task = new UploadTask(bucketId, bucketDao, uploadCommand, datastations, activeTaskRegistry);
 
         task.run();
@@ -89,7 +93,8 @@ class UploadTaskTest {
         Map<String, DataStationConfig> datastations = Map.of(datastationName, dsConfig);
 
         // Command that fails
-        String uploadCommand = "false";
+        ExternalCommandConfig uploadCommand = new ExternalCommandConfig();
+        uploadCommand.setExecutable("false");
         UploadTask task = new UploadTask(bucketId, bucketDao, uploadCommand, datastations, activeTaskRegistry);
 
         task.run();

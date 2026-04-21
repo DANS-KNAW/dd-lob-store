@@ -97,7 +97,10 @@ transfer:
     pollingInterval: 5s
     minimalBucketSize: 1G
     uploadDirectory: data/upload
-    command: dmftar -cf data/upload/${bucketname}.dmftar --options='-C data/upload/${bucketname}' .
+    command:
+      executable: dmftar
+      workingDirectory: 'data/upload/${bucketname}'
+      args: ["-cf", "data/upload/${bucketname}.dmftar"]
     taskQueue:
       nameFormat: "package-worker-%d"
       maxQueueSize: 5000
@@ -110,7 +113,9 @@ transfer:
   # Uploads a package to the Data Archive
   upload:
     pollingInterval: 5s
-    command: rsync -av --partial --append data/upload/${bucketname}.dmftar ${user}@${host}:${path}/
+    command:
+      executable: rsync
+      args: ["-av", "--partial", "--append", "data/upload/${bucketname}.dmftar", "${user}@${host}:${path}/"]
     destination: /data/vault
     taskQueue:
       nameFormat: "upload-worker-%d"
@@ -124,7 +129,9 @@ transfer:
   # Verifies the integrity of the uploaded package.
   verify:
     pollingInterval: 5s
-    command: dmftar --verify -f ${user}@${host}:${path}/${bucketname.dmftar}
+    command:
+      executable: dmftar
+      args: ["--verify", "-f", "${user}@${host}:${path}/${bucketname}.dmftar"]
     taskQueue:
       nameFormat: "verify-worker-%d"
       maxQueueSize: 5000

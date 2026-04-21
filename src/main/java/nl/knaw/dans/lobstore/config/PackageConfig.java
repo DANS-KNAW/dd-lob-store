@@ -33,7 +33,7 @@ public class PackageConfig {
     @NotNull
     private Path uploadDirectory;
     @NotNull
-    private String command;
+    private ExternalCommandConfig command;
     @NotNull
     private ExecutorServiceFactory taskQueue;
 }

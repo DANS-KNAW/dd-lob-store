@@ -15,6 +15,7 @@
  */
 package nl.knaw.dans.lobstore.core;
 
+import nl.knaw.dans.lobstore.config.ExternalCommandConfig;
 import nl.knaw.dans.lobstore.db.BucketDao;
 import org.junit.jupiter.api.Test;
 import org.slf4j.Logger;
@@ -60,7 +61,9 @@ class PackagingTaskTest {
 
         when(bucketDao.findById(bucketId)).thenReturn(Optional.of(bucket));
 
-        PackagingTask task = new PackagingTask(bucketId, bucketDao, downloadDir, uploadDir, "tar -cf ${bucketname}.tar ${bucketname}", quotaManager, activeTaskRegistry);
+        ExternalCommandConfig packagingCommand = new ExternalCommandConfig();
+        packagingCommand.setExecutable("true");
+        PackagingTask task = new PackagingTask(bucketId, bucketDao, downloadDir, uploadDir, packagingCommand, quotaManager, activeTaskRegistry);
         
         task.run();
 
@@ -96,7 +99,9 @@ class PackagingTaskTest {
         // We'll probably hit an IOException later because the files don't exist, 
         // which is fine as long as it doesn't fail the sanity check.
         
-        PackagingTask task = new PackagingTask(bucketId, bucketDao, downloadDir, uploadDir, "true", quotaManager, activeTaskRegistry);
+        ExternalCommandConfig packagingCommand = new ExternalCommandConfig();
+        packagingCommand.setExecutable("true");
+        PackagingTask task = new PackagingTask(bucketId, bucketDao, downloadDir, uploadDir, packagingCommand, quotaManager, activeTaskRegistry);
         
         task.run();
 

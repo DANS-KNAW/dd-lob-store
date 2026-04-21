@@ -19,13 +19,16 @@ import io.dropwizard.hibernate.UnitOfWork;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import nl.knaw.dans.lobstore.config.DataStationConfig;
+import nl.knaw.dans.lobstore.config.ExternalCommandConfig;
 import nl.knaw.dans.lobstore.db.BucketDao;
 import nl.knaw.dans.lobstore.db.LocationDao;
 import org.apache.commons.exec.CommandLine;
 import org.apache.commons.exec.DefaultExecutor;
 import org.apache.commons.exec.ExecuteException;
 import org.apache.commons.exec.PumpStreamHandler;
+import org.apache.commons.io.FileUtils;
 
+import java.io.File;
 import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.Path;
@@ -38,7 +41,7 @@ public class VerifyTask implements Runnable {
     private final UUID bucketId;
     private final BucketDao bucketDao;
     private final LocationDao locationDao;
-    private final String verifyCommand;
+    private final ExternalCommandConfig verifyCommand;
     private final Map<String, DataStationConfig> datastations;
     private final Path uploadDir;
     private final QuotaManager quotaManager;
@@ -57,14 +60,7 @@ public class VerifyTask implements Runnable {
                 throw new IllegalStateException("DataStation configuration not found for: " + datastationName);
             }
 
-            String command = verifyCommand
-                .replace("${bucketname}", bucketId.toString())
-                .replace("${datastation}", datastationName)
-                .replace("${user}", dsConfig.getLobstore().getUser())
-                .replace("${host}", dsConfig.getLobstore().getHost())
-                .replace("${path}", dsConfig.getLobstore().getPath().toString());
-
-            executeVerifyCommand(command);
+            executeVerifyCommand(bucketId.toString(), datastationName, dsConfig);
 
             bucket.setStatus(BucketStatus.DONE);
             bucketDao.save(bucket);
@@ -78,10 +74,10 @@ public class VerifyTask implements Runnable {
             }
 
             // If the command exits with success the local bucket should be removed
-            Path bucketFile = uploadDir.resolve(bucketId.toString() + ".tar");
+            Path bucketFile = uploadDir.resolve(bucketId.toString() + ".dmftar");
             if (Files.exists(bucketFile)) {
                 log.info("Removing local bucket file: {}", bucketFile);
-                Files.delete(bucketFile);
+                FileUtils.deleteDirectory(bucketFile.toFile());
             }
 
             // and the remaining claim with extension /base should be released.
@@ -99,14 +95,23 @@ public class VerifyTask implements Runnable {
         }
     }
 
-    private void executeVerifyCommand(String command) throws IOException {
-        log.debug("Executing verify command: {}", command);
-        CommandLine commandLine = new CommandLine("sh");
-        commandLine.addArgument("-c");
-        commandLine.addArgument(command, false);
+    private void executeVerifyCommand(String bucketName, String datastationName, DataStationConfig dsConfig) throws IOException {
+        CommandLine commandLine = new CommandLine(verifyCommand.getExecutable());
+        for (String arg : verifyCommand.getArgs()) {
+            commandLine.addArgument(interpolate(arg, bucketName, datastationName, dsConfig));
+        }
 
-        DefaultExecutor executor = new DefaultExecutor.Builder<>().get();
+        log.debug("Executing verify command: {}", commandLine);
+
+        var builder  = new DefaultExecutor.Builder<>();
+        if (verifyCommand.getWorkingDirectory() != null) {
+            String wd = interpolate(verifyCommand.getWorkingDirectory(), bucketName, datastationName, dsConfig);
+            builder.setWorkingDirectory(new File(wd));
+        }
+        var executor = builder.get();
+
         executor.setStreamHandler(new PumpStreamHandler(System.out, System.err));
+
 
         try {
             int exitCode = executor.execute(commandLine);
@@ -116,5 +121,13 @@ public class VerifyTask implements Runnable {
         } catch (ExecuteException e) {
             throw new RuntimeException("Verify command failed", e);
         }
+    }
+
+    private String interpolate(String text, String bucketName, String datastationName, DataStationConfig dsConfig) {
+        return text.replace("${bucketname}", bucketName)
+            .replace("${datastation}", datastationName)
+            .replace("${user}", dsConfig.getLobstore().getUser())
+            .replace("${host}", dsConfig.getLobstore().getHost())
+            .replace("${path}", dsConfig.getLobstore().getPath().toString());
     }
 }

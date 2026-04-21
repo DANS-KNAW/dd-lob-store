@@ -19,6 +19,7 @@ import io.dropwizard.hibernate.UnitOfWorkAwareProxyFactory;
 import lombok.RequiredArgsConstructor;
 import nl.knaw.dans.lib.util.pollingtaskexec.TaskFactory;
 import nl.knaw.dans.lobstore.config.DataStationConfig;
+import nl.knaw.dans.lobstore.config.ExternalCommandConfig;
 import nl.knaw.dans.lobstore.db.BucketDao;
 import nl.knaw.dans.lobstore.db.LocationDao;
 
@@ -31,7 +32,7 @@ import java.util.UUID;
 public class VerifyTaskFactory implements TaskFactory<Bucket> {
     private final BucketDao bucketDao;
     private final LocationDao locationDao;
-    private final String verifyCommand;
+    private final ExternalCommandConfig verifyCommand;
     private final Map<String, DataStationConfig> datastations;
     private final Path uploadDir;
     private final QuotaManager quotaManager;
@@ -47,9 +48,9 @@ public class VerifyTaskFactory implements TaskFactory<Bucket> {
         return createUnitOfWorkAwareTask(bucketId, bucketDao, locationDao, verifyCommand, datastations, uploadDir, quotaManager, activeTaskRegistry);
     }
 
-    private Runnable createUnitOfWorkAwareTask(UUID bucketId, BucketDao bucketDao, LocationDao locationDao, String verifyCommand, Map<String, DataStationConfig> datastations, Path uploadDir, QuotaManager quotaManager, ActiveTaskRegistry activeTaskRegistry) {
+    private Runnable createUnitOfWorkAwareTask(UUID bucketId, BucketDao bucketDao, LocationDao locationDao, ExternalCommandConfig verifyCommand, Map<String, DataStationConfig> datastations, Path uploadDir, QuotaManager quotaManager, ActiveTaskRegistry activeTaskRegistry) {
         return unitOfWorkAwareProxyFactory.create(VerifyTask.class,
-            new Class[] { UUID.class, BucketDao.class, LocationDao.class, String.class, Map.class, Path.class, QuotaManager.class, ActiveTaskRegistry.class },
+            new Class[] { UUID.class, BucketDao.class, LocationDao.class, ExternalCommandConfig.class, Map.class, Path.class, QuotaManager.class, ActiveTaskRegistry.class },
             new Object[] { bucketId, bucketDao, locationDao, verifyCommand, datastations, uploadDir, quotaManager, activeTaskRegistry });
     }
 }

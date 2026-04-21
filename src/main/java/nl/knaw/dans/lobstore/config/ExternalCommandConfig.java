@@ -16,18 +16,16 @@
 
 package nl.knaw.dans.lobstore.config;
 
-import io.dropwizard.util.Duration;
 import lombok.Data;
-import nl.knaw.dans.lib.util.ExecutorServiceFactory;
 
 import javax.validation.constraints.NotNull;
+import java.util.Collections;
+import java.util.List;
 
 @Data
-public class VerifyConfig {
+public class ExternalCommandConfig {
     @NotNull
-    private Duration pollingInterval;
-    @NotNull
-    private ExternalCommandConfig command;
-    @NotNull
-    private ExecutorServiceFactory taskQueue;
+    private String executable;
+    private String workingDirectory;
+    private List<String> args = Collections.emptyList();
 }

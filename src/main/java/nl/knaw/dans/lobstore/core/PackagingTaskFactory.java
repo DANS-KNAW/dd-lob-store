@@ -19,6 +19,7 @@ import io.dropwizard.hibernate.UnitOfWorkAwareProxyFactory;
 import lombok.RequiredArgsConstructor;
 import nl.knaw.dans.lib.util.pollingtaskexec.TaskFactory;
 import nl.knaw.dans.lobstore.config.DownloadConfig;
+import nl.knaw.dans.lobstore.config.ExternalCommandConfig;
 import nl.knaw.dans.lobstore.config.PackageConfig;
 import nl.knaw.dans.lobstore.db.BucketDao;
 import nl.knaw.dans.lobstore.db.TransferRequestDao;
@@ -47,9 +48,9 @@ public class PackagingTaskFactory implements TaskFactory<Bucket> {
             packageConfig.getCommand(), quotaManager, activeTaskRegistry);
     }
 
-    private Runnable createUnitOfWorkAwareTask(UUID bucketId, BucketDao bucketDao, Path downloadDir, Path uploadDir, String packagingCommand, QuotaManager quotaManager, ActiveTaskRegistry activeTaskRegistry) {
+    private Runnable createUnitOfWorkAwareTask(UUID bucketId, BucketDao bucketDao, Path downloadDir, Path uploadDir, ExternalCommandConfig packagingCommand, QuotaManager quotaManager, ActiveTaskRegistry activeTaskRegistry) {
         return unitOfWorkAwareProxyFactory.create(PackagingTask.class,
-            new Class[] { UUID.class, BucketDao.class, Path.class, Path.class, String.class, QuotaManager.class, ActiveTaskRegistry.class },
+            new Class[] { UUID.class, BucketDao.class, Path.class, Path.class, ExternalCommandConfig.class, QuotaManager.class, ActiveTaskRegistry.class },
             new Object[] { bucketId, bucketDao, downloadDir, uploadDir, packagingCommand, quotaManager, activeTaskRegistry });
     }
 }
