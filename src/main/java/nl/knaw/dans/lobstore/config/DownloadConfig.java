@@ -16,39 +16,25 @@
 
 package nl.knaw.dans.lobstore.config;
 
-import io.dropwizard.client.JerseyClientConfiguration;
-import io.dropwizard.core.Configuration;
-import io.dropwizard.db.DataSourceFactory;
 import io.dropwizard.util.DataSize;
+import io.dropwizard.util.Duration;
 import lombok.Data;
-import lombok.EqualsAndHashCode;
-import nl.knaw.dans.lib.util.DataverseClientFactory;
+import nl.knaw.dans.lib.util.ExecutorServiceFactory;
 
-import javax.validation.Valid;
 import javax.validation.constraints.NotNull;
-import java.util.List;
-import java.util.Map;
+import java.nio.file.Path;
 
 @Data
-@EqualsAndHashCode(callSuper = true)
-public class DdLobStoreConfig extends Configuration {
-
-    @Valid
+public class DownloadConfig {
     @NotNull
-    private DataSourceFactory database = new DataSourceFactory();
-
-    @Valid
-    @NotNull
-    private JerseyClientConfiguration httpClient = new JerseyClientConfiguration();
-
-    @Valid
-    @NotNull
-    private TransferConfig transfer;
-
-    @Valid
-    @NotNull
-    private Map<String, DataStationConfig> datastations;
+    private Duration pollingInterval;
+    private DataSize chunkSize = DataSize.gigabytes(1);
+    private DataSize margin = DataSize.megabytes(10);
 
     @NotNull
-    private Map<String, DataSize> diskSpace;
+    private Path downloadDirectory;
+    @NotNull
+    private ExecutorServiceFactory taskQueue;
+    private int maxTotalChunkThreads = 20;
+    private int maxChunksPerFile = 4;
 }

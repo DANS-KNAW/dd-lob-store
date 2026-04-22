@@ -16,39 +16,20 @@
 
 package nl.knaw.dans.lobstore.config;
 
-import io.dropwizard.client.JerseyClientConfiguration;
-import io.dropwizard.core.Configuration;
-import io.dropwizard.db.DataSourceFactory;
-import io.dropwizard.util.DataSize;
+import io.dropwizard.util.Duration;
 import lombok.Data;
-import lombok.EqualsAndHashCode;
-import nl.knaw.dans.lib.util.DataverseClientFactory;
+import nl.knaw.dans.lib.util.ExecutorServiceFactory;
 
-import javax.validation.Valid;
 import javax.validation.constraints.NotNull;
-import java.util.List;
-import java.util.Map;
 
 @Data
-@EqualsAndHashCode(callSuper = true)
-public class DdLobStoreConfig extends Configuration {
-
-    @Valid
+public class UploadConfig {
     @NotNull
-    private DataSourceFactory database = new DataSourceFactory();
-
-    @Valid
+    private Duration pollingInterval;
     @NotNull
-    private JerseyClientConfiguration httpClient = new JerseyClientConfiguration();
-
-    @Valid
+    private ExternalCommandConfig command;
     @NotNull
-    private TransferConfig transfer;
-
-    @Valid
+    private String destination;
     @NotNull
-    private Map<String, DataStationConfig> datastations;
-
-    @NotNull
-    private Map<String, DataSize> diskSpace;
+    private ExecutorServiceFactory taskQueue;
 }

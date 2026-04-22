@@ -1,15 +1,146 @@
-
+#
+# dd-lob-store configuration file
+#
 server:
   applicationContextPath: /
   adminContextPath: /
   applicationConnectors:
     - type: http
-      # Replace with port number unique for this service
-      port: 20000
+      port: 20385
   adminConnectors:
     - type: http
-      # Replace with port number unique for this service
-      port: 20001
+      port: 20386
+  # Logs the requests to the Jetty http server
+  requestLog:
+    appenders:
+      - type: file
+        archive: false
+        timeZone: system
+        currentLogFilename: /var/opt/dans.knaw.nl/log/dd-lob-store/request.log
+
+datastations:
+  archaeology:
+    dataverse:
+      baseUrl: 'https://dev.archaeology.datastations.nl'
+      apiKey: 'changeme'
+    lobstore:
+      user: changeme
+      host: changeme@example.com
+      path: changeme
+  test_archaeology:
+    dataverse:
+      baseUrl: 'https://test.archaeology.datastations.nl'
+      apiKey: changeme
+    lobstore:
+      user: danstst0
+      host: archive.surfsara.nl
+      path: 'archive/data-vault/test/archaeology.lobs'
+
+
+database:
+  driverClass: org.postgresql.Driver
+  user: dd_lob_store_local_test
+  password: dd_lob_store_local_test
+  url: jdbc:postgresql://dev.transfer.dans-data.nl:5432/dd_lob_store_local_test
+  logValidationErrors: true
+  properties:
+    hibernate.dialect: 'org.hibernate.dialect.PostgreSQL95Dialect'
+    hibernate.hbm2ddl.auto: update
+
+httpClient:
+  timeout: 500ms
+  connectionTimeout: 500ms
+  connectionRequestTimeout: 500ms
+  timeToLive: 1h
+  cookiesEnabled: false
+  maxConnections: 1024
+  maxConnectionsPerRoute: 1024
+  keepAlive: 0s
+  userAgent: dd-lob-store
+
+# Total about disk space to manage for the download.downloadDirectory and package.uploadDirectory. These directories must
+# be on the same filesystem. The total available space on this filesystem must be, at minimum, the sum of these two values.
+diskSpace:
+  download: 1500GB
+  upload: 1500GB
+
+transfer:
+  # Retrieves the file metadata from the targeted Data Station, verifies that the checksum given in the metadata matches the
+  # one expected by the client and records the file length in the download request.
+  inspect:
+    pollingInterval: 5s
+    taskQueue:
+      nameFormat: "inspect-worker-%d"
+      maxQueueSize: 5000
+      # Number of threads will be increased when maxQueueSize is exceeded.
+      minThreads: 1
+      # No more than maxThreads will be created, though
+      maxThreads: 3
+      # Threads will die after 60 seconds of idleness
+      keepAliveTime: 60 seconds
+  # Downloads the file in chunks, verifies the checksum and concatenates the chunks into a single file.
+  download:
+    pollingInterval: 5s
+    chunkSize: 1G
+    downloadDirectory: data/download
+    taskQueue:
+      nameFormat: "download-worker-%d"
+      maxQueueSize: 5000
+      # Number of threads will be increased when maxQueueSize is exceeded.
+      minThreads: 1
+      # No more than maxThreads will be created, though
+      maxThreads: 3
+      # Threads will die after 60 seconds of idleness
+      keepAliveTime: 60 seconds
+  # Packages files worth at least a minimal bucket size of data into a package.
+  package:
+    pollingInterval: 5s
+    minimalBucketSize: 1G
+    uploadDirectory: data/upload
+    command:
+      executable: dmftar
+      workingDirectory: 'data/upload/${bucketname}'
+      args: ["-cf", "data/upload/${bucketname}.dmftar"]
+    taskQueue:
+      nameFormat: "package-worker-%d"
+      maxQueueSize: 5000
+      # Number of threads will be increased when maxQueueSize is exceeded.
+      minThreads: 1
+      # No more than maxThreads will be created, though
+      maxThreads: 3
+      # Threads will die after 60 seconds of idleness
+      keepAliveTime: 60 seconds
+  # Uploads a package to the Data Archive
+  upload:
+    pollingInterval: 5s
+    command:
+      executable: rsync
+      args: ["-av", "--partial", "--append", "data/upload/${bucketname}.dmftar", "${user}@${host}:${path}/"]
+    destination: /data/vault
+    taskQueue:
+      nameFormat: "upload-worker-%d"
+      maxQueueSize: 5000
+      # Number of threads will be increased when maxQueueSize is exceeded.
+      minThreads: 1
+      # No more than maxThreads will be created, though
+      maxThreads: 3
+      # Threads will die after 60 seconds of idleness
+      keepAliveTime: 60 seconds
+  # Verifies the integrity of the uploaded package.
+  verify:
+    pollingInterval: 5s
+    command:
+      executable: dmftar
+      args: ["--verify", "-f", "${user}@${host}:${path}/${bucketname}.dmftar"]
+    taskQueue:
+      nameFormat: "verify-worker-%d"
+      maxQueueSize: 5000
+      # Number of threads will be increased when maxQueueSize is exceeded.
+      minThreads: 1
+      # No more than maxThreads will be created, though
+      maxThreads: 3
+      # Threads will die after 60 seconds of idleness
+      keepAliveTime: 60 seconds
 
 #
 # See https://www.dropwizard.io/en/latest/manual/configuration.html#logging
@@ -17,12 +148,12 @@ server:
 logging:
   level: INFO
   appenders:
-    - type: console
-      logFormat: "%-5p [%d{ISO8601}] [%t] %c: %m%n%rEx"
-
     - type: file
       archive: false
+      timeZone: system
       currentLogFilename: data/dd-lob-store.log
+    - type: console
+      # Used in combination with journald, which already adds the timestamp
+      logFormat: "%-5p %c{0}: %m%n%dwREx"
   loggers:
-    'nl.knaw.dans': DEBUG
     'org.hibernate.engine.internal.StatisticalLoggingSessionEventListener': 'OFF'

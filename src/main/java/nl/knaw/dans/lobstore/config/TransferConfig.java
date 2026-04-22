@@ -16,39 +16,31 @@
 
 package nl.knaw.dans.lobstore.config;
 
-import io.dropwizard.client.JerseyClientConfiguration;
-import io.dropwizard.core.Configuration;
-import io.dropwizard.db.DataSourceFactory;
-import io.dropwizard.util.DataSize;
+import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
+import com.fasterxml.jackson.annotation.JsonProperty;
 import lombok.Data;
-import lombok.EqualsAndHashCode;
-import nl.knaw.dans.lib.util.DataverseClientFactory;
 
 import javax.validation.Valid;
 import javax.validation.constraints.NotNull;
-import java.util.List;
-import java.util.Map;
 
 @Data
-@EqualsAndHashCode(callSuper = true)
-public class DdLobStoreConfig extends Configuration {
-
+@JsonIgnoreProperties(ignoreUnknown = true)
+public class TransferConfig {
+    @NotNull
     @Valid
+    private InspectConfig inspect;
     @NotNull
-    private DataSourceFactory database = new DataSourceFactory();
-
     @Valid
+    private DownloadConfig download;
     @NotNull
-    private JerseyClientConfiguration httpClient = new JerseyClientConfiguration();
-
     @Valid
+    @JsonProperty("package")
+    private PackageConfig packageConfig;
     @NotNull
-    private TransferConfig transfer;
-
     @Valid
+    private UploadConfig upload;
     @NotNull
-    private Map<String, DataStationConfig> datastations;
+    @Valid
+    private VerifyConfig verify;
 
-    @NotNull
-    private Map<String, DataSize> diskSpace;
 }

@@ -29,14 +29,16 @@
     <artifactId>dd-lob-store</artifactId>
     <version>0.1.0-SNAPSHOT</version>
 
-    <name>Dd Lob Store</name>
+    <name>DD LOB Store</name>
     <url>https://github.com/DANS-KNAW/dd-lob-store</url>
-    <description>Manages a DANS Data Vault Large Object Store</description>
+    <description>Manages DANS Data Vault Large Object Stores</description>
     <inceptionYear>2026</inceptionYear>
 
     <properties>
         <main-class>nl.knaw.dans.lobstore.DdLobStoreApplication</main-class>
-        <dd-lob-store-api.version>0.1.0-SNAPSHOT</dd-lob-store-api.version>
+        <dd-lob-store-api.version>0.1.0</dd-lob-store-api.version>
+        <dans-java-utils.version>3.0.0</dans-java-utils.version>
+        <dans-dataverse-client-lib.version>2.0.0</dans-dataverse-client-lib.version>
     </properties>
 
     <scm>
@@ -46,17 +48,84 @@
 
     <dependencies>
         <dependency>
+            <groupId>nl.knaw.dans</groupId>
+            <artifactId>dans-dataverse-client-lib</artifactId>
+        </dependency>
+        <dependency>
             <groupId>io.dropwizard</groupId>
             <artifactId>dropwizard-core</artifactId>
+        </dependency>
+        <dependency>
+            <groupId>io.dropwizard</groupId>
+            <artifactId>dropwizard-hibernate</artifactId>
+        </dependency>
+        <dependency>
+            <groupId>org.hibernate.validator</groupId>
+            <artifactId>hibernate-validator</artifactId>
+        </dependency>
+        <dependency>
+            <groupId>org.postgresql</groupId>
+            <artifactId>postgresql</artifactId>
+        </dependency>
+        <dependency>
+            <groupId>com.h2database</groupId>
+            <artifactId>h2</artifactId>
+            <scope>test</scope>
+        </dependency>
+        <dependency>
+            <groupId>io.dropwizard</groupId>
+            <artifactId>dropwizard-client</artifactId>
+        </dependency>
+        <dependency>
+            <groupId>nl.knaw.dans</groupId>
+            <artifactId>dans-java-utils</artifactId>
         </dependency>
         <dependency>
             <groupId>org.projectlombok</groupId>
             <artifactId>lombok</artifactId>
         </dependency>
         <dependency>
+            <groupId>org.mapstruct</groupId>
+            <artifactId>mapstruct</artifactId>
+            <version>${mapstruct.version}</version>
+        </dependency>
+        <dependency>
             <groupId>nl.knaw.dans</groupId>
             <artifactId>dd-lob-store-api</artifactId>
             <version>${dd-lob-store-api.version}</version>
+        </dependency>
+        <dependency>
+            <groupId>commons-codec</groupId>
+            <artifactId>commons-codec</artifactId>
+        </dependency>
+        <dependency>
+            <groupId>org.apache.commons</groupId>
+            <artifactId>commons-exec</artifactId>
+        </dependency>
+        <dependency>
+            <groupId>io.dropwizard</groupId>
+            <artifactId>dropwizard-testing</artifactId>
+            <scope>test</scope>
+        </dependency>
+        <dependency>
+            <groupId>org.junit.jupiter</groupId>
+            <artifactId>junit-jupiter-api</artifactId>
+            <scope>test</scope>
+        </dependency>
+        <dependency>
+            <groupId>org.mockito</groupId>
+            <artifactId>mockito-core</artifactId>
+            <scope>test</scope>
+        </dependency>
+        <dependency>
+            <groupId>org.mockito</groupId>
+            <artifactId>mockito-junit-jupiter</artifactId>
+            <scope>test</scope>
+        </dependency>
+        <dependency>
+            <groupId>org.assertj</groupId>
+            <artifactId>assertj-core</artifactId>
+            <scope>test</scope>
         </dependency>
     </dependencies>
 
@@ -67,6 +136,15 @@
                 <artifactId>jacoco-maven-plugin</artifactId>
             </plugin>
             <plugin>
+                <groupId>com.mycila</groupId>
+                <artifactId>license-maven-plugin</artifactId>
+                <configuration combine.children="override">
+                    <excludes combine.children="append">
+                        <exclude>modules/</exclude>
+                    </excludes>
+                </configuration>
+            </plugin>
+            <plugin>
                 <groupId>org.apache.maven.plugins</groupId>
                 <artifactId>maven-compiler-plugin</artifactId>
                 <configuration combine.children="override">
@@ -75,6 +153,11 @@
                             <groupId>org.projectlombok</groupId>
                             <artifactId>lombok</artifactId>
                             <version>${lombok.version}</version>
+                        </path>
+                        <path>
+                            <groupId>org.mapstruct</groupId>
+                            <artifactId>mapstruct-processor</artifactId>
+                            <version>${mapstruct.version}</version>
                         </path>
                     </annotationProcessorPaths>
                 </configuration>
