@@ -125,7 +125,7 @@ transfer:
     pollingInterval: 5s
     command:
       executable: /usr/bin/ssh
-      args: ["${user}@${host}", "dmftar --verify -f ${path}/${bucketname}.dmftar"]
+      args: ["${user}@${host}", "dmftar", "--verify", "-f",  "${path}/${bucketname}.dmftar"]
     taskQueue:
       nameFormat: "verify-worker-%d"
       maxQueueSize: 5000

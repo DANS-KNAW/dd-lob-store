@@ -84,8 +84,8 @@ class VerifyTaskTest {
 
         Map<String, DataStationConfig> datastations = Map.of(datastationName, dsConfig);
 
-        Path bucketFile = uploadDir.resolve(bucketId.toString() + ".dmftar");
-        Files.createFile(bucketFile);
+        Path bucketFile = uploadDir.resolve(bucketId + ".dmftar");
+        Files.createDirectory(bucketFile);
 
         ExternalCommandConfig verifyCommand = new ExternalCommandConfig();
         verifyCommand.setExecutable("echo");
@@ -128,8 +128,8 @@ class VerifyTaskTest {
 
         Map<String, DataStationConfig> datastations = Map.of(datastationName, dsConfig);
 
-        Path bucketFile = uploadDir.resolve(bucketId.toString() + ".dmftar");
-        Files.createFile(bucketFile);
+        Path bucketFile = uploadDir.resolve(bucketId + ".dmftar");
+        Files.createDirectory(bucketFile);
 
         // Command that fails
         ExternalCommandConfig verifyCommand = new ExternalCommandConfig();
