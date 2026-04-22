@@ -19,7 +19,7 @@ import lombok.RequiredArgsConstructor;
 import nl.knaw.dans.lib.util.pollingtaskexec.TaskSource;
 import nl.knaw.dans.lobstore.db.TransferRequestDao;
 
-import java.util.List;
+import java.util.Optional;
 
 /**
  * Returns {@link TransferRequest}s that are ready for inspection. The next inputs are ordered from older to newer.
@@ -30,14 +30,14 @@ public class InspectTaskSource implements TaskSource<TransferRequest> {
     private final ActiveTaskRegistry activeTaskRegistry;
 
     @Override
-    public List<TransferRequest> nextInputs() {
+    public Optional<TransferRequest> nextInput() {
         var optItem = transferRequestDao.findNextInspectableItem();
         if (optItem.isPresent()) {
             var item = optItem.get();
             if (activeTaskRegistry.add(item.getId())) {
-                return List.of(item);
+                return Optional.of(item);
             }
         }
-        return List.of();
+        return Optional.empty();
     }
 }

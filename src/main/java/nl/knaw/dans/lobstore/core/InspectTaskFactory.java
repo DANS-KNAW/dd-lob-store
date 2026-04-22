@@ -21,7 +21,6 @@ import nl.knaw.dans.lib.dataverse.DataverseClient;
 import nl.knaw.dans.lib.util.pollingtaskexec.TaskFactory;
 import nl.knaw.dans.lobstore.db.TransferRequestDao;
 
-import java.util.List;
 import java.util.Map;
 import java.util.UUID;
 
@@ -33,11 +32,7 @@ public class InspectTaskFactory implements TaskFactory<TransferRequest> {
     private final UnitOfWorkAwareProxyFactory unitOfWorkAwareProxyFactory;
 
     @Override
-    public Runnable create(List<TransferRequest> records) {
-        if (records.size() != 1) {
-            throw new IllegalArgumentException("Exactly one record is expected, but got " + records.size());
-        }
-        var transferRequest = records.get(0);
+    public Runnable create(TransferRequest transferRequest) {
         return createUnitOfWorkAwareTask(transferRequest.getId(), transferRequestDao, dataverseClients.get(transferRequest.getDatastation()));
     }
 

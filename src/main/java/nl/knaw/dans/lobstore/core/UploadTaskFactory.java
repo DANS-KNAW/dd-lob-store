@@ -22,7 +22,6 @@ import nl.knaw.dans.lobstore.config.DataStationConfig;
 import nl.knaw.dans.lobstore.config.ExternalCommandConfig;
 import nl.knaw.dans.lobstore.db.BucketDao;
 
-import java.util.List;
 import java.util.Map;
 import java.util.UUID;
 
@@ -35,12 +34,8 @@ public class UploadTaskFactory implements TaskFactory<Bucket> {
     private final UnitOfWorkAwareProxyFactory unitOfWorkAwareProxyFactory;
 
     @Override
-    public Runnable create(List<Bucket> records) {
-        if (records.isEmpty()) {
-            throw new IllegalArgumentException("At least one record is expected");
-        }
-        UUID bucketId = records.get(0).getId();
-        return createUnitOfWorkAwareTask(bucketId, bucketDao, uploadCommand, datastations, activeTaskRegistry);
+    public Runnable create(Bucket bucket) {
+        return createUnitOfWorkAwareTask(bucket.getId(), bucketDao, uploadCommand, datastations, activeTaskRegistry);
     }
 
     private Runnable createUnitOfWorkAwareTask(UUID bucketId, BucketDao bucketDao, ExternalCommandConfig uploadCommand, Map<String, DataStationConfig> datastations, ActiveTaskRegistry activeTaskRegistry) {

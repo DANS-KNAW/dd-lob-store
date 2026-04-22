@@ -19,6 +19,7 @@ import nl.knaw.dans.lobstore.db.BucketDao;
 import org.junit.jupiter.api.Test;
 
 import java.util.List;
+import java.util.Optional;
 import java.util.UUID;
 
 import static org.assertj.core.api.Assertions.assertThat;
@@ -31,21 +32,21 @@ class UploadTaskSourceTest {
     private final UploadTaskSource source = new UploadTaskSource(bucketDao, activeTaskRegistry);
 
     @Test
-    void nextInputs_should_return_interrupted_uploading_bucket() {
+    void nextInput_should_return_interrupted_uploading_bucket() {
         UUID bucketId = UUID.randomUUID();
         Bucket bucket = Bucket.builder().id(bucketId).status(BucketStatus.UPLOADING).build();
 
         when(bucketDao.findByStatus(BucketStatus.UPLOADING)).thenReturn(List.of(bucket));
         when(activeTaskRegistry.contains(bucketId)).thenReturn(false);
 
-        List<Bucket> result = source.nextInputs();
+        Optional<Bucket> result = source.nextInput();
 
-        assertThat(result).containsExactly(bucket);
+        assertThat(result).contains(bucket);
         verify(activeTaskRegistry).add(bucketId);
     }
 
     @Test
-    void nextInputs_should_return_packaged_bucket_and_set_to_uploading() {
+    void nextInput_should_return_packaged_bucket_and_set_to_uploading() {
         UUID bucketId = UUID.randomUUID();
         Bucket bucket = Bucket.builder().id(bucketId).status(BucketStatus.PACKAGED).build();
 
@@ -53,16 +54,16 @@ class UploadTaskSourceTest {
         when(bucketDao.findByStatus(BucketStatus.PACKAGED)).thenReturn(List.of(bucket));
         when(activeTaskRegistry.contains(bucketId)).thenReturn(false);
 
-        List<Bucket> result = source.nextInputs();
+        Optional<Bucket> result = source.nextInput();
 
-        assertThat(result).containsExactly(bucket);
+        assertThat(result).contains(bucket);
         assertThat(bucket.getStatus()).isEqualTo(BucketStatus.UPLOADING);
         verify(bucketDao).save(bucket);
         verify(activeTaskRegistry).add(bucketId);
     }
 
     @Test
-    void nextInputs_should_return_empty_if_all_active() {
+    void nextInput_should_return_empty_if_all_active() {
         UUID bucketId = UUID.randomUUID();
         Bucket bucket = Bucket.builder().id(bucketId).status(BucketStatus.UPLOADING).build();
 
@@ -70,7 +71,7 @@ class UploadTaskSourceTest {
         when(activeTaskRegistry.contains(bucketId)).thenReturn(true);
         when(bucketDao.findByStatus(BucketStatus.PACKAGED)).thenReturn(List.of());
 
-        List<Bucket> result = source.nextInputs();
+        Optional<Bucket> result = source.nextInput();
 
         assertThat(result).isEmpty();
     }

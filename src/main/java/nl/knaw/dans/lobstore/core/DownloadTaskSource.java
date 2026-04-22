@@ -19,7 +19,7 @@ import lombok.RequiredArgsConstructor;
 import nl.knaw.dans.lib.util.pollingtaskexec.TaskSource;
 import nl.knaw.dans.lobstore.db.TransferRequestDao;
 
-import java.util.List;
+import java.util.Optional;
 
 /**
  * Returns {@link TransferRequest}s that are ready for download. The next inputs are ordered from older to newer.
@@ -34,7 +34,7 @@ public class DownloadTaskSource implements TaskSource<TransferRequest> {
     private final long margin;
 
     @Override
-    public List<TransferRequest> nextInputs() {
+    public Optional<TransferRequest> nextInput() {
         var optItem = transferRequestDao.findNextDownloadableItem();
         if (optItem.isPresent()) {
             var item = optItem.get();
@@ -43,7 +43,7 @@ public class DownloadTaskSource implements TaskSource<TransferRequest> {
                     if (quotaManager.ensureClaimed(item.getId() + "/extra", TARGET_DOWNLOAD, item.getFileSize() + margin)) {
                         item.setStatus(TransferRequestStatus.DOWNLOADING);
                         transferRequestDao.save(item);
-                        return List.of(item);
+                        return Optional.of(item);
                     }
                     // DO NOT DELETE: IMPORTANT EXPLANATION FOR FUTURE MAINTENANCE.
                     // else {
@@ -55,6 +55,6 @@ public class DownloadTaskSource implements TaskSource<TransferRequest> {
                 activeTaskRegistry.remove(item.getId());
             }
         }
-        return List.of();
+        return Optional.empty();
     }
 }

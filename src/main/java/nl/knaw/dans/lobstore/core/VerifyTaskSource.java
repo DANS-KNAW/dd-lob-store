@@ -20,7 +20,7 @@ import lombok.extern.slf4j.Slf4j;
 import nl.knaw.dans.lib.util.pollingtaskexec.TaskSource;
 import nl.knaw.dans.lobstore.db.BucketDao;
 
-import java.util.List;
+import java.util.Optional;
 
 @Slf4j
 @RequiredArgsConstructor
@@ -30,14 +30,14 @@ public class VerifyTaskSource implements TaskSource<Bucket> {
     private final ActiveTaskRegistry activeTaskRegistry;
 
     @Override
-    public List<Bucket> nextInputs() {
+    public Optional<Bucket> nextInput() {
         // 1. Check for interrupted buckets in VERIFYING state
         var interruptedBuckets = bucketDao.findByStatus(BucketStatus.VERIFYING);
         for (var bucket : interruptedBuckets) {
             if (!activeTaskRegistry.contains(bucket.getId())) {
                 log.info("Restarting interrupted verify task for bucket {}", bucket.getId());
                 activeTaskRegistry.add(bucket.getId());
-                return List.of(bucket);
+                return Optional.of(bucket);
             }
         }
 
@@ -49,10 +49,10 @@ public class VerifyTaskSource implements TaskSource<Bucket> {
                 bucket.setStatus(BucketStatus.VERIFYING);
                 bucketDao.save(bucket);
                 activeTaskRegistry.add(bucket.getId());
-                return List.of(bucket);
+                return Optional.of(bucket);
             }
         }
 
-        return List.of();
+        return Optional.empty();
     }
 }

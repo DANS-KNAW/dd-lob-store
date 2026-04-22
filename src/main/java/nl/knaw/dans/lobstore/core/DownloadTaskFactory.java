@@ -22,7 +22,6 @@ import nl.knaw.dans.lib.util.pollingtaskexec.TaskFactory;
 import nl.knaw.dans.lobstore.config.DownloadConfig;
 import nl.knaw.dans.lobstore.db.TransferRequestDao;
 
-import java.util.List;
 import java.util.Map;
 import java.util.UUID;
 import java.util.concurrent.ExecutorService;
@@ -38,11 +37,7 @@ public class DownloadTaskFactory implements TaskFactory<TransferRequest> {
     private final ExecutorService chunkDownloadExecutor;
 
     @Override
-    public Runnable create(List<TransferRequest> records) {
-        if (records.size() != 1) {
-            throw new IllegalArgumentException("Exactly one record is expected, but got " + records.size());
-        }
-        var transferRequest = records.get(0);
+    public Runnable create(TransferRequest transferRequest) {
         return createUnitOfWorkAwareTask(transferRequest.getId(), transferRequestDao,
             dataverseClients.get(transferRequest.getDatastation()), downloadConfig);
     }

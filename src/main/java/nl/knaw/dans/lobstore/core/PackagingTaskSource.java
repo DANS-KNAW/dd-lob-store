@@ -21,8 +21,7 @@ import nl.knaw.dans.lib.util.pollingtaskexec.TaskSource;
 import nl.knaw.dans.lobstore.db.BucketDao;
 import nl.knaw.dans.lobstore.db.TransferRequestDao;
 
-import java.util.ArrayList;
-import java.util.List;
+import java.util.Optional;
 import java.util.UUID;
 
 @Slf4j
@@ -39,14 +38,14 @@ public class PackagingTaskSource implements TaskSource<Bucket> {
     private final long margin;
 
     @Override
-    public List<Bucket> nextInputs() {
+    public Optional<Bucket> nextInput() {
         // 1. Check for interrupted buckets
         var interruptedBuckets = bucketDao.findByStatus(BucketStatus.PACKAGING);
         for (var bucket : interruptedBuckets) {
             if (!activeTaskRegistry.contains(bucket.getId())) {
                 log.info("Restarting interrupted packaging task for bucket {}", bucket.getId());
                 activeTaskRegistry.add(bucket.getId());
-                return List.of(bucket);
+                return Optional.of(bucket);
             }
         }
 
@@ -54,7 +53,7 @@ public class PackagingTaskSource implements TaskSource<Bucket> {
         var readyDatastations = transferRequestDao.findDatastationsReadyForPackaging(minimalBucketSize);
         if (readyDatastations.isEmpty()) {
             log.debug("No datastations meet the minimal bucket size ({})", minimalBucketSize);
-            return List.of();
+            return Optional.empty();
         }
 
         // 3. Take the first ready datastation (the one with the oldest pending item)
@@ -83,9 +82,9 @@ public class PackagingTaskSource implements TaskSource<Bucket> {
             bucket.setTransferRequests(itemsToPackage);
 
             activeTaskRegistry.add(bucketId);
-            return List.of(bucket);
+            return Optional.of(bucket);
         }
 
-        return List.of();
+        return Optional.empty();
     }
 }

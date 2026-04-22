@@ -18,9 +18,9 @@ package nl.knaw.dans.lobstore.core;
 import nl.knaw.dans.lobstore.db.BucketDao;
 import nl.knaw.dans.lobstore.db.TransferRequestDao;
 import org.junit.jupiter.api.Test;
-import org.mockito.Mockito;
 
 import java.util.List;
+import java.util.Optional;
 import java.util.UUID;
 
 import static org.assertj.core.api.Assertions.assertThat;
@@ -35,7 +35,7 @@ class PackagingTaskSourceTest {
     private final ActiveTaskRegistry activeTaskRegistry = new ActiveTaskRegistry();
 
     @Test
-    void nextInputs_should_prioritize_interrupted_buckets() {
+    void nextInput_should_prioritize_interrupted_buckets() {
         UUID interruptedBucketId = UUID.randomUUID();
         TransferRequest tr = TransferRequest.builder().id(UUID.randomUUID()).build();
         Bucket interruptedBucket = Bucket.builder()
@@ -48,14 +48,14 @@ class PackagingTaskSourceTest {
 
         PackagingTaskSource source = new PackagingTaskSource(transferRequestDao, bucketDao, quotaManager, activeTaskRegistry, 1000, 100);
         
-        List<Bucket> result = source.nextInputs();
+        Optional<Bucket> result = source.nextInput();
         
-        assertThat(result).containsExactly(interruptedBucket);
+        assertThat(result).contains(interruptedBucket);
         assertThat(activeTaskRegistry.contains(interruptedBucketId)).isTrue();
     }
 
     @Test
-    void nextInputs_should_not_pick_up_already_active_interrupted_buckets() {
+    void nextInput_should_not_pick_up_already_active_interrupted_buckets() {
         UUID activeBucketId = UUID.randomUUID();
         activeTaskRegistry.add(activeBucketId);
         
@@ -71,7 +71,7 @@ class PackagingTaskSourceTest {
 
         PackagingTaskSource source = new PackagingTaskSource(transferRequestDao, bucketDao, quotaManager, activeTaskRegistry, 1000, 100);
         
-        List<Bucket> result = source.nextInputs();
+        Optional<Bucket> result = source.nextInput();
         
         assertThat(result).isEmpty();
     }

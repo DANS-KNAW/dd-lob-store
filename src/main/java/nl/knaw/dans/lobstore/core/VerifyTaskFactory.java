@@ -24,7 +24,6 @@ import nl.knaw.dans.lobstore.db.BucketDao;
 import nl.knaw.dans.lobstore.db.LocationDao;
 
 import java.nio.file.Path;
-import java.util.List;
 import java.util.Map;
 import java.util.UUID;
 
@@ -40,12 +39,8 @@ public class VerifyTaskFactory implements TaskFactory<Bucket> {
     private final UnitOfWorkAwareProxyFactory unitOfWorkAwareProxyFactory;
 
     @Override
-    public Runnable create(List<Bucket> records) {
-        if (records.isEmpty()) {
-            throw new IllegalArgumentException("At least one record is expected");
-        }
-        UUID bucketId = records.get(0).getId();
-        return createUnitOfWorkAwareTask(bucketId, bucketDao, locationDao, verifyCommand, datastations, uploadDir, quotaManager, activeTaskRegistry);
+    public Runnable create(Bucket bucket) {
+        return createUnitOfWorkAwareTask(bucket.getId(), bucketDao, locationDao, verifyCommand, datastations, uploadDir, quotaManager, activeTaskRegistry);
     }
 
     private Runnable createUnitOfWorkAwareTask(UUID bucketId, BucketDao bucketDao, LocationDao locationDao, ExternalCommandConfig verifyCommand, Map<String, DataStationConfig> datastations, Path uploadDir, QuotaManager quotaManager, ActiveTaskRegistry activeTaskRegistry) {
