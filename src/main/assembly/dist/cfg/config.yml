@@ -126,6 +126,8 @@ transfer:
     command:
       executable: /usr/bin/ssh
       args: ["${user}@${host}", "dmftar", "--verify", "-f",  "${path}/${bucketname}.dmftar"]
+    # If this text is in the output, conclude that the dmftar is invalid
+    invalidOn: 'checksum failure'
     taskQueue:
       nameFormat: "verify-worker-%d"
       maxQueueSize: 5000

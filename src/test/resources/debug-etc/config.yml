@@ -100,7 +100,9 @@ transfer:
     command:
       executable: dmftar
       workingDirectory: 'data/upload/${bucketname}'
-      args: ["-cf", "data/upload/${bucketname}.dmftar"]
+      # N.B. the path to the dmftar to create must be either absolute or relative to the bucket dir.
+      # For testing, the relative path is more convenient, because not developer-dependent.
+      args: ["-cf", "../${bucketname}.dmftar", "."]
     taskQueue:
       nameFormat: "package-worker-%d"
       maxQueueSize: 5000
@@ -130,8 +132,9 @@ transfer:
   verify:
     pollingInterval: 5s
     command:
-      executable: dmftar
-      args: ["--verify", "-f", "${user}@${host}:${path}/${bucketname}.dmftar"]
+      executable: ssh
+      args: ["${user}@${host}", "dmftar", "--verify", "-f",  "${path}/${bucketname}.dmftar"]
+    invalidOn: 'checksum failure'
     taskQueue:
       nameFormat: "verify-worker-%d"
       maxQueueSize: 5000

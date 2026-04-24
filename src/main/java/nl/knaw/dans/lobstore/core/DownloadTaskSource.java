@@ -40,6 +40,7 @@ public class DownloadTaskSource implements TaskSource<TransferRequest> {
             var item = optItem.get();
             if (activeTaskRegistry.add(item.getId())) {
                 if (quotaManager.ensureClaimed(item.getId() + "/base", TARGET_DOWNLOAD, item.getFileSize())) {
+                    // TODO: the extra claim is only necessary if downloading in chunks, so if the filesize exceeds the chunk size.
                     if (quotaManager.ensureClaimed(item.getId() + "/extra", TARGET_DOWNLOAD, item.getFileSize() + margin)) {
                         item.setStatus(TransferRequestStatus.DOWNLOADING);
                         transferRequestDao.save(item);

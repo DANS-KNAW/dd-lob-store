@@ -19,6 +19,7 @@ import io.dropwizard.hibernate.UnitOfWork;
 import nl.knaw.dans.lobstore.Conversions;
 import nl.knaw.dans.lobstore.api.TransferRequestDto;
 import nl.knaw.dans.lobstore.api.TransferResponseDto;
+import nl.knaw.dans.lobstore.api.TransferResponseItemDto;
 import nl.knaw.dans.lobstore.api.TransferStatusDto;
 import nl.knaw.dans.lobstore.api.TransferStatusInfoDto;
 import nl.knaw.dans.lobstore.core.BucketStatus;
@@ -34,8 +35,10 @@ import javax.ws.rs.WebApplicationException;
 import javax.ws.rs.core.Response;
 import java.net.URI;
 import java.time.OffsetDateTime;
+import java.util.ArrayList;
 import java.util.List;
 import java.util.UUID;
+import java.util.stream.Collectors;
 
 public class TransfersResource implements TransfersApi {
     private final Conversions conversions = Mappers.getMapper(Conversions.class);
@@ -49,48 +52,63 @@ public class TransfersResource implements TransfersApi {
 
     @Override
     @UnitOfWork
-    public Response addTransfer(@Valid @NotNull TransferRequestDto transferRequestDto) {
+    public Response addTransfers(@Valid @NotNull List<@Valid TransferRequestDto> transferRequestDtoList) {
+        List<TransferResponseItemDto> results = new ArrayList<>();
+
+        for (TransferRequestDto dto : transferRequestDtoList) {
+            results.add(processSingleTransfer(dto));
+        }
+
+        return Response.status(207) // Multi-Status
+            .entity(results)
+            .build();
+    }
+
+    private TransferResponseItemDto processSingleTransfer(TransferRequestDto transferRequestDto) {
         String sha1 = transferRequestDto.getSha1Sum();
+        String datastation = transferRequestDto.getDatastation();
+        Long fileId = transferRequestDto.getDataverseFileId();
 
         List<TransferRequest> existingRequestsForSha1 = transferRequestDao.findBySha1Sum(sha1);
         if (existingRequestsForSha1.stream()
-            .filter(request -> request.getDatastation().equals(transferRequestDto.getDatastation()))
+            .filter(request -> request.getDatastation().equals(datastation))
             .anyMatch(TransferRequest::isInProgress)) {
-            return Response.status(Response.Status.CONFLICT)
-                .entity("Transfer(s) already in progress for the given SHA-1")
-                .build();
+            return new TransferResponseItemDto()
+                .status(Response.Status.CONFLICT.getStatusCode())
+                .message("Transfer already in progress for the given SHA-1");
         }
 
-        List<TransferRequest> existingRequestsForFileId = transferRequestDao.findByDataverseFileId(transferRequestDto.getDataverseFileId());
+        List<TransferRequest> existingRequestsForFileId = transferRequestDao.findByDataverseFileId(fileId);
         if (existingRequestsForFileId.stream()
-            .filter(request -> request.getDatastation().equals(transferRequestDto.getDatastation()))
+            .filter(request -> request.getDatastation().equals(datastation))
             .anyMatch(TransferRequest::isInProgress)) {
-            return Response.status(Response.Status.CONFLICT)
-                .entity("Transfer(s) already in progress for the given Dataverse file ID")
-                .build();
+            return new TransferResponseItemDto()
+                .status(Response.Status.CONFLICT.getStatusCode())
+                .message("Transfer already in progress for the given Dataverse file ID");
         }
 
-        var existingLocation = locationDao.findByDatastationAndSha1Sum(transferRequestDto.getDatastation(), sha1);
+        var existingLocation = locationDao.findByDatastationAndSha1Sum(datastation, sha1);
 
         if (existingLocation.isPresent()) {
-            return Response.seeOther(URI.create(String.format("/locations/%s/%s", transferRequestDto.getDatastation(), sha1)))
-                .build();
+            return new TransferResponseItemDto()
+                .status(Response.Status.SEE_OTHER.getStatusCode())
+                .location(String.format("/locations/%s/%s", datastation, sha1));
         }
 
         TransferRequest newRequest = TransferRequest.builder()
             .id(UUID.randomUUID())
-            .dataverseFileId(transferRequestDto.getDataverseFileId())
+            .dataverseFileId(fileId)
             .sha1Sum(sha1)
-            .datastation(transferRequestDto.getDatastation())
+            .datastation(datastation)
             .status(TransferRequestStatus.PENDING)
             .created(OffsetDateTime.now())
             .build();
 
         transferRequestDao.save(newRequest);
 
-        return Response.status(Response.Status.CREATED)
-            .entity(new TransferResponseDto().id(newRequest.getId()))
-            .build();
+        return new TransferResponseItemDto()
+            .id(newRequest.getId())
+            .status(Response.Status.CREATED.getStatusCode());
     }
 
     @Override

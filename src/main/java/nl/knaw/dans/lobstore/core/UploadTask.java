@@ -61,11 +61,7 @@ public class UploadTask implements Runnable {
         }
         catch (Exception e) {
             log.error("Error during upload for bucket {}", bucketId, e);
-            // If interrupted or failed, the task just leaves the bucket in UPLOADING state
-            // as per instructions: "If interrupted the task should not remove anything but just 
-            // leave the bucket in uploading state, so that a next try will execute the same command."
-            // We only set to FAILED if it's an unrecoverable logic error or we want to stop retrying.
-            // For now, following the instruction to just leave it.
+            // Leaves the bucket in UPLOADING state, so it will be retried next polling round.
         }
         finally {
             activeTaskRegistry.remove(bucketId);
