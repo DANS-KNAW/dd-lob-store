@@ -18,7 +18,7 @@ package nl.knaw.dans.lobstore.resources;
 import io.dropwizard.testing.junit5.DropwizardExtensionsSupport;
 import io.dropwizard.testing.junit5.ResourceExtension;
 import nl.knaw.dans.lobstore.api.TransferRequestDto;
-import nl.knaw.dans.lobstore.api.TransferResponseDto;
+import nl.knaw.dans.lobstore.api.TransferResponseItemDto;
 import nl.knaw.dans.lobstore.core.Bucket;
 import nl.knaw.dans.lobstore.core.BucketStatus;
 import nl.knaw.dans.lobstore.core.Location;
@@ -66,7 +66,7 @@ class TransfersResourceTest {
     }
 
     @Test
-    void add_transfer_should_return_201_and_id_for_new_request() {
+    void add_transfers_should_return_207_with_201_and_id_for_new_request() {
         TransferRequestDto dto = new TransferRequestDto()
             .dataverseFileId(123L)
             .sha1Sum("abc")
@@ -76,11 +76,13 @@ class TransfersResourceTest {
 
         Response response = EXT.target("/transfers")
             .request(MediaType.APPLICATION_JSON)
-            .post(Entity.entity(dto, MediaType.APPLICATION_JSON));
+            .post(Entity.entity(List.of(dto), MediaType.APPLICATION_JSON));
 
-        assertThat(response.getStatus()).isEqualTo(201);
-        TransferResponseDto result = response.readEntity(TransferResponseDto.class);
-        assertThat(result.getId()).isNotNull();
+        assertThat(response.getStatus()).isEqualTo(207);
+        List<TransferResponseItemDto> result = response.readEntity(new javax.ws.rs.core.GenericType<List<TransferResponseItemDto>>() {});
+        assertThat(result).hasSize(1);
+        assertThat(result.get(0).getStatus()).isEqualTo(201);
+        assertThat(result.get(0).getId()).isNotNull();
 
         ArgumentCaptor<TransferRequest> captor = ArgumentCaptor.forClass(TransferRequest.class);
         verify(dao).save(captor.capture());
@@ -89,7 +91,7 @@ class TransfersResourceTest {
     }
 
     @Test
-    void add_transfer_should_return_409_if_already_in_progress_for_same_datastation() {
+    void add_transfers_should_return_207_with_409_if_already_in_progress_for_same_datastation() {
         TransferRequestDto dto = new TransferRequestDto()
             .dataverseFileId(123L)
             .sha1Sum("abc")
@@ -105,13 +107,16 @@ class TransfersResourceTest {
 
         Response response = EXT.target("/transfers")
             .request(MediaType.APPLICATION_JSON)
-            .post(Entity.entity(dto, MediaType.APPLICATION_JSON));
+            .post(Entity.entity(List.of(dto), MediaType.APPLICATION_JSON));
 
-        assertThat(response.getStatus()).isEqualTo(409);
+        assertThat(response.getStatus()).isEqualTo(207);
+        List<TransferResponseItemDto> result = response.readEntity(new javax.ws.rs.core.GenericType<List<TransferResponseItemDto>>() {});
+        assertThat(result).hasSize(1);
+        assertThat(result.get(0).getStatus()).isEqualTo(409);
     }
 
     @Test
-    void add_transfer_should_return_201_if_already_in_progress_for_different_datastation() {
+    void add_transfers_should_return_207_with_201_if_already_in_progress_for_different_datastation() {
         TransferRequestDto dto = new TransferRequestDto()
             .dataverseFileId(123L)
             .sha1Sum("abc")
@@ -127,13 +132,16 @@ class TransfersResourceTest {
 
         Response response = EXT.target("/transfers")
             .request(MediaType.APPLICATION_JSON)
-            .post(Entity.entity(dto, MediaType.APPLICATION_JSON));
+            .post(Entity.entity(List.of(dto), MediaType.APPLICATION_JSON));
 
-        assertThat(response.getStatus()).isEqualTo(201);
+        assertThat(response.getStatus()).isEqualTo(207);
+        List<TransferResponseItemDto> result = response.readEntity(new javax.ws.rs.core.GenericType<List<TransferResponseItemDto>>() {});
+        assertThat(result).hasSize(1);
+        assertThat(result.get(0).getStatus()).isEqualTo(201);
     }
 
     @Test
-    void add_transfer_should_return_303_if_already_done_for_same_datastation() {
+    void add_transfers_should_return_207_with_303_if_already_done_for_same_datastation() {
         TransferRequestDto dto = new TransferRequestDto()
             .dataverseFileId(123L)
             .sha1Sum("abc")
@@ -149,18 +157,20 @@ class TransfersResourceTest {
         when(locationDao.findByDatastationAndSha1Sum("station1", "abc")).thenReturn(java.util.Optional.of(existingLocation));
 
         Response response = EXT.target("/transfers")
-            .property(ClientProperties.FOLLOW_REDIRECTS, false)
             .request(MediaType.APPLICATION_JSON)
-            .post(Entity.entity(dto, MediaType.APPLICATION_JSON));
+            .post(Entity.entity(List.of(dto), MediaType.APPLICATION_JSON));
 
-        assertThat(response.getStatus()).isEqualTo(303);
-        assertThat(response.getHeaderString("Location")).endsWith("/locations/station1/abc");
+        assertThat(response.getStatus()).isEqualTo(207);
+        List<TransferResponseItemDto> result = response.readEntity(new javax.ws.rs.core.GenericType<List<TransferResponseItemDto>>() {});
+        assertThat(result).hasSize(1);
+        assertThat(result.get(0).getStatus()).isEqualTo(303);
+        assertThat(result.get(0).getLocation()).endsWith("/locations/station1/abc");
 
         verify(dao, org.mockito.Mockito.never()).save(any());
     }
 
     @Test
-    void add_transfer_should_return_201_if_already_done_for_different_datastation() {
+    void add_transfers_should_return_207_with_201_if_already_done_for_different_datastation() {
         TransferRequestDto dto = new TransferRequestDto()
             .dataverseFileId(123L)
             .sha1Sum("abc")
@@ -172,8 +182,11 @@ class TransfersResourceTest {
 
         Response response = EXT.target("/transfers")
             .request(MediaType.APPLICATION_JSON)
-            .post(Entity.entity(dto, MediaType.APPLICATION_JSON));
+            .post(Entity.entity(List.of(dto), MediaType.APPLICATION_JSON));
 
-        assertThat(response.getStatus()).isEqualTo(201);
+        assertThat(response.getStatus()).isEqualTo(207);
+        List<TransferResponseItemDto> result = response.readEntity(new javax.ws.rs.core.GenericType<List<TransferResponseItemDto>>() {});
+        assertThat(result).hasSize(1);
+        assertThat(result.get(0).getStatus()).isEqualTo(201);
     }
 }
