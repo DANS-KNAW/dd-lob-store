@@ -1,0 +1,208 @@
+#
+# Copyright (C) 2026 DANS - Data Archiving and Networked Services (info@dans.knaw.nl)
+#
+# Licensed under the Apache License, Version 2.0 (the "License");
+# you may not use this file except in compliance with the License.
+# You may obtain a copy of the License at
+#
+# http://www.apache.org/licenses/LICENSE-2.0
+#
+# Unless required by applicable law or agreed to in writing, software
+# distributed under the License is distributed on an "AS IS" BASIS,
+# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+# See the License for the specific language governing permissions and
+# limitations under the License.
+#
+
+openapi: 3.0.1
+
+servers:
+  - url: http://localhost:20385/
+
+info:
+  description: Service for storing large objects in the Data Vault
+  version: 0.2.0
+  title: dd-lob-store-api
+  contact:
+    email: info@dans.knaw.nl
+  license:
+    name: Apache 2.0
+    url: http://www.apache.org/licenses/LICENSE-2.0.html
+
+paths:
+  /:
+    get:
+      summary: Returns a description of the service.
+      responses:
+        '200':
+          description: OK
+          content:
+            text/plain:
+              schema:
+                type: string
+                description: a plain text, human readable description of the service
+                example: |
+                  LOB Store Running (v0.2.0)
+
+  /transfers:
+    post:
+      operationId: addTransfers
+      summary: Add one or more new transfers to the queue
+      requestBody:
+        description: A list of transfer request details
+        required: true
+        content:
+          application/json:
+            schema:
+              type: array
+              items:
+                $ref: '#/components/schemas/TransferRequest'
+      responses:
+        '207':
+          description: Multi-Status. Results for each transfer request in the same order as the input.
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/TransferResponseItem'
+        '400':
+          description: Invalid request body
+
+  /transfers/{id}:
+    get:
+      operationId: getTransferStatus
+      summary: Retrieve the status of a transfer
+      parameters:
+        - name: id
+          in: path
+          required: true
+          description: The ID of the transfer
+          schema:
+            type: string
+            format: uuid
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/TransferStatusInfo'
+        '404':
+          description: Transfer not found
+
+  /locations/{store}/{hash}:
+    get:
+      operationId: getLocationByHash
+      summary: Retrieve the location of a file by its SHA-1 hash
+      description: This only works for files that have been completely processed.
+      parameters:
+        - name: store
+          in: path
+          required: true
+          description: The name of the datastation whose LOB store to query
+          schema:
+            type: string
+        - name: hash
+          in: path
+          required: true
+          description: The SHA-1 hash of the file
+          schema:
+            type: string
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/LocationResponse'
+        '404':
+          description: Location not found for the given hash
+
+components:
+  schemas:
+    TransferRequest:
+      type: object
+      properties:
+        dataverseFileId:
+          type: integer
+          format: int64
+          description: The Dataverse file ID to download (as a long)
+        sha1Sum:
+          type: string
+          description: The SHA-1 hash of the file, used for verifying the integrity of the file after download
+        datastation:
+          type: string
+          description: The name of the datastation where the file is located. This is used to determine which credentials to use for downloading the file.
+      required:
+        - dataverseFileId
+        - sha1Sum
+        - datastation
+
+    TransferResponse:
+      type: object
+      properties:
+        id:
+          type: string
+          format: uuid
+          description: The unique identifier of the transfer
+      required:
+        - id
+
+    TransferResponseItem:
+      type: object
+      properties:
+        id:
+          type: string
+          format: uuid
+          description: The unique identifier of the transfer if it was created.
+        status:
+          type: integer
+          description: The HTTP status code for this specific item (e.g., 201, 303, 409).
+        location:
+          type: string
+          description: The URI of the existing transfer or location (if status is 303).
+        message:
+          type: string
+          description: Error message if the specific transfer failed (e.g., if status is 409).
+
+    TransferStatusInfo:
+      type: object
+      properties:
+        id:
+          type: string
+          format: uuid
+        status:
+          $ref: '#/components/schemas/TransferStatus'
+      required:
+        - id
+        - status
+
+    TransferStatus:
+      type: string
+      enum:
+        - PENDING
+        - INSPECTED
+        - DOWNLOADING
+        - DOWNLOADED
+        - PACKAGING
+        - PACKAGED
+        - UPLOADING
+        - UPLOADED
+        - VERIFYING
+        - DONE
+        - REJECTED
+        - FAILED
+
+    LocationResponse:
+      type: object
+      properties:
+        datastation:
+          type: string
+          description: The LOB Store's Data Station
+        bucket:
+          type: string
+          description: The bucket where the file is stored
+      required:
+        - datastation
+        - bucket
