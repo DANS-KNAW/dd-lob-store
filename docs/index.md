@@ -103,7 +103,7 @@ status for the transfer requests is now set to `PACKAGED`.
 
 !!! info "Technical note"
 
-    The status in the indivual transfer request records stays on `DOWNLOADED`, but the API will return the status of the containing bucket for all its transfer
+    The status in the individual transfer request records stays on `DOWNLOADED`, but the API will return the status of the containing bucket for all its transfer
     requests from this point on.
 
 ### Upload
