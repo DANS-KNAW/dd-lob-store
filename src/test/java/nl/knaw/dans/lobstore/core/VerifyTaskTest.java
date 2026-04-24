@@ -102,7 +102,7 @@ class VerifyTaskTest {
             .bucketName(bucketId.toString())
             .build());
         verify(activeTaskRegistry).remove(bucketId);
-        verify(quotaManager).release(tr1Id + "/base", "download");
+        verify(quotaManager).release(bucketId + "/base", "upload");
         assertThat(Files.exists(bucketFile)).isFalse();
     }
 
