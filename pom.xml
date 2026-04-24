@@ -35,7 +35,7 @@
 
     <properties>
         <main-class>nl.knaw.dans.lobstore.DdLobStoreApplication</main-class>
-        <dd-lob-store-api.version>0.1.1-SNAPSHOT</dd-lob-store-api.version>
+        <dd-lob-store-api.version>0.2.0</dd-lob-store-api.version>
         <dans-java-utils.version>3.0.0</dans-java-utils.version>
         <dans-dataverse-client-lib.version>2.0.0</dans-dataverse-client-lib.version>
     </properties>
