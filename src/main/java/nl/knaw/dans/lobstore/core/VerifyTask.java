@@ -100,10 +100,8 @@ public class VerifyTask implements Runnable {
                     FileUtils.deleteDirectory(bucketFile.toFile());
                 }
 
-                // and the remaining claim with extension /base should be released.
-                for (var tr : bucket.getTransferRequests()) {
-                    quotaManager.release(tr.getId() + "/base", "download");
-                }
+                // and the remaining bucket-level upload claim with extension /base should be released.
+                quotaManager.release(bucketId + "/base", "upload");
 
                 bucket.setStatus(BucketStatus.DONE);
                 bucketDao.save(bucket);
