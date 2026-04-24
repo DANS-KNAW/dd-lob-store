@@ -27,9 +27,11 @@ import org.apache.commons.exec.DefaultExecutor;
 import org.apache.commons.exec.ExecuteException;
 import org.apache.commons.exec.PumpStreamHandler;
 import org.apache.commons.io.FileUtils;
+import org.apache.commons.io.output.ByteArrayOutputStream;
 
 import java.io.File;
 import java.io.IOException;
+import java.nio.charset.Charset;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.attribute.PosixFilePermission;
@@ -47,6 +49,7 @@ public class VerifyTask implements Runnable {
     private final BucketDao bucketDao;
     private final LocationDao locationDao;
     private final ExternalCommandConfig verifyCommand;
+    private final String invalidOn;
     private final Map<String, DataStationConfig> datastations;
     private final Path uploadDir;
     private final QuotaManager quotaManager;
@@ -65,44 +68,59 @@ public class VerifyTask implements Runnable {
                 throw new IllegalStateException("DataStation configuration not found for: " + datastationName);
             }
 
-            executeVerifyCommand(bucketId.toString(), datastationName, dsConfig);
+            ByteArrayOutputStream outputStream = new ByteArrayOutputStream();
+            int exitCode = executeVerifyCommand(bucketId.toString(), datastationName, dsConfig, outputStream);
 
-            for (var tr : bucket.getTransferRequests()) {
-                locationDao.save(Location.builder()
-                    .datastation(datastationName)
-                    .sha1Sum(tr.getSha1Sum())
-                    .bucketName(bucketId.toString())
-                    .build());
+            if (exitCode == 0) {
+                for (var tr : bucket.getTransferRequests()) {
+                    locationDao.save(Location.builder()
+                        .datastation(datastationName)
+                        .sha1Sum(tr.getSha1Sum())
+                        .bucketName(bucketId.toString())
+                        .build());
+                }
+
+                // If the command exits with success the local bucket should be removed
+                Path bucketFile = uploadDir.resolve(bucketId.toString() + ".dmftar");
+
+                // dmftar makes everything readonly, even the directories, so we need to set write-permissions to be able to delete the files in them.
+                try (var stream = Files.walk(bucketFile)) {
+                    stream.filter(Files::isDirectory).forEach(path -> {
+                        try {
+                            Files.setPosixFilePermissions(path, deletePermissions);
+                        }
+                        catch (IOException e) {
+                            log.warn("Failed to set delete permissions for {}: {}", path, e.getMessage());
+                        }
+                    });
+                }
+
+                if (Files.exists(bucketFile)) {
+                    log.info("Removing local bucket file: {}", bucketFile);
+                    FileUtils.deleteDirectory(bucketFile.toFile());
+                }
+
+                // and the remaining claim with extension /base should be released.
+                for (var tr : bucket.getTransferRequests()) {
+                    quotaManager.release(tr.getId() + "/base", "download");
+                }
+
+                bucket.setStatus(BucketStatus.DONE);
+                bucketDao.save(bucket);
+                log.info("Successfully finished VERIFY task for bucket {}", bucketId);
             }
-
-            // If the command exits with success the local bucket should be removed
-            Path bucketFile = uploadDir.resolve(bucketId.toString() + ".dmftar");
-
-            // dmftar makes everything readonly, even the directories, so we need to set write-permissions to be able to delete the files in them.
-            try (var stream = Files.walk(bucketFile)) {
-                stream.filter(Files::isDirectory).forEach(path -> {
-                    try {
-                        Files.setPosixFilePermissions(path, deletePermissions);
-                    }
-                    catch (IOException e) {
-                        log.warn("Failed to set delete permissions for {}: {}", path, e.getMessage());
-                    }
-                });
+            else {
+                String stderr = outputStream.toString(Charset.defaultCharset());
+                if (invalidOn != null && stderr.contains(invalidOn)) {
+                    log.error("Verify command indicated invalid dmftar for bucket {}: {}", bucketId, stderr);
+                    bucket.setStatus(BucketStatus.FAILED);
+                    bucketDao.save(bucket);
+                }
+                else {
+                    log.warn("Verify command failed with exit code {} for bucket {} but 'invalidOn' string not found in stderr. Stderr: {}", exitCode, bucketId, stderr);
+                    // Do nothing, leave in current state for retry
+                }
             }
-
-            if (Files.exists(bucketFile)) {
-                log.info("Removing local bucket file: {}", bucketFile);
-                FileUtils.deleteDirectory(bucketFile.toFile());
-            }
-
-            // and the remaining claim with extension /base should be released.
-            for (var tr : bucket.getTransferRequests()) {
-                quotaManager.release(tr.getId() + "/base", "download");
-            }
-
-            bucket.setStatus(BucketStatus.DONE);
-            bucketDao.save(bucket);
-            log.info("Successfully finished VERIFY task for bucket {}", bucketId);
         }
         catch (Exception e) {
             log.error("Error during verify for bucket {}", bucketId, e);
@@ -114,7 +132,7 @@ public class VerifyTask implements Runnable {
         }
     }
 
-    private void executeVerifyCommand(String bucketName, String datastationName, DataStationConfig dsConfig) throws IOException {
+    private int executeVerifyCommand(String bucketName, String datastationName, DataStationConfig dsConfig, ByteArrayOutputStream outputStream) throws IOException {
         CommandLine commandLine = new CommandLine(verifyCommand.getExecutable());
         for (String arg : verifyCommand.getArgs()) {
             commandLine.addArgument(interpolate(arg, bucketName, datastationName, dsConfig));
@@ -129,16 +147,13 @@ public class VerifyTask implements Runnable {
         }
         var executor = builder.get();
 
-        executor.setStreamHandler(new PumpStreamHandler(System.out, System.err));
+        executor.setStreamHandler(new PumpStreamHandler(outputStream, outputStream));
 
         try {
-            int exitCode = executor.execute(commandLine);
-            if (exitCode != 0) {
-                throw new RuntimeException("Verify command failed with exit code " + exitCode);
-            }
+            return executor.execute(commandLine);
         }
         catch (ExecuteException e) {
-            throw new RuntimeException("Verify command failed", e);
+            return e.getExitValue();
         }
     }
 

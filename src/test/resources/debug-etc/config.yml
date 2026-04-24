@@ -134,6 +134,7 @@ transfer:
     command:
       executable: ssh
       args: ["${user}@${host}", "dmftar", "--verify", "-f",  "${path}/${bucketname}.dmftar"]
+    invalidOn: 'checksum failure'
     taskQueue:
       nameFormat: "verify-worker-%d"
       maxQueueSize: 5000

@@ -29,5 +29,7 @@ public class VerifyConfig {
     @NotNull
     private ExternalCommandConfig command;
     @NotNull
+    private String invalidOn;
+    @NotNull
     private ExecutorServiceFactory taskQueue;
 }

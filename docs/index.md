@@ -98,14 +98,14 @@ files until the total size exceeds the minimal package threshold. It then claims
 
 It then creates a bucket folder in the upload folder and moves the files into it. For each file the base claims on the download folder are now released.
 
-The task now runs the configured packaging command. If that succeeds, the source files are deleted and the extra claim on the upload folder is released. The 
+The task now runs the configured packaging command. If that succeeds, the source files are deleted and the extra claim on the upload folder is released. The
 status for the transfer requests is now set to `PACKAGED`.
 
 !!! info "Technical note"
-    
+
     The status in the indivual transfer request records stays on `DOWNLOADED`, but the API will return the status of the containing bucket for all its transfer
     requests from this point on.
-    
+
 ### Upload
 
 The Upload step uploads the archive file to the SURF Data Archive using `rsync`. The command is retried if an interruption occurs, so providing the `--partial`
@@ -114,4 +114,5 @@ option to `rsync` implements upload-resuming. On success, the status is changed 
 ### Verify
 
 Finally, on finishing the transfer, the archive package is verified by running `dmftar --verify` on the SURF Data Archive side via `ssh`. If the verification
-fails, the verification `FAIL. If it succeeds, the local copy is deleted and the transfer request is set to `DONE`.
+succeeds, the local copy is deleted and the transfer request is set to `DONE`. If it finds a checksum mismatch, the status is set to `FAILED`. If it fails
+because of some other error, the status is left unchanged so that the task can be retried.

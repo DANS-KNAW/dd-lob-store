@@ -90,7 +90,7 @@ class VerifyTaskTest {
         ExternalCommandConfig verifyCommand = new ExternalCommandConfig();
         verifyCommand.setExecutable("echo");
         verifyCommand.setArgs(List.of("${bucketname}", "${datastation}", "${user}", "${host}", "${path}"));
-        VerifyTask task = new VerifyTask(bucketId, bucketDao, locationDao, verifyCommand, datastations, uploadDir, quotaManager, activeTaskRegistry);
+        VerifyTask task = new VerifyTask(bucketId, bucketDao, locationDao, verifyCommand, null, datastations, uploadDir, quotaManager, activeTaskRegistry);
 
         task.run();
 
@@ -134,12 +134,52 @@ class VerifyTaskTest {
         // Command that fails
         ExternalCommandConfig verifyCommand = new ExternalCommandConfig();
         verifyCommand.setExecutable("false");
-        VerifyTask task = new VerifyTask(bucketId, bucketDao, locationDao, verifyCommand, datastations, uploadDir, quotaManager, activeTaskRegistry);
+        VerifyTask task = new VerifyTask(bucketId, bucketDao, locationDao, verifyCommand, null, datastations, uploadDir, quotaManager, activeTaskRegistry);
 
         task.run();
 
         assertThat(bucket.getStatus()).isEqualTo(BucketStatus.VERIFYING);
         verify(bucketDao, never()).save(any());
+        verify(activeTaskRegistry).remove(bucketId);
+        assertThat(Files.exists(bucketFile)).isTrue();
+    }
+
+    @Test
+    void run_should_set_bucket_status_to_FAILED_when_command_fails_and_stderr_contains_invalidOn() throws IOException {
+        UUID bucketId = UUID.randomUUID();
+        String datastationName = "station1";
+        Bucket bucket = Bucket.builder()
+            .id(bucketId)
+            .status(BucketStatus.VERIFYING)
+            .datastation(datastationName)
+            .build();
+
+        when(bucketDao.findById(bucketId)).thenReturn(Optional.of(bucket));
+
+        LobStoreConfig lobstoreConfig = new LobStoreConfig();
+        lobstoreConfig.setUser("testuser");
+        lobstoreConfig.setHost("testhost");
+        lobstoreConfig.setPath(Path.of("/test/path"));
+
+        DataStationConfig dsConfig = new DataStationConfig();
+        dsConfig.setLobstore(lobstoreConfig);
+
+        Map<String, DataStationConfig> datastations = Map.of(datastationName, dsConfig);
+
+        Path bucketFile = uploadDir.resolve(bucketId + ".dmftar");
+        Files.createDirectory(bucketFile);
+
+        // Command that fails with specific stderr
+        ExternalCommandConfig verifyCommand = new ExternalCommandConfig();
+        verifyCommand.setExecutable("bash");
+        verifyCommand.setArgs(List.of("-c", "echo 'checksum failure' >&2; exit 1"));
+        
+        VerifyTask task = new VerifyTask(bucketId, bucketDao, locationDao, verifyCommand, "checksum failure", datastations, uploadDir, quotaManager, activeTaskRegistry);
+
+        task.run();
+
+        assertThat(bucket.getStatus()).isEqualTo(BucketStatus.FAILED);
+        verify(bucketDao).save(bucket);
         verify(activeTaskRegistry).remove(bucketId);
         assertThat(Files.exists(bucketFile)).isTrue();
     }

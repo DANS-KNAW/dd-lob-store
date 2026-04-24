@@ -143,6 +143,7 @@ public class DdLobStoreApplication extends Application<DdLobStoreConfig> {
             config.getTransfer().getVerify().getPollingInterval().toJavaDuration(),
             new VerifyTaskSource(bucketDao, verifyActiveTaskRegistry),
             new VerifyTaskFactory(bucketDao, locationDao, config.getTransfer().getVerify().getCommand(),
+                config.getTransfer().getVerify().getInvalidOn(),
                 config.getDatastations(), config.getTransfer().getPackageConfig().getUploadDirectory(), quotaManager, verifyActiveTaskRegistry, uowProxyFactory),
             new ExecutorServiceTaskScheduler(config.getTransfer().getVerify().getTaskQueue().build(environment)));
 
