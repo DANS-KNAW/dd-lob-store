@@ -18,6 +18,7 @@ package nl.knaw.dans.lobstore.core;
 import io.dropwizard.util.DataSize;
 import nl.knaw.dans.lib.dataverse.BasicFileAccessApi;
 import nl.knaw.dans.lib.dataverse.DataverseClient;
+import nl.knaw.dans.lib.dataverse.GetFileOptions;
 import nl.knaw.dans.lib.dataverse.GetFileRange;
 import nl.knaw.dans.lobstore.config.DownloadConfig;
 import nl.knaw.dans.lobstore.db.TransferRequestDao;
@@ -79,8 +80,8 @@ class DownloadTaskTest {
 
         when(dao.findById(id)).thenReturn(Optional.of(request));
 
-        when(basicFileAccessApi.getFile(any(HttpClientResponseHandler.class))).thenAnswer(invocation -> {
-            HttpClientResponseHandler<?> handler = invocation.getArgument(0);
+        when(basicFileAccessApi.getFile(any(GetFileOptions.class), any(HttpClientResponseHandler.class))).thenAnswer(invocation -> {
+            HttpClientResponseHandler<?> handler = invocation.getArgument(1);
             ClassicHttpResponse response = mock(ClassicHttpResponse.class);
             HttpEntity entity = mock(HttpEntity.class);
             when(response.getEntity()).thenReturn(entity);
@@ -115,9 +116,9 @@ class DownloadTaskTest {
 
         when(dao.findById(id)).thenReturn(Optional.of(request));
 
-        when(basicFileAccessApi.getFile(any(GetFileRange.class), any(HttpClientResponseHandler.class))).thenAnswer(invocation -> {
-            GetFileRange range = invocation.getArgument(0);
-            HttpClientResponseHandler<?> handler = invocation.getArgument(1);
+        when(basicFileAccessApi.getFile(any(GetFileOptions.class), any(GetFileRange.class), any(HttpClientResponseHandler.class))).thenAnswer(invocation -> {
+            GetFileRange range = invocation.getArgument(1);
+            HttpClientResponseHandler<?> handler = invocation.getArgument(2);
             String chunkContent = content.substring((int) range.getStart(), (int) range.getEnd() + 1);
 
             ClassicHttpResponse response = mock(ClassicHttpResponse.class);
@@ -163,12 +164,12 @@ class DownloadTaskTest {
         when(dao.findById(id)).thenReturn(Optional.of(request));
 
         // Only chunk 1 should be downloaded
-        when(basicFileAccessApi.getFile(any(GetFileRange.class), any(HttpClientResponseHandler.class))).thenAnswer(invocation -> {
-            GetFileRange range = invocation.getArgument(0);
+        when(basicFileAccessApi.getFile(any(GetFileOptions.class), any(GetFileRange.class), any(HttpClientResponseHandler.class))).thenAnswer(invocation -> {
+            GetFileRange range = invocation.getArgument(1);
             assertThat(range.getStart()).isEqualTo(3);
             assertThat(range.getEnd()).isEqualTo(5);
 
-            HttpClientResponseHandler<?> handler = invocation.getArgument(1);
+            HttpClientResponseHandler<?> handler = invocation.getArgument(2);
             ClassicHttpResponse response = mock(ClassicHttpResponse.class);
             HttpEntity entity = mock(HttpEntity.class);
             when(response.getEntity()).thenReturn(entity);
@@ -201,8 +202,8 @@ class DownloadTaskTest {
 
         when(dao.findById(id)).thenReturn(Optional.of(request));
 
-        when(basicFileAccessApi.getFile(any(HttpClientResponseHandler.class))).thenAnswer(invocation -> {
-            HttpClientResponseHandler<?> handler = invocation.getArgument(0);
+        when(basicFileAccessApi.getFile(any(GetFileOptions.class), any(HttpClientResponseHandler.class))).thenAnswer(invocation -> {
+            HttpClientResponseHandler<?> handler = invocation.getArgument(1);
             ClassicHttpResponse response = mock(ClassicHttpResponse.class);
             HttpEntity entity = mock(HttpEntity.class);
             when(response.getEntity()).thenReturn(entity);
@@ -233,7 +234,7 @@ class DownloadTaskTest {
             .build();
 
         when(dao.findById(id)).thenReturn(Optional.of(request));
-        when(basicFileAccessApi.getFile(any(HttpClientResponseHandler.class))).thenThrow(new RuntimeException("Download failed"));
+        when(basicFileAccessApi.getFile(any(GetFileOptions.class), any(HttpClientResponseHandler.class))).thenThrow(new RuntimeException("Download failed"));
 
         DownloadTask task = new DownloadTask(id, dao, dataverseClient, downloadConfig, quotaManager, activeTaskRegistry, executorService);
         try {

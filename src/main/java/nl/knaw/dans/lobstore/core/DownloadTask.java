@@ -138,6 +138,7 @@ public class DownloadTask implements Runnable {
     }
 
     private void handleFailure(Throwable e) {
+        log.error("Download failed for {}", transferRequestId, e);
         transferRequestDao.findById(transferRequestId).ifPresent(transferRequest -> {
             transferRequest.setStatus(TransferRequestStatus.FAILED);
             String msg = e.getMessage();
