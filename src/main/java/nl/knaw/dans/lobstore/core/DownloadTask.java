@@ -21,6 +21,7 @@ import lombok.extern.slf4j.Slf4j;
 import nl.knaw.dans.lib.dataverse.BasicFileAccessApi;
 import nl.knaw.dans.lib.dataverse.DataverseClient;
 import nl.knaw.dans.lib.dataverse.DataverseException;
+import nl.knaw.dans.lib.dataverse.GetFileOptions;
 import nl.knaw.dans.lib.dataverse.GetFileRange;
 import nl.knaw.dans.lobstore.config.DownloadConfig;
 import nl.knaw.dans.lobstore.db.TransferRequestDao;
@@ -154,7 +155,9 @@ public class DownloadTask implements Runnable {
             return;
         }
         log.info("Downloading whole file to {}", outputFile);
-        api.getFile(response -> {
+        var options = new GetFileOptions();
+        options.setGbrecs(true);
+        api.getFile(options, response -> {
             try (InputStream is = response.getEntity().getContent()) {
                 FileUtils.copyInputStreamToFile(is, outputFile.toFile());
             }
@@ -197,7 +200,9 @@ public class DownloadTask implements Runnable {
                         return;
                     }
                     log.debug("Downloading chunk {} ({}-{}) for {}", chunkIndex, range.getStart(), range.getEnd(), transferRequestId);
-                    api.getFile(range, response -> {
+                    var options = new GetFileOptions();
+                    options.setGbrecs(true);
+                    api.getFile(options, range, response -> {
                         try (InputStream is = response.getEntity().getContent()) {
                             FileUtils.copyInputStreamToFile(is, chunkFilePartial.toFile());
                             Files.move(chunkFilePartial, chunkFile);
