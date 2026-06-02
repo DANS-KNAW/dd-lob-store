@@ -44,7 +44,13 @@ public class InspectTask implements Runnable {
             var r = dataverseClient.file(transferRequest.getDataverseFileId()).getMetadata();
             String sha1SumDataverse = r.getData().getDataFile().getChecksum().getValue();
             if (sha1SumDataverse.equals(transferRequest.getSha1Sum())) {
-                transferRequest.setFileSize(r.getData().getDataFile().getFilesize());
+                /*
+                 * If the file is a tabular file that has been ingested, `datafile.getFilesize()` will return the size of the .tab file, but we are downloading the original file, so we need to use the
+                 * `originalFileSize` if it is available. If the file is not a tabular file or has not been ingested, `originalFileSize` will be null, and we can use `filesize`.
+                 */
+                Long originalFileSize = r.getData().getDataFile().getOriginalFileSize();
+                long filesize = r.getData().getDataFile().getFilesize();
+                transferRequest.setFileSize(originalFileSize != null ? originalFileSize : filesize);
                 transferRequest.setStatus(TransferRequestStatus.INSPECTED);
             }
             else {

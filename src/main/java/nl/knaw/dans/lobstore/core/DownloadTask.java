@@ -158,6 +158,7 @@ public class DownloadTask implements Runnable {
         log.info("Downloading whole file to {}", outputFile);
         var options = new GetFileOptions();
         options.setGbrecs(true);
+        options.setFormat("original"); // Otherwise, for tab-ingested files, the .tab version will be downloaded.
         api.getFile(options, response -> {
             try (InputStream is = response.getEntity().getContent()) {
                 FileUtils.copyInputStreamToFile(is, outputFile.toFile());
@@ -203,6 +204,7 @@ public class DownloadTask implements Runnable {
                     log.debug("Downloading chunk {} ({}-{}) for {}", chunkIndex, range.getStart(), range.getEnd(), transferRequestId);
                     var options = new GetFileOptions();
                     options.setGbrecs(true);
+                    options.setFormat("original"); // Otherwise, for tab-ingested files, the .tab version will be downloaded.
                     api.getFile(options, range, response -> {
                         try (InputStream is = response.getEntity().getContent()) {
                             FileUtils.copyInputStreamToFile(is, chunkFilePartial.toFile());
