@@ -107,6 +107,15 @@ public class DownloadTask implements Runnable {
         catch (IOException | HibernateException e) {
             log.warn("Transient error occurred during download for {}: {}, will retry later", transferRequestId, e.getMessage());
         }
+        catch (RuntimeException e) {
+            if (e.getCause() instanceof IOException || e.getCause() instanceof HibernateException) {
+                log.warn("Transient error occurred during download for {}: {}, will retry later", transferRequestId, e.getMessage());
+            }
+            else {
+                log.error("Error occurred during download for {}: {}", transferRequestId, e.getMessage(), e);
+                handleFailure(e);
+            }
+        }
         catch (Exception e) {
             if (isInterrupted(e)) {
                 log.warn("Download task for {} was interrupted", transferRequestId);
