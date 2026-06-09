@@ -41,7 +41,7 @@ public class InspectTask implements Runnable {
         TransferRequest transferRequest = null;
         try {
             transferRequest = transferRequestDao.findById(transferRequestId).orElseThrow(() -> new RuntimeException("Transfer request with id " + transferRequestId + " not found"));
-            var r = dataverseClient.file(transferRequest.getDataverseFileId()).getMetadata();
+            var r = dataverseClient.file(transferRequest.getDataverseFileId()).getMetadata(true);
             String sha1SumDataverse = r.getData().getDataFile().getChecksum().getValue();
             if (sha1SumDataverse.equals(transferRequest.getSha1Sum())) {
                 /*
