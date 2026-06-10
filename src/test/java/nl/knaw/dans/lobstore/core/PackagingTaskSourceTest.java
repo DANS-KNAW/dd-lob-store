@@ -24,6 +24,9 @@ import java.util.Optional;
 import java.util.UUID;
 
 import static org.assertj.core.api.Assertions.assertThat;
+import static org.mockito.ArgumentMatchers.anyLong;
+import static org.mockito.ArgumentMatchers.anyString;
+import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.when;
 
@@ -46,7 +49,7 @@ class PackagingTaskSourceTest {
 
         when(bucketDao.findByStatus(BucketStatus.PACKAGING)).thenReturn(List.of(interruptedBucket));
 
-        PackagingTaskSource source = new PackagingTaskSource(transferRequestDao, bucketDao, quotaManager, activeTaskRegistry, 1000, 100);
+        PackagingTaskSource source = new PackagingTaskSource(transferRequestDao, bucketDao, quotaManager, activeTaskRegistry, 1000, 2000, 100);
         
         Optional<Bucket> result = source.nextInput();
         
@@ -69,10 +72,32 @@ class PackagingTaskSourceTest {
         when(bucketDao.findByStatus(BucketStatus.PACKAGING)).thenReturn(List.of(activeBucket));
         when(transferRequestDao.findPackagableItems()).thenReturn(List.of());
 
-        PackagingTaskSource source = new PackagingTaskSource(transferRequestDao, bucketDao, quotaManager, activeTaskRegistry, 1000, 100);
+        PackagingTaskSource source = new PackagingTaskSource(transferRequestDao, bucketDao, quotaManager, activeTaskRegistry, 1000, 2000, 100);
         
         Optional<Bucket> result = source.nextInput();
         
         assertThat(result).isEmpty();
+    }
+
+    @Test
+    void nextInput_should_limit_bucket_size_and_include_exceeding_item() {
+        String datastation = "ds1";
+        TransferRequest tr1 = TransferRequest.builder().id(UUID.randomUUID()).fileSize(100L).datastation(datastation).build();
+        TransferRequest tr2 = TransferRequest.builder().id(UUID.randomUUID()).fileSize(150L).datastation(datastation).build();
+        TransferRequest tr3 = TransferRequest.builder().id(UUID.randomUUID()).fileSize(50L).datastation(datastation).build();
+
+        when(bucketDao.findByStatus(BucketStatus.PACKAGING)).thenReturn(List.of());
+        when(transferRequestDao.findDatastationsReadyForPackaging(anyLong())).thenReturn(List.of(datastation));
+        when(transferRequestDao.findPackagableItemsByDatastation(datastation)).thenReturn(List.of(tr1, tr2, tr3));
+        
+        // Threshold is 200. tr1(100) + tr2(150) = 250, so tr2 exceeds threshold and should be the last item.
+        PackagingTaskSource source = new PackagingTaskSource(transferRequestDao, bucketDao, quotaManager, activeTaskRegistry, 100L, 200L, 10L);
+
+        when(quotaManager.ensureClaimed(anyString(), eq("upload"), anyLong())).thenReturn(true);
+
+        Optional<Bucket> result = source.nextInput();
+
+        assertThat(result).isPresent();
+        assertThat(result.get().getTransferRequests()).containsExactly(tr1, tr2);
     }
 }

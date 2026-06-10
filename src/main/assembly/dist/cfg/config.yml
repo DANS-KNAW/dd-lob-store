@@ -88,6 +88,9 @@ transfer:
   package:
     pollingInterval: 5s
     minimalBucketSize: 1G
+    # To avoid creating huge packages in cases where downloads have been queued up, no more files will be
+    # added after the total size of the package exceeds this threshold.
+    bucketSizeThreshold: 10G
     margin: 5M
     uploadDirectory: /data/lob-transfer/upload
     #command: tar -cf /data/lob-transfer/upload/${bucketname}.tar -C /data/lob-transfer/upload/${bucketname} .
@@ -150,6 +153,6 @@ logging:
       currentLogFilename: /var/opt/dans.knaw.nl/log/dd-lob-store/dd-lob-store.log
     - type: console
       # Used in combination with journald, which already adds the timestamp
-      logFormat: "%-5p %c{0} [%t]: %m%n%dwREx"
+      logFormat: "%-5p [%t] %c{0}: %m%n%dwREx"
   loggers:
     'org.hibernate.engine.internal.StatisticalLoggingSessionEventListener': 'OFF'
