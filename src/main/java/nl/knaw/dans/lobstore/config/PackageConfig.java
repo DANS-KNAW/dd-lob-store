@@ -20,7 +20,6 @@ import io.dropwizard.util.DataSize;
 import io.dropwizard.util.Duration;
 import lombok.Data;
 import nl.knaw.dans.lib.util.ExecutorServiceFactory;
-import nl.knaw.dans.validation.GreaterThan;
 
 import javax.validation.constraints.NotNull;
 import java.nio.file.Path;

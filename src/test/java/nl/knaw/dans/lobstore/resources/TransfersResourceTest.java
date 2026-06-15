@@ -34,14 +34,17 @@ import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.ArgumentCaptor;
 
 import javax.ws.rs.client.Entity;
+import javax.ws.rs.core.GenericType;
 import javax.ws.rs.core.MediaType;
 import javax.ws.rs.core.Response;
 import java.util.Collections;
 import java.util.List;
+import java.util.Optional;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.reset;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
@@ -79,7 +82,7 @@ class TransfersResourceTest {
             .post(Entity.entity(List.of(dto), MediaType.APPLICATION_JSON));
 
         assertThat(response.getStatus()).isEqualTo(207);
-        List<TransferResponseItemDto> result = response.readEntity(new javax.ws.rs.core.GenericType<List<TransferResponseItemDto>>() {});
+        List<TransferResponseItemDto> result = response.readEntity(new GenericType<List<TransferResponseItemDto>>() {});
         assertThat(result).hasSize(1);
         assertThat(result.get(0).getStatus()).isEqualTo(201);
         assertThat(result.get(0).getId()).isNotNull();
@@ -110,7 +113,7 @@ class TransfersResourceTest {
             .post(Entity.entity(List.of(dto), MediaType.APPLICATION_JSON));
 
         assertThat(response.getStatus()).isEqualTo(207);
-        List<TransferResponseItemDto> result = response.readEntity(new javax.ws.rs.core.GenericType<List<TransferResponseItemDto>>() {});
+        List<TransferResponseItemDto> result = response.readEntity(new GenericType<List<TransferResponseItemDto>>() {});
         assertThat(result).hasSize(1);
         assertThat(result.get(0).getStatus()).isEqualTo(409);
     }
@@ -135,7 +138,7 @@ class TransfersResourceTest {
             .post(Entity.entity(List.of(dto), MediaType.APPLICATION_JSON));
 
         assertThat(response.getStatus()).isEqualTo(207);
-        List<TransferResponseItemDto> result = response.readEntity(new javax.ws.rs.core.GenericType<List<TransferResponseItemDto>>() {});
+        List<TransferResponseItemDto> result = response.readEntity(new GenericType<List<TransferResponseItemDto>>() {});
         assertThat(result).hasSize(1);
         assertThat(result.get(0).getStatus()).isEqualTo(201);
     }
@@ -154,19 +157,19 @@ class TransfersResourceTest {
             .build();
 
         when(dao.findBySha1Sum("abc")).thenReturn(Collections.emptyList());
-        when(locationDao.findByDatastationAndSha1Sum("station1", "abc")).thenReturn(java.util.Optional.of(existingLocation));
+        when(locationDao.findByDatastationAndSha1Sum("station1", "abc")).thenReturn(Optional.of(existingLocation));
 
         Response response = EXT.target("/transfers")
             .request(MediaType.APPLICATION_JSON)
             .post(Entity.entity(List.of(dto), MediaType.APPLICATION_JSON));
 
         assertThat(response.getStatus()).isEqualTo(207);
-        List<TransferResponseItemDto> result = response.readEntity(new javax.ws.rs.core.GenericType<List<TransferResponseItemDto>>() {});
+        List<TransferResponseItemDto> result = response.readEntity(new GenericType<List<TransferResponseItemDto>>() {});
         assertThat(result).hasSize(1);
         assertThat(result.get(0).getStatus()).isEqualTo(303);
         assertThat(result.get(0).getLocation()).endsWith("/locations/station1/abc");
 
-        verify(dao, org.mockito.Mockito.never()).save(any());
+        verify(dao, never()).save(any());
     }
 
     @Test
@@ -178,14 +181,14 @@ class TransfersResourceTest {
 
         when(dao.findBySha1Sum("abc")).thenReturn(Collections.emptyList());
         // Location for different datastation should NOT trigger 303 for THIS request
-        when(locationDao.findByDatastationAndSha1Sum("station1", "abc")).thenReturn(java.util.Optional.empty());
+        when(locationDao.findByDatastationAndSha1Sum("station1", "abc")).thenReturn(Optional.empty());
 
         Response response = EXT.target("/transfers")
             .request(MediaType.APPLICATION_JSON)
             .post(Entity.entity(List.of(dto), MediaType.APPLICATION_JSON));
 
         assertThat(response.getStatus()).isEqualTo(207);
-        List<TransferResponseItemDto> result = response.readEntity(new javax.ws.rs.core.GenericType<List<TransferResponseItemDto>>() {});
+        List<TransferResponseItemDto> result = response.readEntity(new GenericType<List<TransferResponseItemDto>>() {});
         assertThat(result).hasSize(1);
         assertThat(result.get(0).getStatus()).isEqualTo(201);
     }
