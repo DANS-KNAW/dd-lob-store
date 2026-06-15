@@ -20,6 +20,7 @@ import io.dropwizard.util.DataSize;
 import io.dropwizard.util.Duration;
 import lombok.Data;
 import nl.knaw.dans.lib.util.ExecutorServiceFactory;
+import nl.knaw.dans.validation.GreaterThan;
 
 import javax.validation.constraints.NotNull;
 import java.nio.file.Path;
@@ -29,7 +30,6 @@ public class PackageConfig {
     @NotNull
     private Duration pollingInterval;
     private DataSize minimalBucketSize = DataSize.gigabytes(1);
-    private DataSize bucketSizeThreshold = DataSize.gigabytes(10);
     private DataSize margin = DataSize.megabytes(10);
     @NotNull
     private Path uploadDirectory;

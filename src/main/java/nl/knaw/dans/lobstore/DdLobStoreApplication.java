@@ -123,7 +123,6 @@ public class DdLobStoreApplication extends Application<DdLobStoreConfig> {
             config.getTransfer().getPackageConfig().getPollingInterval().toJavaDuration(),
             new PackagingTaskSource(transferRequestDao, bucketDao, quotaManager, packagingActiveTaskRegistry,
                 config.getTransfer().getPackageConfig().getMinimalBucketSize().toBytes(),
-                config.getTransfer().getPackageConfig().getBucketSizeThreshold().toBytes(),
                 config.getTransfer().getPackageConfig().getMargin().toBytes()),
             new PackagingTaskFactory(bucketDao, config.getTransfer().getDownload(),
                 config.getTransfer().getPackageConfig(), quotaManager, packagingActiveTaskRegistry, uowProxyFactory),

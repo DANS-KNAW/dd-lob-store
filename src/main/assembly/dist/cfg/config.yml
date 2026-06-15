@@ -87,17 +87,17 @@ transfer:
   # Packages files worth at least a minimal bucket size of data into a package.
   package:
     pollingInterval: 5s
+    # The minimal size of a package. There is no maximum size, but the service will only include as many files as needed to reach this minimum size or just exceed it.
+    # This is to prevent the creation of many small packages, which is not allowed by the targeted tape system. On the other hand, we also do not want to package
+    # up too many files (in case a large queue of downloaded files is available) into one big package.
     minimalBucketSize: 1G
-    # To avoid creating huge packages in cases where downloads have been queued up, no more files will be
-    # added after the total size of the package exceeds this threshold.
-    bucketSizeThreshold: 10G
     margin: 5M
     uploadDirectory: /data/lob-transfer/upload
     #command: tar -cf /data/lob-transfer/upload/${bucketname}.tar -C /data/lob-transfer/upload/${bucketname} .
     command:
       executable: /usr/local/bin/dmftar
       workingDirectory: '/data/lob-transfer/upload/${bucketname}'
-      args: ["-cf", "/data/lob-transfer/upload/${bucketname}.dmftar", "."]
+      args: [ "-cf", "/data/lob-transfer/upload/${bucketname}.dmftar", "." ]
     taskQueue:
       nameFormat: "package-worker-%d"
       maxQueueSize: 5000
@@ -112,7 +112,7 @@ transfer:
     pollingInterval: 5s
     command:
       executable: /bin/rsync
-      args: ["-av", "--partial", "--append", "/data/lob-transfer/upload/${bucketname}.dmftar", "${user}@${host}:${path}/"]
+      args: [ "-av", "--partial", "--append", "/data/lob-transfer/upload/${bucketname}.dmftar", "${user}@${host}:${path}/" ]
     destination: /data/vault
     taskQueue:
       nameFormat: "upload-worker-%d"
@@ -128,7 +128,7 @@ transfer:
     pollingInterval: 5s
     command:
       executable: /usr/bin/ssh
-      args: ["${user}@${host}", "dmftar", "--verify", "-f",  "${path}/${bucketname}.dmftar"]
+      args: [ "${user}@${host}", "dmftar", "--verify", "-f",  "${path}/${bucketname}.dmftar" ]
     # If this text is in the output, conclude that the dmftar is invalid
     invalidOn: 'checksum failure'
     taskQueue:
