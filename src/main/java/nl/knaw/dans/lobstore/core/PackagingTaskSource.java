@@ -21,6 +21,8 @@ import nl.knaw.dans.lib.util.pollingtaskexec.TaskSource;
 import nl.knaw.dans.lobstore.db.BucketDao;
 import nl.knaw.dans.lobstore.db.TransferRequestDao;
 
+import java.util.ArrayList;
+import java.util.List;
 import java.util.Optional;
 import java.util.UUID;
 
@@ -58,8 +60,18 @@ public class PackagingTaskSource implements TaskSource<Bucket> {
 
         // 3. Take the first ready datastation (the one with the oldest pending item)
         String targetDatastation = readyDatastations.get(0);
-        var itemsToPackage = transferRequestDao.findPackagableItemsByDatastation(targetDatastation);
-        long currentTotalSize = itemsToPackage.stream().mapToLong(TransferRequest::getFileSize).sum();
+        var allItems = transferRequestDao.findPackagableItemsByDatastation(targetDatastation);
+
+        List<TransferRequest> itemsToPackage = new ArrayList<>();
+        long currentTotalSize = 0;
+
+        for (var item : allItems) {
+            itemsToPackage.add(item);
+            currentTotalSize += item.getFileSize();
+            if (currentTotalSize >= minimalBucketSize) {
+                break;
+            }
+        }
 
         UUID bucketId = UUID.randomUUID();
         // Claim both /base and /extra on the upload folder.
@@ -71,12 +83,12 @@ public class PackagingTaskSource implements TaskSource<Bucket> {
                 .datastation(targetDatastation)
                 .build();
             bucketDao.save(bucket);
-            
+
             for (var item : itemsToPackage) {
                 item.setBucket(bucket);
                 transferRequestDao.save(item);
             }
-            
+
             // Ensure the bucket object has the transfer requests populated if needed later, 
             // though PackagingTask fetches it from DB anyway.
             bucket.setTransferRequests(itemsToPackage);
