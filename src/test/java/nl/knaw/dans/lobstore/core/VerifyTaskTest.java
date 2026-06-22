@@ -185,4 +185,44 @@ class VerifyTaskTest {
         verify(activeTaskRegistry).remove(bucketId);
         assertThat(Files.exists(bucketFile)).isTrue();
     }
+
+    @Test
+    void run_should_set_moratorium_on_connection_refused() throws IOException {
+        UUID bucketId = UUID.randomUUID();
+        String datastationName = "station1";
+        Bucket bucket = Bucket.builder()
+            .id(bucketId)
+            .status(BucketStatus.VERIFYING)
+            .datastation(datastationName)
+            .build();
+
+        when(bucketDao.findById(bucketId)).thenReturn(Optional.of(bucket));
+
+        LobStoreConfig lobstoreConfig = new LobStoreConfig();
+        lobstoreConfig.setUser("testuser");
+        lobstoreConfig.setHost("testhost");
+        lobstoreConfig.setPath(Path.of("/test/path"));
+
+        DataStationConfig dsConfig = new DataStationConfig();
+        dsConfig.setLobstore(lobstoreConfig);
+
+        Map<String, DataStationConfig> datastations = Map.of(datastationName, dsConfig);
+
+        Path bucketFile = uploadDir.resolve(bucketId + ".dmftar");
+        Files.createDirectory(bucketFile);
+
+        // Command that fails with "Connection refused" in stderr
+        ExternalCommandConfig verifyCommand = new ExternalCommandConfig();
+        verifyCommand.setExecutable("sh");
+        verifyCommand.setArgs(List.of("-c", "echo 'Connection refused' >&2; exit 1"));
+        Duration duration = Duration.ofMinutes(15);
+        VerifyTask task = new VerifyTask(bucketId, bucketDao, locationDao, verifyCommand, "checksum failure", datastations, uploadDir, quotaManager, activeTaskRegistry, moratoriumManager, "Connection refused", duration);
+
+        task.run();
+
+        assertThat(bucket.getStatus()).isEqualTo(BucketStatus.VERIFYING);
+        verify(moratoriumManager).setMoratorium(duration);
+        verify(activeTaskRegistry).remove(bucketId);
+        assertThat(Files.exists(bucketFile)).isTrue();
+    }
 }

@@ -24,7 +24,8 @@ public class MoratoriumManager {
     private Instant moratoriumUntil = Instant.MIN;
 
     public synchronized void setMoratorium(Duration duration) {
-        moratoriumUntil = Instant.now().plus(duration);
+        Instant newUntil = Instant.now().plus(duration);
+        moratoriumUntil = moratoriumUntil.isAfter(newUntil) ? moratoriumUntil : newUntil;
         log.warn("Service-wide moratorium set until {}", moratoriumUntil);
     }
 

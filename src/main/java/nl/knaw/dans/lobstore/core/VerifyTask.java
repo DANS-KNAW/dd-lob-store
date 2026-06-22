@@ -56,7 +56,7 @@ public class VerifyTask implements Runnable {
     private final QuotaManager quotaManager;
     private final ActiveTaskRegistry activeTaskRegistry;
     private final MoratoriumManager moratoriumManager;
-    private final String connectionRefusedOn;
+    private final String moratoriumTrigger;
     private final Duration moratoriumDuration;
 
     @Override
@@ -119,7 +119,7 @@ public class VerifyTask implements Runnable {
                     bucketDao.save(bucket);
                 }
                 else {
-                    if (connectionRefusedOn != null && stderr.contains(connectionRefusedOn)) {
+                    if (moratoriumTrigger != null && stderr.contains(moratoriumTrigger)) {
                         moratoriumManager.setMoratorium(moratoriumDuration);
                     }
                     log.warn("Verify command failed with exit code {} for bucket {} but 'invalidOn' string not found in stderr. Stderr: {}", exitCode, bucketId, stderr);

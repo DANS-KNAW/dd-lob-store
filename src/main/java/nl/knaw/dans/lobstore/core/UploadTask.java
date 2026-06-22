@@ -43,7 +43,7 @@ public class UploadTask implements Runnable {
     private final Map<String, DataStationConfig> datastations;
     private final ActiveTaskRegistry activeTaskRegistry;
     private final MoratoriumManager moratoriumManager;
-    private final String connectionRefusedOn;
+    private final String moratoriumTrigger;
     private final Duration moratoriumDuration;
 
     @Override
@@ -97,7 +97,7 @@ public class UploadTask implements Runnable {
         }
         catch (ExecuteException e) {
             String stderr = outputStream.toString(Charset.defaultCharset());
-            if (connectionRefusedOn != null && stderr.contains(connectionRefusedOn)) {
+            if (moratoriumTrigger != null && stderr.contains(moratoriumTrigger)) {
                 moratoriumManager.setMoratorium(moratoriumDuration);
             }
             throw new RuntimeException("Upload command failed with exit code " + e.getExitValue(), e);
