@@ -93,21 +93,14 @@ public class UploadTask implements Runnable {
         executor.setStreamHandler(new PumpStreamHandler(System.out, outputStream));
 
         try {
-            int exitCode = executor.execute(commandLine);
-            if (exitCode != 0) {
-                String stderr = outputStream.toString(Charset.defaultCharset());
-                if (connectionRefusedOn != null && stderr.contains(connectionRefusedOn)) {
-                    moratoriumManager.setMoratorium(moratoriumDuration);
-                }
-                throw new RuntimeException("Upload command failed with exit code " + exitCode);
-            }
+            executor.execute(commandLine);
         }
         catch (ExecuteException e) {
             String stderr = outputStream.toString(Charset.defaultCharset());
             if (connectionRefusedOn != null && stderr.contains(connectionRefusedOn)) {
                 moratoriumManager.setMoratorium(moratoriumDuration);
             }
-            throw new RuntimeException("Upload command failed", e);
+            throw new RuntimeException("Upload command failed with exit code " + e.getExitValue(), e);
         }
     }
 
