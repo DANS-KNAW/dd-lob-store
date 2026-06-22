@@ -13,25 +13,17 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-
 package nl.knaw.dans.lobstore.config;
 
 import io.dropwizard.util.Duration;
 import lombok.Data;
-import nl.knaw.dans.lib.util.ExecutorServiceFactory;
 
 import javax.validation.constraints.NotNull;
 
 @Data
-public class UploadConfig {
+public class MoratoriumConfig {
     @NotNull
-    private Duration pollingInterval;
+    private String triggerOn;
     @NotNull
-    private ExternalCommandConfig command;
-    @NotNull
-    private String destination;
-    @NotNull
-    private ExecutorServiceFactory taskQueue;
-    @NotNull
-    private MoratoriumConfig moratorium;
+    private Duration duration;
 }

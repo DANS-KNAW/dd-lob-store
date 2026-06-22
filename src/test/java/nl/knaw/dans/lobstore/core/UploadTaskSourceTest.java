@@ -29,7 +29,8 @@ class UploadTaskSourceTest {
 
     private final BucketDao bucketDao = mock(BucketDao.class);
     private final ActiveTaskRegistry activeTaskRegistry = mock(ActiveTaskRegistry.class);
-    private final UploadTaskSource source = new UploadTaskSource(bucketDao, activeTaskRegistry);
+    private final MoratoriumManager moratoriumManager = mock(MoratoriumManager.class);
+    private final UploadTaskSource source = new UploadTaskSource(bucketDao, activeTaskRegistry, moratoriumManager);
 
     @Test
     void nextInput_should_return_interrupted_uploading_bucket() {

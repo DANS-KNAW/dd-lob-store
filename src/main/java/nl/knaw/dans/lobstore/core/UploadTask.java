@@ -25,9 +25,12 @@ import org.apache.commons.exec.CommandLine;
 import org.apache.commons.exec.DefaultExecutor;
 import org.apache.commons.exec.ExecuteException;
 import org.apache.commons.exec.PumpStreamHandler;
+import org.apache.commons.io.output.ByteArrayOutputStream;
 
 import java.io.File;
 import java.io.IOException;
+import java.nio.charset.Charset;
+import java.time.Duration;
 import java.util.Map;
 import java.util.UUID;
 
@@ -39,6 +42,9 @@ public class UploadTask implements Runnable {
     private final ExternalCommandConfig uploadCommand;
     private final Map<String, DataStationConfig> datastations;
     private final ActiveTaskRegistry activeTaskRegistry;
+    private final MoratoriumManager moratoriumManager;
+    private final String connectionRefusedOn;
+    private final Duration moratoriumDuration;
 
     @Override
     @UnitOfWork
@@ -53,7 +59,8 @@ public class UploadTask implements Runnable {
                 throw new IllegalStateException("DataStation configuration not found for: " + datastationName);
             }
 
-            executeUploadCommand(bucketId.toString(), datastationName, dsConfig);
+            ByteArrayOutputStream outputStream = new ByteArrayOutputStream();
+            executeUploadCommand(bucketId.toString(), datastationName, dsConfig, outputStream);
 
             bucket.setStatus(BucketStatus.UPLOADED);
             bucketDao.save(bucket);
@@ -68,7 +75,7 @@ public class UploadTask implements Runnable {
         }
     }
 
-    private void executeUploadCommand(String bucketName, String datastationName, DataStationConfig dsConfig) throws IOException {
+    private void executeUploadCommand(String bucketName, String datastationName, DataStationConfig dsConfig, ByteArrayOutputStream outputStream) throws IOException {
         CommandLine commandLine = new CommandLine(uploadCommand.getExecutable());
         for (String arg : uploadCommand.getArgs()) {
             commandLine.addArgument(interpolate(arg, bucketName, datastationName, dsConfig));
@@ -83,15 +90,23 @@ public class UploadTask implements Runnable {
         }
         var executor = builder.get();
 
-        executor.setStreamHandler(new PumpStreamHandler(System.out, System.err));
+        executor.setStreamHandler(new PumpStreamHandler(outputStream, outputStream));
 
         try {
             int exitCode = executor.execute(commandLine);
             if (exitCode != 0) {
+                String stderr = outputStream.toString(Charset.defaultCharset());
+                if (connectionRefusedOn != null && stderr.contains(connectionRefusedOn)) {
+                    moratoriumManager.setMoratorium(moratoriumDuration);
+                }
                 throw new RuntimeException("Upload command failed with exit code " + exitCode);
             }
         }
         catch (ExecuteException e) {
+            String stderr = outputStream.toString(Charset.defaultCharset());
+            if (connectionRefusedOn != null && stderr.contains(connectionRefusedOn)) {
+                moratoriumManager.setMoratorium(moratoriumDuration);
+            }
             throw new RuntimeException("Upload command failed", e);
         }
     }

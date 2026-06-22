@@ -22,6 +22,7 @@ import nl.knaw.dans.lobstore.db.BucketDao;
 import org.junit.jupiter.api.Test;
 
 import java.nio.file.Path;
+import java.time.Duration;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
@@ -34,6 +35,7 @@ class UploadTaskTest {
 
     private final BucketDao bucketDao = mock(BucketDao.class);
     private final ActiveTaskRegistry activeTaskRegistry = mock(ActiveTaskRegistry.class);
+    private final MoratoriumManager moratoriumManager = mock(MoratoriumManager.class);
 
     @Test
     void run_should_substitute_variables_and_execute_command() {
@@ -61,7 +63,7 @@ class UploadTaskTest {
         ExternalCommandConfig uploadCommand = new ExternalCommandConfig();
         uploadCommand.setExecutable("echo");
         uploadCommand.setArgs(List.of("${bucketname}", "${datastation}", "${user}", "${host}", "${path}"));
-        UploadTask task = new UploadTask(bucketId, bucketDao, uploadCommand, datastations, activeTaskRegistry);
+        UploadTask task = new UploadTask(bucketId, bucketDao, uploadCommand, datastations, activeTaskRegistry, moratoriumManager, "Connection refused", Duration.ofMinutes(15));
 
         task.run();
 
@@ -95,7 +97,7 @@ class UploadTaskTest {
         // Command that fails
         ExternalCommandConfig uploadCommand = new ExternalCommandConfig();
         uploadCommand.setExecutable("false");
-        UploadTask task = new UploadTask(bucketId, bucketDao, uploadCommand, datastations, activeTaskRegistry);
+        UploadTask task = new UploadTask(bucketId, bucketDao, uploadCommand, datastations, activeTaskRegistry, moratoriumManager, "Connection refused", Duration.ofMinutes(15));
 
         task.run();
 

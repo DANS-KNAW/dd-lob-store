@@ -28,9 +28,13 @@ public class UploadTaskSource implements TaskSource<Bucket> {
 
     private final BucketDao bucketDao;
     private final ActiveTaskRegistry activeTaskRegistry;
+    private final MoratoriumManager moratoriumManager;
 
     @Override
     public Optional<Bucket> nextInput() {
+        if (moratoriumManager.isUnderMoratorium()) {
+            return Optional.empty();
+        }
         // 1. Check for interrupted buckets in UPLOADING state
         var interruptedBuckets = bucketDao.findByStatus(BucketStatus.UPLOADING);
         for (var bucket : interruptedBuckets) {

@@ -31,6 +31,7 @@ import nl.knaw.dans.lobstore.core.DownloadTaskFactory;
 import nl.knaw.dans.lobstore.core.DownloadTaskSource;
 import nl.knaw.dans.lobstore.core.InspectTaskFactory;
 import nl.knaw.dans.lobstore.core.InspectTaskSource;
+import nl.knaw.dans.lobstore.core.MoratoriumManager;
 import nl.knaw.dans.lobstore.core.PackagingTaskFactory;
 import nl.knaw.dans.lobstore.core.PackagingTaskSource;
 import nl.knaw.dans.lobstore.core.UploadTaskFactory;
@@ -85,6 +86,7 @@ public class DdLobStoreApplication extends Application<DdLobStoreConfig> {
         final ActiveTaskRegistry packagingActiveTaskRegistry = new ActiveTaskRegistry();
         final ActiveTaskRegistry uploadActiveTaskRegistry = new ActiveTaskRegistry();
         final ActiveTaskRegistry verifyActiveTaskRegistry = new ActiveTaskRegistry();
+        final MoratoriumManager moratoriumManager = new MoratoriumManager();
 
         environment.jersey().register(new TransfersResource(transferRequestDao, locationDao));
         environment.jersey().register(new LocationsResource(locationDao));
@@ -132,19 +134,23 @@ public class DdLobStoreApplication extends Application<DdLobStoreConfig> {
             "UploadTaskExecutor",
             environment.lifecycle().scheduledExecutorService("upload-task-executor", true).build(),
             config.getTransfer().getUpload().getPollingInterval().toJavaDuration(),
-            new UploadTaskSource(bucketDao, uploadActiveTaskRegistry),
+            new UploadTaskSource(bucketDao, uploadActiveTaskRegistry, moratoriumManager),
             new UploadTaskFactory(bucketDao, config.getTransfer().getUpload().getCommand(),
-                config.getDatastations(), uploadActiveTaskRegistry, uowProxyFactory),
+                config.getDatastations(), uploadActiveTaskRegistry, moratoriumManager,
+                config.getTransfer().getUpload().getMoratorium().getTriggerOn(),
+                config.getTransfer().getUpload().getMoratorium().getDuration().toJavaDuration(), uowProxyFactory),
             new ExecutorServiceTaskScheduler(config.getTransfer().getUpload().getTaskQueue().build(environment)));
 
         final PollingTaskExecutor<Bucket> verifyTaskExecutor = new PollingTaskExecutor<>(
             "VerifyTaskExecutor",
             environment.lifecycle().scheduledExecutorService("verify-task-executor", true).build(),
             config.getTransfer().getVerify().getPollingInterval().toJavaDuration(),
-            new VerifyTaskSource(bucketDao, verifyActiveTaskRegistry),
+            new VerifyTaskSource(bucketDao, verifyActiveTaskRegistry, moratoriumManager),
             new VerifyTaskFactory(bucketDao, locationDao, config.getTransfer().getVerify().getCommand(),
                 config.getTransfer().getVerify().getInvalidOn(),
-                config.getDatastations(), config.getTransfer().getPackageConfig().getUploadDirectory(), quotaManager, verifyActiveTaskRegistry, uowProxyFactory),
+                config.getDatastations(), config.getTransfer().getPackageConfig().getUploadDirectory(), quotaManager, verifyActiveTaskRegistry, moratoriumManager,
+                config.getTransfer().getVerify().getMoratorium().getTriggerOn(),
+                config.getTransfer().getVerify().getMoratorium().getDuration().toJavaDuration(), uowProxyFactory),
             new ExecutorServiceTaskScheduler(config.getTransfer().getVerify().getTaskQueue().build(environment)));
 
         environment.lifecycle().manage(createUnitOfWorkAwareProxy(uowProxyFactory, inspectTaskExecutor));

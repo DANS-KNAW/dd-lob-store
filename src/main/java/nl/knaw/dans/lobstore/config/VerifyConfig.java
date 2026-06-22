@@ -32,4 +32,6 @@ public class VerifyConfig {
     private String invalidOn;
     @NotNull
     private ExecutorServiceFactory taskQueue;
+    @NotNull
+    private MoratoriumConfig moratorium;
 }

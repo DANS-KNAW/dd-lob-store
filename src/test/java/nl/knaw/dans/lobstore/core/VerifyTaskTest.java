@@ -28,6 +28,7 @@ import org.junit.jupiter.api.Test;
 import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.Path;
+import java.time.Duration;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
@@ -42,6 +43,7 @@ class VerifyTaskTest {
     private final LocationDao locationDao = mock(LocationDao.class);
     private final QuotaManager quotaManager = mock(QuotaManager.class);
     private final ActiveTaskRegistry activeTaskRegistry = mock(ActiveTaskRegistry.class);
+    private final MoratoriumManager moratoriumManager = mock(MoratoriumManager.class);
     private final Path uploadDir = Path.of("target/test/VerifyTaskTest/upload");
 
     @BeforeEach
@@ -90,7 +92,7 @@ class VerifyTaskTest {
         ExternalCommandConfig verifyCommand = new ExternalCommandConfig();
         verifyCommand.setExecutable("echo");
         verifyCommand.setArgs(List.of("${bucketname}", "${datastation}", "${user}", "${host}", "${path}"));
-        VerifyTask task = new VerifyTask(bucketId, bucketDao, locationDao, verifyCommand, null, datastations, uploadDir, quotaManager, activeTaskRegistry);
+        VerifyTask task = new VerifyTask(bucketId, bucketDao, locationDao, verifyCommand, null, datastations, uploadDir, quotaManager, activeTaskRegistry, moratoriumManager, "Connection refused", Duration.ofMinutes(15));
 
         task.run();
 
@@ -134,7 +136,7 @@ class VerifyTaskTest {
         // Command that fails
         ExternalCommandConfig verifyCommand = new ExternalCommandConfig();
         verifyCommand.setExecutable("false");
-        VerifyTask task = new VerifyTask(bucketId, bucketDao, locationDao, verifyCommand, null, datastations, uploadDir, quotaManager, activeTaskRegistry);
+        VerifyTask task = new VerifyTask(bucketId, bucketDao, locationDao, verifyCommand, null, datastations, uploadDir, quotaManager, activeTaskRegistry, moratoriumManager, "Connection refused", Duration.ofMinutes(15));
 
         task.run();
 
@@ -174,7 +176,7 @@ class VerifyTaskTest {
         verifyCommand.setExecutable("bash");
         verifyCommand.setArgs(List.of("-c", "echo 'checksum failure' >&2; exit 1"));
         
-        VerifyTask task = new VerifyTask(bucketId, bucketDao, locationDao, verifyCommand, "checksum failure", datastations, uploadDir, quotaManager, activeTaskRegistry);
+        VerifyTask task = new VerifyTask(bucketId, bucketDao, locationDao, verifyCommand, "checksum failure", datastations, uploadDir, quotaManager, activeTaskRegistry, moratoriumManager, "Connection refused", Duration.ofMinutes(15));
 
         task.run();
 
