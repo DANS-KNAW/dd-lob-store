@@ -13,27 +13,23 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
+package nl.knaw.dans.lobstore.core;
 
-package nl.knaw.dans.lobstore.config;
+import lombok.extern.slf4j.Slf4j;
+import java.time.Instant;
+import java.time.Duration;
 
-import io.dropwizard.util.Duration;
-import lombok.Data;
-import nl.knaw.dans.lib.util.ExecutorServiceFactory;
+@Slf4j
+public class MoratoriumManager {
+    private Instant moratoriumUntil = Instant.MIN;
 
-import javax.validation.Valid;
-import javax.validation.constraints.NotNull;
+    public synchronized void setMoratorium(Duration duration) {
+        Instant newUntil = Instant.now().plus(duration);
+        moratoriumUntil = moratoriumUntil.isAfter(newUntil) ? moratoriumUntil : newUntil;
+        log.warn("Service-wide moratorium set until {}", moratoriumUntil);
+    }
 
-@Data
-public class VerifyConfig {
-    @NotNull
-    private Duration pollingInterval;
-    @NotNull
-    private ExternalCommandConfig command;
-    @NotNull
-    private String invalidOn;
-    @NotNull
-    private ExecutorServiceFactory taskQueue;
-    @NotNull
-    @Valid
-    private MoratoriumConfig moratorium;
+    public synchronized boolean isUnderMoratorium() {
+        return Instant.now().isBefore(moratoriumUntil);
+    }
 }

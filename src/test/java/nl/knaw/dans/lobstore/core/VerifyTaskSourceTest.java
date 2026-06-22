@@ -29,7 +29,8 @@ class VerifyTaskSourceTest {
 
     private final BucketDao bucketDao = mock(BucketDao.class);
     private final ActiveTaskRegistry activeTaskRegistry = mock(ActiveTaskRegistry.class);
-    private final VerifyTaskSource source = new VerifyTaskSource(bucketDao, activeTaskRegistry);
+    private final MoratoriumManager moratoriumManager = mock(MoratoriumManager.class);
+    private final VerifyTaskSource source = new VerifyTaskSource(bucketDao, activeTaskRegistry, moratoriumManager);
 
     @Test
     void nextInput_should_return_interrupted_verifying_bucket() {

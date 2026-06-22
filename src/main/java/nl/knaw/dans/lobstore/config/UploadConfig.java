@@ -20,6 +20,7 @@ import io.dropwizard.util.Duration;
 import lombok.Data;
 import nl.knaw.dans.lib.util.ExecutorServiceFactory;
 
+import javax.validation.Valid;
 import javax.validation.constraints.NotNull;
 
 @Data
@@ -32,4 +33,7 @@ public class UploadConfig {
     private String destination;
     @NotNull
     private ExecutorServiceFactory taskQueue;
+    @NotNull
+    @Valid
+    private MoratoriumConfig moratorium;
 }

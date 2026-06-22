@@ -129,11 +129,14 @@ transfer:
       maxQueueSize: 5000
       # Number of threads will be increased when maxQueueSize is exceeded.
       minThreads: 1
-      # No more than maxThreads will be created, though
       maxThreads: 3
       # Threads will die after 60 seconds of idleness
       keepAliveTime: 60 seconds
-  # Verifies the integrity of the uploaded package.
+    # Temporarily suspend all attempts to perform SSH actions to the Data Archive when this text is in the output of the command,
+    # to prevent hammer protection from locking us out indefinitely.
+    moratorium:
+      triggerOn: "Connection refused"
+      duration: 15m
   verify:
     pollingInterval: 5s
     command:
@@ -146,10 +149,14 @@ transfer:
       maxQueueSize: 5000
       # Number of threads will be increased when maxQueueSize is exceeded.
       minThreads: 1
-      # No more than maxThreads will be created, though
       maxThreads: 3
       # Threads will die after 60 seconds of idleness
       keepAliveTime: 60 seconds
+    # Temporarily suspend all attempts to perform SSH actions to the Data Archive when this text is in the output of the command,
+    # to prevent hammer protection from locking us out indefinitely.
+    moratorium:
+      triggerOn: "Connection refused"
+      duration: 15m
 
 #
 # See https://www.dropwizard.io/en/latest/manual/configuration.html#logging

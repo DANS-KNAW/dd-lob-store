@@ -36,6 +36,7 @@ import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.attribute.PosixFilePermission;
 import java.nio.file.attribute.PosixFilePermissions;
+import java.time.Duration;
 import java.util.Map;
 import java.util.Set;
 import java.util.UUID;
@@ -54,6 +55,9 @@ public class VerifyTask implements Runnable {
     private final Path uploadDir;
     private final QuotaManager quotaManager;
     private final ActiveTaskRegistry activeTaskRegistry;
+    private final MoratoriumManager moratoriumManager;
+    private final String moratoriumTrigger;
+    private final Duration moratoriumDuration;
 
     @Override
     @UnitOfWork
@@ -115,6 +119,9 @@ public class VerifyTask implements Runnable {
                     bucketDao.save(bucket);
                 }
                 else {
+                    if (moratoriumTrigger != null && stderr.contains(moratoriumTrigger)) {
+                        moratoriumManager.setMoratorium(moratoriumDuration);
+                    }
                     log.warn("Verify command failed with exit code {} for bucket {} but 'invalidOn' string not found in stderr. Stderr: {}", exitCode, bucketId, stderr);
                     // Do nothing, leave in current state for retry
                 }
@@ -145,7 +152,7 @@ public class VerifyTask implements Runnable {
         }
         var executor = builder.get();
 
-        executor.setStreamHandler(new PumpStreamHandler(outputStream, outputStream));
+        executor.setStreamHandler(new PumpStreamHandler(System.out, outputStream));
 
         try {
             return executor.execute(commandLine);

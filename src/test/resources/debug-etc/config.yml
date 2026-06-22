@@ -124,10 +124,12 @@ transfer:
       maxQueueSize: 5000
       # Number of threads will be increased when maxQueueSize is exceeded.
       minThreads: 1
-      # No more than maxThreads will be created, though
       maxThreads: 3
       # Threads will die after 60 seconds of idleness
       keepAliveTime: 60 seconds
+    moratorium:
+      triggerOn: "Connection refused"
+      duration: 15m
   # Verifies the integrity of the uploaded package.
   verify:
     pollingInterval: 5s
@@ -140,10 +142,12 @@ transfer:
       maxQueueSize: 5000
       # Number of threads will be increased when maxQueueSize is exceeded.
       minThreads: 1
-      # No more than maxThreads will be created, though
       maxThreads: 3
       # Threads will die after 60 seconds of idleness
       keepAliveTime: 60 seconds
+    moratorium:
+      triggerOn: "Connection refused"
+      duration: 15m
 
 #
 # See https://www.dropwizard.io/en/latest/manual/configuration.html#logging

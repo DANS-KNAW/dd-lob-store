@@ -24,6 +24,7 @@ import nl.knaw.dans.lobstore.db.BucketDao;
 import nl.knaw.dans.lobstore.db.LocationDao;
 
 import java.nio.file.Path;
+import java.time.Duration;
 import java.util.Map;
 import java.util.UUID;
 
@@ -37,16 +38,19 @@ public class VerifyTaskFactory implements TaskFactory<Bucket> {
     private final Path uploadDir;
     private final QuotaManager quotaManager;
     private final ActiveTaskRegistry activeTaskRegistry;
+    private final MoratoriumManager moratoriumManager;
+    private final String connectionRefusedOn;
+    private final Duration moratoriumDuration;
     private final UnitOfWorkAwareProxyFactory unitOfWorkAwareProxyFactory;
 
     @Override
     public Runnable create(Bucket bucket) {
-        return createUnitOfWorkAwareTask(bucket.getId(), bucketDao, locationDao, verifyCommand, invalidOn, datastations, uploadDir, quotaManager, activeTaskRegistry);
+        return createUnitOfWorkAwareTask(bucket.getId(), bucketDao, locationDao, verifyCommand, invalidOn, datastations, uploadDir, quotaManager, activeTaskRegistry, moratoriumManager, connectionRefusedOn, moratoriumDuration);
     }
 
-    private Runnable createUnitOfWorkAwareTask(UUID bucketId, BucketDao bucketDao, LocationDao locationDao, ExternalCommandConfig verifyCommand, String invalidOn, Map<String, DataStationConfig> datastations, Path uploadDir, QuotaManager quotaManager, ActiveTaskRegistry activeTaskRegistry) {
+    private Runnable createUnitOfWorkAwareTask(UUID bucketId, BucketDao bucketDao, LocationDao locationDao, ExternalCommandConfig verifyCommand, String invalidOn, Map<String, DataStationConfig> datastations, Path uploadDir, QuotaManager quotaManager, ActiveTaskRegistry activeTaskRegistry, MoratoriumManager moratoriumManager, String connectionRefusedOn, Duration moratoriumDuration) {
         return unitOfWorkAwareProxyFactory.create(VerifyTask.class,
-            new Class[] { UUID.class, BucketDao.class, LocationDao.class, ExternalCommandConfig.class, String.class, Map.class, Path.class, QuotaManager.class, ActiveTaskRegistry.class },
-            new Object[] { bucketId, bucketDao, locationDao, verifyCommand, invalidOn, datastations, uploadDir, quotaManager, activeTaskRegistry });
+            new Class[] { UUID.class, BucketDao.class, LocationDao.class, ExternalCommandConfig.class, String.class, Map.class, Path.class, QuotaManager.class, ActiveTaskRegistry.class, MoratoriumManager.class, String.class, Duration.class },
+            new Object[] { bucketId, bucketDao, locationDao, verifyCommand, invalidOn, datastations, uploadDir, quotaManager, activeTaskRegistry, moratoriumManager, connectionRefusedOn, moratoriumDuration });
     }
 }

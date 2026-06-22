@@ -28,9 +28,13 @@ public class VerifyTaskSource implements TaskSource<Bucket> {
 
     private final BucketDao bucketDao;
     private final ActiveTaskRegistry activeTaskRegistry;
+    private final MoratoriumManager moratoriumManager;
 
     @Override
     public Optional<Bucket> nextInput() {
+        if (moratoriumManager.isUnderMoratorium()) {
+            return Optional.empty();
+        }
         // 1. Check for interrupted buckets in VERIFYING state
         var interruptedBuckets = bucketDao.findByStatus(BucketStatus.VERIFYING);
         for (var bucket : interruptedBuckets) {

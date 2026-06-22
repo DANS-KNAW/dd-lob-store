@@ -22,6 +22,7 @@ import nl.knaw.dans.lobstore.config.DataStationConfig;
 import nl.knaw.dans.lobstore.config.ExternalCommandConfig;
 import nl.knaw.dans.lobstore.db.BucketDao;
 
+import java.time.Duration;
 import java.util.Map;
 import java.util.UUID;
 
@@ -31,16 +32,19 @@ public class UploadTaskFactory implements TaskFactory<Bucket> {
     private final ExternalCommandConfig uploadCommand;
     private final Map<String, DataStationConfig> datastations;
     private final ActiveTaskRegistry activeTaskRegistry;
+    private final MoratoriumManager moratoriumManager;
+    private final String connectionRefusedOn;
+    private final Duration moratoriumDuration;
     private final UnitOfWorkAwareProxyFactory unitOfWorkAwareProxyFactory;
 
     @Override
     public Runnable create(Bucket bucket) {
-        return createUnitOfWorkAwareTask(bucket.getId(), bucketDao, uploadCommand, datastations, activeTaskRegistry);
+        return createUnitOfWorkAwareTask(bucket.getId(), bucketDao, uploadCommand, datastations, activeTaskRegistry, moratoriumManager, connectionRefusedOn, moratoriumDuration);
     }
 
-    private Runnable createUnitOfWorkAwareTask(UUID bucketId, BucketDao bucketDao, ExternalCommandConfig uploadCommand, Map<String, DataStationConfig> datastations, ActiveTaskRegistry activeTaskRegistry) {
+    private Runnable createUnitOfWorkAwareTask(UUID bucketId, BucketDao bucketDao, ExternalCommandConfig uploadCommand, Map<String, DataStationConfig> datastations, ActiveTaskRegistry activeTaskRegistry, MoratoriumManager moratoriumManager, String connectionRefusedOn, Duration moratoriumDuration) {
         return unitOfWorkAwareProxyFactory.create(UploadTask.class,
-            new Class[] { UUID.class, BucketDao.class, ExternalCommandConfig.class, Map.class, ActiveTaskRegistry.class },
-            new Object[] { bucketId, bucketDao, uploadCommand, datastations, activeTaskRegistry });
+            new Class[] { UUID.class, BucketDao.class, ExternalCommandConfig.class, Map.class, ActiveTaskRegistry.class, MoratoriumManager.class, String.class, Duration.class },
+            new Object[] { bucketId, bucketDao, uploadCommand, datastations, activeTaskRegistry, moratoriumManager, connectionRefusedOn, moratoriumDuration });
     }
 }

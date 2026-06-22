@@ -22,6 +22,7 @@ import nl.knaw.dans.lobstore.db.BucketDao;
 import org.junit.jupiter.api.Test;
 
 import java.nio.file.Path;
+import java.time.Duration;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
@@ -34,6 +35,7 @@ class UploadTaskTest {
 
     private final BucketDao bucketDao = mock(BucketDao.class);
     private final ActiveTaskRegistry activeTaskRegistry = mock(ActiveTaskRegistry.class);
+    private final MoratoriumManager moratoriumManager = mock(MoratoriumManager.class);
 
     @Test
     void run_should_substitute_variables_and_execute_command() {
@@ -61,7 +63,7 @@ class UploadTaskTest {
         ExternalCommandConfig uploadCommand = new ExternalCommandConfig();
         uploadCommand.setExecutable("echo");
         uploadCommand.setArgs(List.of("${bucketname}", "${datastation}", "${user}", "${host}", "${path}"));
-        UploadTask task = new UploadTask(bucketId, bucketDao, uploadCommand, datastations, activeTaskRegistry);
+        UploadTask task = new UploadTask(bucketId, bucketDao, uploadCommand, datastations, activeTaskRegistry, moratoriumManager, "Connection refused", Duration.ofMinutes(15));
 
         task.run();
 
@@ -95,12 +97,48 @@ class UploadTaskTest {
         // Command that fails
         ExternalCommandConfig uploadCommand = new ExternalCommandConfig();
         uploadCommand.setExecutable("false");
-        UploadTask task = new UploadTask(bucketId, bucketDao, uploadCommand, datastations, activeTaskRegistry);
+        UploadTask task = new UploadTask(bucketId, bucketDao, uploadCommand, datastations, activeTaskRegistry, moratoriumManager, "Connection refused", Duration.ofMinutes(15));
 
         task.run();
 
         assertThat(bucket.getStatus()).isEqualTo(BucketStatus.UPLOADING);
         verify(bucketDao, never()).save(any());
+        verify(activeTaskRegistry).remove(bucketId);
+    }
+
+    @Test
+    void run_should_set_moratorium_on_connection_refused() {
+        UUID bucketId = UUID.randomUUID();
+        String datastationName = "station1";
+        Bucket bucket = Bucket.builder()
+            .id(bucketId)
+            .status(BucketStatus.UPLOADING)
+            .datastation(datastationName)
+            .build();
+
+        when(bucketDao.findById(bucketId)).thenReturn(Optional.of(bucket));
+
+        LobStoreConfig lobstoreConfig = new LobStoreConfig();
+        lobstoreConfig.setUser("testuser");
+        lobstoreConfig.setHost("testhost");
+        lobstoreConfig.setPath(Path.of("/test/path"));
+
+        DataStationConfig dsConfig = new DataStationConfig();
+        dsConfig.setLobstore(lobstoreConfig);
+
+        Map<String, DataStationConfig> datastations = Map.of(datastationName, dsConfig);
+
+        // Command that outputs "Connection refused" to stderr and fails
+        ExternalCommandConfig uploadCommand = new ExternalCommandConfig();
+        uploadCommand.setExecutable("sh");
+        uploadCommand.setArgs(List.of("-c", "echo 'Connection refused' >&2; exit 1"));
+        Duration duration = Duration.ofMinutes(15);
+        UploadTask task = new UploadTask(bucketId, bucketDao, uploadCommand, datastations, activeTaskRegistry, moratoriumManager, "Connection refused", duration);
+
+        task.run();
+
+        assertThat(bucket.getStatus()).isEqualTo(BucketStatus.UPLOADING);
+        verify(moratoriumManager).setMoratorium(duration);
         verify(activeTaskRegistry).remove(bucketId);
     }
 }
