@@ -90,7 +90,7 @@ public class UploadTask implements Runnable {
         }
         var executor = builder.get();
 
-        executor.setStreamHandler(new PumpStreamHandler(outputStream, outputStream));
+        executor.setStreamHandler(new PumpStreamHandler(System.out, outputStream));
 
         try {
             int exitCode = executor.execute(commandLine);

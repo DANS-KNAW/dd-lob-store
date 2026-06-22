@@ -152,7 +152,7 @@ public class VerifyTask implements Runnable {
         }
         var executor = builder.get();
 
-        executor.setStreamHandler(new PumpStreamHandler(outputStream, outputStream));
+        executor.setStreamHandler(new PumpStreamHandler(System.out, outputStream));
 
         try {
             return executor.execute(commandLine);
