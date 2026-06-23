@@ -18,7 +18,6 @@ package nl.knaw.dans.lobstore.resources;
 import io.dropwizard.hibernate.UnitOfWork;
 import nl.knaw.dans.lobstore.Conversions;
 import nl.knaw.dans.lobstore.api.TransferRequestDto;
-import nl.knaw.dans.lobstore.api.TransferResponseDto;
 import nl.knaw.dans.lobstore.api.TransferResponseItemDto;
 import nl.knaw.dans.lobstore.api.TransferStatusDto;
 import nl.knaw.dans.lobstore.api.TransferStatusInfoDto;
@@ -118,5 +117,17 @@ public class TransfersResource implements TransfersApi {
             .map(conversions::convert)
             .map(statusInfo -> Response.ok(statusInfo).build())
             .orElseThrow(() -> new WebApplicationException("Transfer not found", Response.Status.NOT_FOUND));
+    }
+
+    @Override
+    @UnitOfWork
+    public Response getTransfersByHash(@NotNull String hash, TransferStatusDto status, String datastation) {
+        return Response.ok(
+            transferRequestDao.findBySha1Sum(hash).stream()
+                .filter(tr -> datastation == null || datastation.equals(tr.getDatastation()))
+                .filter(tr -> status == null || status.equals(conversions.mapStatus(tr)))
+                .map(conversions::convert)
+                .collect(Collectors.toList())
+        ).build();
     }
 }

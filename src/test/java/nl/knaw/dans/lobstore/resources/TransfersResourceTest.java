@@ -19,6 +19,8 @@ import io.dropwizard.testing.junit5.DropwizardExtensionsSupport;
 import io.dropwizard.testing.junit5.ResourceExtension;
 import nl.knaw.dans.lobstore.api.TransferRequestDto;
 import nl.knaw.dans.lobstore.api.TransferResponseItemDto;
+import nl.knaw.dans.lobstore.api.TransferStatusDto;
+import nl.knaw.dans.lobstore.api.TransferStatusInfoDto;
 import nl.knaw.dans.lobstore.core.Bucket;
 import nl.knaw.dans.lobstore.core.BucketStatus;
 import nl.knaw.dans.lobstore.core.Location;
@@ -191,5 +193,67 @@ class TransfersResourceTest {
         List<TransferResponseItemDto> result = response.readEntity(new GenericType<List<TransferResponseItemDto>>() {});
         assertThat(result).hasSize(1);
         assertThat(result.get(0).getStatus()).isEqualTo(201);
+    }
+
+    @Test
+    void get_transfers_by_hash_should_return_list_of_transfers() {
+        TransferRequest tr1 = TransferRequest.builder()
+            .sha1Sum("abc")
+            .datastation("station1")
+            .status(TransferRequestStatus.PENDING)
+            .build();
+        TransferRequest tr2 = TransferRequest.builder()
+            .sha1Sum("abc")
+            .datastation("station2")
+            .status(TransferRequestStatus.DOWNLOADED)
+            .build();
+
+        when(dao.findBySha1Sum("abc")).thenReturn(List.of(tr1, tr2));
+
+        Response response = EXT.target("/transfers/hash/abc")
+            .request(MediaType.APPLICATION_JSON)
+            .get();
+
+        assertThat(response.getStatus()).isEqualTo(200);
+        List<TransferStatusInfoDto> result = response.readEntity(new GenericType<List<TransferStatusInfoDto>>() {});
+        assertThat(result).hasSize(2);
+    }
+
+    @Test
+    void get_transfers_by_hash_with_filtering_should_return_filtered_list() {
+        TransferRequest tr1 = TransferRequest.builder()
+            .sha1Sum("abc")
+            .datastation("station1")
+            .status(TransferRequestStatus.PENDING)
+            .build();
+        TransferRequest tr2 = TransferRequest.builder()
+            .sha1Sum("abc")
+            .datastation("station2")
+            .status(TransferRequestStatus.DOWNLOADED)
+            .build();
+
+        when(dao.findBySha1Sum("abc")).thenReturn(List.of(tr1, tr2));
+
+        // Filter by datastation
+        Response response = EXT.target("/transfers/hash/abc")
+            .queryParam("datastation", "station1")
+            .request(MediaType.APPLICATION_JSON)
+            .get();
+
+        assertThat(response.getStatus()).isEqualTo(200);
+        List<TransferStatusInfoDto> result = response.readEntity(new GenericType<List<TransferStatusInfoDto>>() {});
+        assertThat(result).hasSize(1);
+        assertThat(result.get(0).getStatus()).isEqualTo(TransferStatusDto.PENDING);
+
+        // Filter by status
+        response = EXT.target("/transfers/hash/abc")
+            .queryParam("status", "DOWNLOADED")
+            .request(MediaType.APPLICATION_JSON)
+            .get();
+
+        assertThat(response.getStatus()).isEqualTo(200);
+        result = response.readEntity(new GenericType<List<TransferStatusInfoDto>>() {});
+        assertThat(result).hasSize(1);
+        assertThat(result.get(0).getStatus()).isEqualTo(TransferStatusDto.DOWNLOADED);
     }
 }
