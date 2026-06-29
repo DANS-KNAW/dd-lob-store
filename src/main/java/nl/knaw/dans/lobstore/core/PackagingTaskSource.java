@@ -44,9 +44,8 @@ public class PackagingTaskSource implements TaskSource<Bucket> {
         // 1. Check for interrupted buckets
         var interruptedBuckets = bucketDao.findByStatus(BucketStatus.PACKAGING);
         for (var bucket : interruptedBuckets) {
-            if (!activeTaskRegistry.contains(bucket.getId())) {
+            if (activeTaskRegistry.add(bucket.getId())) {
                 log.info("Restarting interrupted packaging task for bucket {}", bucket.getId());
-                activeTaskRegistry.add(bucket.getId());
                 return Optional.of(bucket);
             }
         }
