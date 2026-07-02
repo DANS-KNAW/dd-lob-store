@@ -73,27 +73,34 @@ public class PackagingTaskSource implements TaskSource<Bucket> {
         }
 
         UUID bucketId = UUID.randomUUID();
+        var baseClaimId = bucketId + "/base";
+        var extraClaimId = bucketId + "/extra";
         // Claim both /base and /extra on the upload folder.
-        if (quotaManager.ensureClaimed(bucketId + "/base", TARGET_UPLOAD, currentTotalSize) &&
-            quotaManager.ensureClaimed(bucketId + "/extra", TARGET_UPLOAD, currentTotalSize + margin)) {
-            Bucket bucket = Bucket.builder()
-                .id(bucketId)
-                .status(BucketStatus.PACKAGING)
-                .datastation(targetDatastation)
-                .build();
-            bucketDao.save(bucket);
+        if (quotaManager.ensureClaimed(baseClaimId, TARGET_UPLOAD, currentTotalSize)) {
+            if (quotaManager.ensureClaimed(extraClaimId, TARGET_UPLOAD, currentTotalSize + margin)) {
+                Bucket bucket = Bucket.builder()
+                    .id(bucketId)
+                    .status(BucketStatus.PACKAGING)
+                    .datastation(targetDatastation)
+                    .build();
+                bucketDao.save(bucket);
 
-            for (var item : itemsToPackage) {
-                item.setBucket(bucket);
-                transferRequestDao.save(item);
+                for (var item : itemsToPackage) {
+                    item.setBucket(bucket);
+                    transferRequestDao.save(item);
+                }
+
+                // Ensure the bucket object has the transfer requests populated if needed later,
+                // though PackagingTask fetches it from DB anyway.
+                bucket.setTransferRequests(itemsToPackage);
+
+                activeTaskRegistry.add(bucketId);
+                return Optional.of(bucket);
             }
-
-            // Ensure the bucket object has the transfer requests populated if needed later, 
-            // though PackagingTask fetches it from DB anyway.
-            bucket.setTransferRequests(itemsToPackage);
-
-            activeTaskRegistry.add(bucketId);
-            return Optional.of(bucket);
+            // /extra claim failed: release the /base claim to prevent accumulation across poll cycles.
+            // Unlike DownloadTaskSource, the bucket ID here is a fresh random UUID every poll cycle,
+            // so ensureClaimed would create a new /base claim on every retry — leaking one per cycle.
+            quotaManager.release(baseClaimId, TARGET_UPLOAD);
         }
 
         return Optional.empty();

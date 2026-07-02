@@ -24,10 +24,13 @@ import java.util.Optional;
 import java.util.UUID;
 
 import static org.assertj.core.api.Assertions.assertThat;
+import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.anyLong;
 import static org.mockito.ArgumentMatchers.anyString;
 import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.never;
+import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
 class PackagingTaskSourceTest {
@@ -77,6 +80,29 @@ class PackagingTaskSourceTest {
         Optional<Bucket> result = source.nextInput();
 
         assertThat(result).isEmpty();
+    }
+
+    @Test
+    void nextInput_should_release_base_claim_when_extra_claim_fails() {
+        String datastation = "ds1";
+        TransferRequest tr = TransferRequest.builder().id(UUID.randomUUID()).fileSize(100L).datastation(datastation).build();
+
+        when(bucketDao.findByStatus(BucketStatus.PACKAGING)).thenReturn(List.of());
+        when(transferRequestDao.findDatastationsReadyForPackaging(anyLong())).thenReturn(List.of(datastation));
+        when(transferRequestDao.findPackagableItemsByDatastation(datastation)).thenReturn(List.of(tr));
+        // /base succeeds, /extra fails
+        when(quotaManager.ensureClaimed(anyString(), eq("upload"), anyLong()))
+            .thenAnswer(inv -> inv.getArgument(0, String.class).endsWith("/base"));
+
+        PackagingTaskSource source = new PackagingTaskSource(transferRequestDao, bucketDao, quotaManager, activeTaskRegistry, 50L, 10L);
+
+        var result = source.nextInput();
+
+        assertThat(result).isEmpty();
+        // The /base claim must be released so it does not accumulate across poll cycles.
+        verify(quotaManager).release(anyString(), eq("upload"));
+        // No bucket must have been persisted.
+        verify(bucketDao, never()).save(any());
     }
 
     @Test
