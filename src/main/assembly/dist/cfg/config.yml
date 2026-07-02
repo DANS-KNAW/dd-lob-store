@@ -84,12 +84,16 @@ transfer:
     pollingInterval: 5s
     chunkSize: 1G
     margin: 5M
+    # The tread pool for downloading chunks is shared between downloaders
+    maxTotalChunkThreads: 20
+    # Maximum number of chunks per file to download in parallel
+    maxChunksPerFile: 4
     downloadDirectory: /data/lob-transfer/download
     taskQueue:
       nameFormat: "download-worker-%d"
       maxQueueSize: 5000
       # Number of threads will be increased when maxQueueSize is exceeded.
-      minThreads: 1
+      minThreads: 3
       # No more than maxThreads will be created, though
       maxThreads: 3
       # Threads will die after 60 seconds of idleness
@@ -112,7 +116,7 @@ transfer:
       nameFormat: "package-worker-%d"
       maxQueueSize: 5000
       # Number of threads will be increased when maxQueueSize is exceeded.
-      minThreads: 1
+      minThreads: 3
       # No more than maxThreads will be created, though
       maxThreads: 3
       # Threads will die after 60 seconds of idleness
@@ -128,8 +132,8 @@ transfer:
       nameFormat: "upload-worker-%d"
       maxQueueSize: 5000
       # Number of threads will be increased when maxQueueSize is exceeded.
-      minThreads: 1
-      maxThreads: 3
+      minThreads: 5
+      maxThreads: 5
       # Threads will die after 60 seconds of idleness
       keepAliveTime: 60 seconds
     # Temporarily suspend all attempts to perform SSH actions to the Data Archive when this text is in the output of the command,
@@ -148,8 +152,8 @@ transfer:
       nameFormat: "verify-worker-%d"
       maxQueueSize: 5000
       # Number of threads will be increased when maxQueueSize is exceeded.
-      minThreads: 1
-      maxThreads: 3
+      minThreads: 5
+      maxThreads: 5
       # Threads will die after 60 seconds of idleness
       keepAliveTime: 60 seconds
     # Temporarily suspend all attempts to perform SSH actions to the Data Archive when this text is in the output of the command,
