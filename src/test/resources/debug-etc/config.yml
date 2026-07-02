@@ -87,7 +87,11 @@ transfer:
       nameFormat: "download-worker-%d"
       maxQueueSize: 5000
       # Number of threads will be increased when maxQueueSize is exceeded.
-      minThreads: 1
+      # Keep minThreads == maxThreads for downloads: the pool only grows past minThreads
+      # (corePoolSize) once the queue is full, so concurrent downloads are effectively
+      # capped at minThreads. maxThreads also bounds how many items the DownloadTaskSource
+      # schedules per poll.
+      minThreads: 3
       # No more than maxThreads will be created, though
       maxThreads: 3
       # Threads will die after 60 seconds of idleness
@@ -107,7 +111,7 @@ transfer:
       nameFormat: "package-worker-%d"
       maxQueueSize: 5000
       # Number of threads will be increased when maxQueueSize is exceeded.
-      minThreads: 1
+      minThreads: 3
       # No more than maxThreads will be created, though
       maxThreads: 3
       # Threads will die after 60 seconds of idleness
@@ -123,8 +127,8 @@ transfer:
       nameFormat: "upload-worker-%d"
       maxQueueSize: 5000
       # Number of threads will be increased when maxQueueSize is exceeded.
-      minThreads: 1
-      maxThreads: 3
+      minThreads: 6
+      maxThreads: 6
       # Threads will die after 60 seconds of idleness
       keepAliveTime: 60 seconds
     moratorium:
@@ -141,8 +145,8 @@ transfer:
       nameFormat: "verify-worker-%d"
       maxQueueSize: 5000
       # Number of threads will be increased when maxQueueSize is exceeded.
-      minThreads: 1
-      maxThreads: 3
+      minThreads: 6
+      maxThreads: 6
       # Threads will die after 60 seconds of idleness
       keepAliveTime: 60 seconds
     moratorium:

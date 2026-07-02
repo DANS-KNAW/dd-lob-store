@@ -115,7 +115,8 @@ public class DdLobStoreApplication extends Application<DdLobStoreConfig> {
             "DownloadTaskExecutor",
             environment.lifecycle().scheduledExecutorService("download-task-executor", true).build(),
             config.getTransfer().getDownload().getPollingInterval().toJavaDuration(),
-            new DownloadTaskSource(transferRequestDao, quotaManager, downloadActiveTaskRegistry, config.getTransfer().getDownload().getMargin().toBytes()),
+            new DownloadTaskSource(transferRequestDao, quotaManager, downloadActiveTaskRegistry, config.getTransfer().getDownload().getMargin().toBytes(),
+                config.getTransfer().getDownload().getTaskQueue().getMaxThreads()),
             new DownloadTaskFactory(transferRequestDao, dataverseClients, config.getTransfer().getDownload(), quotaManager, downloadActiveTaskRegistry, uowProxyFactory, chunkDownloadExecutor),
             new ExecutorServiceTaskScheduler(config.getTransfer().getDownload().getTaskQueue().build(environment)));
 

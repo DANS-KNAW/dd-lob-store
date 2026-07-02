@@ -153,6 +153,44 @@ class TransferRequestDaoTest {
     }
 
     @Test
+    void findDownloadableItems_should_return_inspected_and_downloading_sorted_by_created_asc_up_to_limit() {
+        UUID inspectedOld = UUID.randomUUID();
+        UUID downloading = UUID.randomUUID();
+        UUID inspectedNew = UUID.randomUUID();
+        UUID pending = UUID.randomUUID();
+        UUID downloaded = UUID.randomUUID();
+        OffsetDateTime now = OffsetDateTime.now();
+
+        db.inTransaction(() -> {
+            dao.save(TransferRequest.builder()
+                .id(inspectedOld).dataverseFileId(1L).sha1Sum("sha1").datastation("station1")
+                .status(TransferRequestStatus.INSPECTED).created(now.minusMinutes(30)).build());
+            dao.save(TransferRequest.builder()
+                .id(downloading).dataverseFileId(2L).sha1Sum("sha2").datastation("station1")
+                .status(TransferRequestStatus.DOWNLOADING).created(now.minusMinutes(20)).build());
+            dao.save(TransferRequest.builder()
+                .id(inspectedNew).dataverseFileId(3L).sha1Sum("sha3").datastation("station1")
+                .status(TransferRequestStatus.INSPECTED).created(now.minusMinutes(10)).build());
+            dao.save(TransferRequest.builder()
+                .id(pending).dataverseFileId(4L).sha1Sum("sha4").datastation("station1")
+                .status(TransferRequestStatus.PENDING).created(now.minusMinutes(40)).build());
+            dao.save(TransferRequest.builder()
+                .id(downloaded).dataverseFileId(5L).sha1Sum("sha5").datastation("station1")
+                .status(TransferRequestStatus.DOWNLOADED).created(now.minusMinutes(50)).build());
+        });
+
+        // Excludes PENDING/DOWNLOADED, ordered oldest-first.
+        assertThat(dao.findDownloadableItems(10))
+            .extracting(TransferRequest::getId)
+            .containsExactly(inspectedOld, downloading, inspectedNew);
+
+        // Honors the limit.
+        assertThat(dao.findDownloadableItems(2))
+            .extracting(TransferRequest::getId)
+            .containsExactly(inspectedOld, downloading);
+    }
+
+    @Test
     void findPackagableItems_should_return_downloaded_requests_without_bucket() {
         UUID id1 = UUID.randomUUID();
         UUID id2 = UUID.randomUUID();

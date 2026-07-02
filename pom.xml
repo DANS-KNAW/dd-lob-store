@@ -26,7 +26,7 @@
     </parent>
 
     <artifactId>dd-lob-store</artifactId>
-    <version>1.1.4-SNAPSHOT</version>
+    <version>1.1.5-SNAPSHOT</version>
 
     <name>DD LOB Store</name>
     <url>https://github.com/DANS-KNAW/dd-lob-store</url>
@@ -36,7 +36,7 @@
     <properties>
         <main-class>nl.knaw.dans.lobstore.DdLobStoreApplication</main-class>
         <dd-lob-store-api.version>1.0.0</dd-lob-store-api.version>
-        <dans-java-utils.version>3.0.0</dans-java-utils.version>
+        <dans-java-utils.version>4.1.0</dans-java-utils.version>
         <dans-dataverse-client-lib.version>2.2.0</dans-dataverse-client-lib.version>
     </properties>
 

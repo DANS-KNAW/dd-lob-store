@@ -19,6 +19,8 @@ import lombok.RequiredArgsConstructor;
 import nl.knaw.dans.lib.util.pollingtaskexec.TaskSource;
 import nl.knaw.dans.lobstore.db.TransferRequestDao;
 
+import java.util.ArrayList;
+import java.util.List;
 import java.util.Optional;
 
 /**
@@ -32,29 +34,43 @@ public class DownloadTaskSource implements TaskSource<TransferRequest> {
     private final QuotaManager quotaManager;
     private final ActiveTaskRegistry activeTaskRegistry;
     private final long margin;
+    private final int maxConcurrentDownloads;
+
+    @Override
+    public List<TransferRequest> nextInputs() {
+        var scheduled = new ArrayList<TransferRequest>();
+        // Fetch a window of the oldest downloadable items (INSPECTED or already DOWNLOADING). Items that are already
+        // being processed are skipped by the ActiveTaskRegistry, so the window naturally caps concurrency at
+        // maxConcurrentDownloads while still resuming items left DOWNLOADING after a crash.
+        for (var item : transferRequestDao.findDownloadableItems(maxConcurrentDownloads)) {
+            claim(item).ifPresent(scheduled::add);
+        }
+        return scheduled;
+    }
 
     @Override
     public Optional<TransferRequest> nextInput() {
-        var optItem = transferRequestDao.findNextDownloadableItem();
-        if (optItem.isPresent()) {
-            var item = optItem.get();
-            if (activeTaskRegistry.add(item.getId())) {
-                if (quotaManager.ensureClaimed(item.getId() + "/base", TARGET_DOWNLOAD, item.getFileSize())) {
-                    // TODO: the extra claim is only necessary if downloading in chunks, so if the filesize exceeds the chunk size.
-                    if (quotaManager.ensureClaimed(item.getId() + "/extra", TARGET_DOWNLOAD, item.getFileSize() + margin)) {
-                        item.setStatus(TransferRequestStatus.DOWNLOADING);
-                        transferRequestDao.save(item);
-                        return Optional.of(item);
-                    }
-                    // DO NOT DELETE: IMPORTANT EXPLANATION FOR FUTURE MAINTENANCE.
-                    // else {
-                    // We DO NOT release the base claim because the same items will be selected in the next try. If the selection
-                    // were to become non-deterministic, we would need to release the base claim here to prevent a leak
-                    // }
+        // Retained for the TaskSource interface; the PollingTaskExecutor calls nextInputs().
+        return nextInputs().stream().findFirst();
+    }
+
+    private Optional<TransferRequest> claim(TransferRequest item) {
+        if (activeTaskRegistry.add(item.getId())) {
+            if (quotaManager.ensureClaimed(item.getId() + "/base", TARGET_DOWNLOAD, item.getFileSize())) {
+                // TODO: the extra claim is only necessary if downloading in chunks, so if the filesize exceeds the chunk size.
+                if (quotaManager.ensureClaimed(item.getId() + "/extra", TARGET_DOWNLOAD, item.getFileSize() + margin)) {
+                    item.setStatus(TransferRequestStatus.DOWNLOADING);
+                    transferRequestDao.save(item);
+                    return Optional.of(item);
                 }
-                // If we couldn't proceed (e.g., quota check failed), we remove it from the registry so it can be picked up again.
-                activeTaskRegistry.remove(item.getId());
+                // DO NOT DELETE: IMPORTANT EXPLANATION FOR FUTURE MAINTENANCE.
+                // else {
+                // We DO NOT release the base claim because the same items will be selected in the next try. If the selection
+                // were to become non-deterministic, we would need to release the base claim here to prevent a leak
+                // }
             }
+            // If we couldn't proceed (e.g., quota check failed), we remove it from the registry so it can be picked up again.
+            activeTaskRegistry.remove(item.getId());
         }
         return Optional.empty();
     }
