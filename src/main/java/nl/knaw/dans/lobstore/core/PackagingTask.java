@@ -102,8 +102,8 @@ public class PackagingTask implements Runnable {
             Path outputFile = uploadDir.resolve(bucketName + ".dmftar");
 
             if (Files.exists(outputFile)) {
-                log.info("Deleting partial output file from previous attempt: {}", outputFile);
-                Files.delete(outputFile);
+                log.info("Deleting partial output from previous attempt: {}", outputFile);
+                FileUtils.forceDelete(outputFile.toFile());
             }
 
             // Call packaging command

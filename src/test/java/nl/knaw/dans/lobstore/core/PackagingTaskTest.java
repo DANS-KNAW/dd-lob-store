@@ -17,10 +17,11 @@ package nl.knaw.dans.lobstore.core;
 
 import nl.knaw.dans.lobstore.config.ExternalCommandConfig;
 import nl.knaw.dans.lobstore.db.BucketDao;
+import org.apache.commons.io.FileUtils;
+import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 
+import java.nio.file.Files;
 import java.nio.file.Path;
 import java.util.List;
 import java.util.Optional;
@@ -36,6 +37,14 @@ class PackagingTaskTest {
     private final ActiveTaskRegistry activeTaskRegistry = mock(ActiveTaskRegistry.class);
     private final Path downloadDir = Path.of("target/test/PackagingTaskTest/download");
     private final Path uploadDir = Path.of("target/test/PackagingTaskTest/upload");
+
+    @BeforeEach
+    void setUp() throws Exception {
+        FileUtils.deleteDirectory(downloadDir.toFile());
+        FileUtils.deleteDirectory(uploadDir.toFile());
+        Files.createDirectories(downloadDir);
+        Files.createDirectories(uploadDir);
+    }
 
     @Test
     void run_should_fail_if_transfer_requests_have_different_datastations() {
@@ -107,6 +116,47 @@ class PackagingTaskTest {
 
         // If it passed the sanity check, it should have tried to resolve the bucket folder.
         // It will fail with IOException when trying to move files.
-        assertThat(bucket.getStatus()).isEqualTo(BucketStatus.PACKAGING); // Remains PACKAGING if it caught IOException (though current implementation re-throws IOException? No, it logs it and then what?)
+        assertThat(bucket.getStatus()).isEqualTo(BucketStatus.PACKAGING); // Remains PACKAGING if it caught IOException
+    }
+
+    @Test
+    void run_should_succeed_when_partial_dmftar_directory_exists_from_previous_interrupted_run() throws Exception {
+        var bucketId = UUID.randomUUID();
+        var trId = UUID.randomUUID();
+        var sha1 = "abc123";
+
+        // Prepare source file in download dir
+        var sourceFile = downloadDir.resolve(trId.toString()).resolve(sha1);
+        Files.createDirectories(sourceFile.getParent());
+        Files.writeString(sourceFile, "test content");
+
+        // Simulate a previous interrupted run: a non-empty .dmftar directory already exists
+        var staleOutput = uploadDir.resolve(bucketId + ".dmftar");
+        Files.createDirectories(staleOutput.resolve("partial-subdir"));
+        Files.writeString(staleOutput.resolve("partial-file"), "leftover partial data");
+
+        var tr = TransferRequest.builder()
+            .id(trId)
+            .datastation("station1")
+            .sha1Sum(sha1)
+            .build();
+
+        var bucket = Bucket.builder()
+            .id(bucketId)
+            .status(BucketStatus.PACKAGING)
+            .datastation("station1")
+            .transferRequests(List.of(tr))
+            .build();
+
+        when(bucketDao.findById(bucketId)).thenReturn(Optional.of(bucket));
+
+        var packagingCommand = new ExternalCommandConfig();
+        packagingCommand.setExecutable("true");
+        var task = new PackagingTask(bucketId, bucketDao, downloadDir, uploadDir, packagingCommand, quotaManager, activeTaskRegistry);
+
+        task.run();
+
+        assertThat(bucket.getStatus()).isEqualTo(BucketStatus.PACKAGED);
+        assertThat(staleOutput).doesNotExist();
     }
 }
