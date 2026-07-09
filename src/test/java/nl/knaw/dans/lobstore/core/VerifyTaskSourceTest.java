@@ -37,8 +37,8 @@ class VerifyTaskSourceTest {
         UUID bucketId = UUID.randomUUID();
         Bucket bucket = Bucket.builder().id(bucketId).status(BucketStatus.VERIFYING).build();
 
-        when(bucketDao.findByStatus(BucketStatus.VERIFYING)).thenReturn(List.of(bucket));
-        when(activeTaskRegistry.contains(bucketId)).thenReturn(false);
+        when(bucketDao.findByStatus(eq(BucketStatus.VERIFYING), anyInt())).thenReturn(List.of(bucket));
+        when(activeTaskRegistry.add(bucketId)).thenReturn(true);
 
         Optional<Bucket> result = source.nextInput();
 
@@ -51,9 +51,9 @@ class VerifyTaskSourceTest {
         UUID bucketId = UUID.randomUUID();
         Bucket bucket = Bucket.builder().id(bucketId).status(BucketStatus.UPLOADED).build();
 
-        when(bucketDao.findByStatus(BucketStatus.VERIFYING)).thenReturn(List.of());
-        when(bucketDao.findByStatus(BucketStatus.UPLOADED)).thenReturn(List.of(bucket));
-        when(activeTaskRegistry.contains(bucketId)).thenReturn(false);
+        when(bucketDao.findByStatus(eq(BucketStatus.VERIFYING), anyInt())).thenReturn(List.of());
+        when(bucketDao.findByStatus(eq(BucketStatus.UPLOADED), anyInt())).thenReturn(List.of(bucket));
+        when(activeTaskRegistry.add(bucketId)).thenReturn(true);
 
         Optional<Bucket> result = source.nextInput();
 
@@ -68,9 +68,9 @@ class VerifyTaskSourceTest {
         UUID bucketId = UUID.randomUUID();
         Bucket bucket = Bucket.builder().id(bucketId).status(BucketStatus.VERIFYING).build();
 
-        when(bucketDao.findByStatus(BucketStatus.VERIFYING)).thenReturn(List.of(bucket));
-        when(activeTaskRegistry.contains(bucketId)).thenReturn(true);
-        when(bucketDao.findByStatus(BucketStatus.UPLOADED)).thenReturn(List.of());
+        when(bucketDao.findByStatus(eq(BucketStatus.VERIFYING), anyInt())).thenReturn(List.of(bucket));
+        when(activeTaskRegistry.add(bucketId)).thenReturn(false);
+        when(bucketDao.findByStatus(eq(BucketStatus.UPLOADED), anyInt())).thenReturn(List.of());
 
         Optional<Bucket> result = source.nextInput();
 

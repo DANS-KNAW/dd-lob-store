@@ -39,12 +39,20 @@ public class UploadTaskFactory implements TaskFactory<Bucket> {
 
     @Override
     public Runnable create(Bucket bucket) {
-        return createUnitOfWorkAwareTask(bucket.getId(), bucketDao, uploadCommand, datastations, activeTaskRegistry, moratoriumManager, connectionRefusedOn, moratoriumDuration);
+        var proxiedTask = createUnitOfWorkAwareTask(bucket.getId(), bucketDao, uploadCommand, datastations, moratoriumManager, connectionRefusedOn, moratoriumDuration);
+        return () -> {
+            try {
+                proxiedTask.run();
+            }
+            finally {
+                activeTaskRegistry.remove(bucket.getId());
+            }
+        };
     }
 
-    private Runnable createUnitOfWorkAwareTask(UUID bucketId, BucketDao bucketDao, ExternalCommandConfig uploadCommand, Map<String, DataStationConfig> datastations, ActiveTaskRegistry activeTaskRegistry, MoratoriumManager moratoriumManager, String connectionRefusedOn, Duration moratoriumDuration) {
+    private Runnable createUnitOfWorkAwareTask(UUID bucketId, BucketDao bucketDao, ExternalCommandConfig uploadCommand, Map<String, DataStationConfig> datastations, MoratoriumManager moratoriumManager, String connectionRefusedOn, Duration moratoriumDuration) {
         return unitOfWorkAwareProxyFactory.create(UploadTask.class,
-            new Class[] { UUID.class, BucketDao.class, ExternalCommandConfig.class, Map.class, ActiveTaskRegistry.class, MoratoriumManager.class, String.class, Duration.class },
-            new Object[] { bucketId, bucketDao, uploadCommand, datastations, activeTaskRegistry, moratoriumManager, connectionRefusedOn, moratoriumDuration });
+            new Class[] { UUID.class, BucketDao.class, ExternalCommandConfig.class, Map.class, MoratoriumManager.class, String.class, Duration.class },
+            new Object[] { bucketId, bucketDao, uploadCommand, datastations, moratoriumManager, connectionRefusedOn, moratoriumDuration });
     }
 }

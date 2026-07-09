@@ -45,12 +45,20 @@ public class VerifyTaskFactory implements TaskFactory<Bucket> {
 
     @Override
     public Runnable create(Bucket bucket) {
-        return createUnitOfWorkAwareTask(bucket.getId(), bucketDao, locationDao, verifyCommand, invalidOn, datastations, uploadDir, quotaManager, activeTaskRegistry, moratoriumManager, connectionRefusedOn, moratoriumDuration);
+        var proxiedTask = createUnitOfWorkAwareTask(bucket.getId(), bucketDao, locationDao, verifyCommand, invalidOn, datastations, uploadDir, quotaManager, moratoriumManager, connectionRefusedOn, moratoriumDuration);
+        return () -> {
+            try {
+                proxiedTask.run();
+            }
+            finally {
+                activeTaskRegistry.remove(bucket.getId());
+            }
+        };
     }
 
-    private Runnable createUnitOfWorkAwareTask(UUID bucketId, BucketDao bucketDao, LocationDao locationDao, ExternalCommandConfig verifyCommand, String invalidOn, Map<String, DataStationConfig> datastations, Path uploadDir, QuotaManager quotaManager, ActiveTaskRegistry activeTaskRegistry, MoratoriumManager moratoriumManager, String connectionRefusedOn, Duration moratoriumDuration) {
+    private Runnable createUnitOfWorkAwareTask(UUID bucketId, BucketDao bucketDao, LocationDao locationDao, ExternalCommandConfig verifyCommand, String invalidOn, Map<String, DataStationConfig> datastations, Path uploadDir, QuotaManager quotaManager, MoratoriumManager moratoriumManager, String connectionRefusedOn, Duration moratoriumDuration) {
         return unitOfWorkAwareProxyFactory.create(VerifyTask.class,
-            new Class[] { UUID.class, BucketDao.class, LocationDao.class, ExternalCommandConfig.class, String.class, Map.class, Path.class, QuotaManager.class, ActiveTaskRegistry.class, MoratoriumManager.class, String.class, Duration.class },
-            new Object[] { bucketId, bucketDao, locationDao, verifyCommand, invalidOn, datastations, uploadDir, quotaManager, activeTaskRegistry, moratoriumManager, connectionRefusedOn, moratoriumDuration });
+            new Class[] { UUID.class, BucketDao.class, LocationDao.class, ExternalCommandConfig.class, String.class, Map.class, Path.class, QuotaManager.class, MoratoriumManager.class, String.class, Duration.class },
+            new Object[] { bucketId, bucketDao, locationDao, verifyCommand, invalidOn, datastations, uploadDir, quotaManager, moratoriumManager, connectionRefusedOn, moratoriumDuration });
     }
 }

@@ -72,13 +72,12 @@ class PackagingTaskTest {
 
         ExternalCommandConfig packagingCommand = new ExternalCommandConfig();
         packagingCommand.setExecutable("true");
-        PackagingTask task = new PackagingTask(bucketId, bucketDao, downloadDir, uploadDir, packagingCommand, quotaManager, activeTaskRegistry);
+        PackagingTask task = new PackagingTask(bucketId, bucketDao, downloadDir, uploadDir, packagingCommand, quotaManager);
         
         task.run();
 
         assertThat(bucket.getStatus()).isEqualTo(BucketStatus.FAILED);
         verify(bucketDao, atLeastOnce()).save(bucket);
-        verify(activeTaskRegistry).remove(bucketId);
     }
     
     @Test
@@ -110,7 +109,7 @@ class PackagingTaskTest {
         
         ExternalCommandConfig packagingCommand = new ExternalCommandConfig();
         packagingCommand.setExecutable("true");
-        PackagingTask task = new PackagingTask(bucketId, bucketDao, downloadDir, uploadDir, packagingCommand, quotaManager, activeTaskRegistry);
+        PackagingTask task = new PackagingTask(bucketId, bucketDao, downloadDir, uploadDir, packagingCommand, quotaManager);
         
         task.run();
 
@@ -152,7 +151,7 @@ class PackagingTaskTest {
 
         var packagingCommand = new ExternalCommandConfig();
         packagingCommand.setExecutable("true");
-        var task = new PackagingTask(bucketId, bucketDao, downloadDir, uploadDir, packagingCommand, quotaManager, activeTaskRegistry);
+        var task = new PackagingTask(bucketId, bucketDao, downloadDir, uploadDir, packagingCommand, quotaManager);
 
         task.run();
 

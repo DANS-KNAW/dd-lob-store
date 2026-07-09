@@ -36,23 +36,21 @@ public class VerifyTaskSource implements TaskSource<Bucket> {
             return Optional.empty();
         }
         // 1. Check for interrupted buckets in VERIFYING state
-        var interruptedBuckets = bucketDao.findByStatus(BucketStatus.VERIFYING);
+        var interruptedBuckets = bucketDao.findByStatus(BucketStatus.VERIFYING, 10);
         for (var bucket : interruptedBuckets) {
-            if (!activeTaskRegistry.contains(bucket.getId())) {
+            if (activeTaskRegistry.add(bucket.getId())) {
                 log.info("Restarting interrupted verify task for bucket {}", bucket.getId());
-                activeTaskRegistry.add(bucket.getId());
                 return Optional.of(bucket);
             }
         }
 
         // 2. Check for buckets in UPLOADED state (ready for first-time verification)
-        var uploadedBuckets = bucketDao.findByStatus(BucketStatus.UPLOADED);
+        var uploadedBuckets = bucketDao.findByStatus(BucketStatus.UPLOADED, 10);
         for (var bucket : uploadedBuckets) {
-            if (!activeTaskRegistry.contains(bucket.getId())) {
+            if (activeTaskRegistry.add(bucket.getId())) {
                 log.info("Starting verify task for bucket {}", bucket.getId());
                 bucket.setStatus(BucketStatus.VERIFYING);
                 bucketDao.save(bucket);
-                activeTaskRegistry.add(bucket.getId());
                 return Optional.of(bucket);
             }
         }

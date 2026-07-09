@@ -32,7 +32,6 @@ public class InspectTask implements Runnable {
     private final UUID transferRequestId;
     private final TransferRequestDao transferRequestDao;
     private final DataverseClient dataverseClient;
-    private final ActiveTaskRegistry activeTaskRegistry;
 
     @Override
     @UnitOfWork
@@ -82,9 +81,6 @@ public class InspectTask implements Runnable {
                 handleFailure(transferRequest, e);
                 throw new RuntimeException(e);
             }
-        }
-        finally {
-            activeTaskRegistry.remove(transferRequestId);
         }
     }
 

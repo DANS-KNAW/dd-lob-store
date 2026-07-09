@@ -38,13 +38,21 @@ public class DownloadTaskFactory implements TaskFactory<TransferRequest> {
 
     @Override
     public Runnable create(TransferRequest transferRequest) {
-        return createUnitOfWorkAwareTask(transferRequest.getId(), transferRequestDao,
+        var proxiedTask = createUnitOfWorkAwareTask(transferRequest.getId(), transferRequestDao,
             dataverseClients.get(transferRequest.getDatastation()), downloadConfig);
+        return () -> {
+            try {
+                proxiedTask.run();
+            }
+            finally {
+                activeTaskRegistry.remove(transferRequest.getId());
+            }
+        };
     }
 
     private Runnable createUnitOfWorkAwareTask(UUID id, TransferRequestDao transferRequestDao, DataverseClient dataverseClient, DownloadConfig downloadConfig) {
         return unitOfWorkAwareProxyFactory.create(DownloadTask.class,
-            new Class[] { UUID.class, TransferRequestDao.class, DataverseClient.class, DownloadConfig.class, QuotaManager.class, ActiveTaskRegistry.class, ExecutorService.class },
-            new Object[] { id, transferRequestDao, dataverseClient, downloadConfig, quotaManager, activeTaskRegistry, chunkDownloadExecutor });
+            new Class[] { UUID.class, TransferRequestDao.class, DataverseClient.class, DownloadConfig.class, QuotaManager.class, ExecutorService.class },
+            new Object[] { id, transferRequestDao, dataverseClient, downloadConfig, quotaManager, chunkDownloadExecutor });
     }
 }

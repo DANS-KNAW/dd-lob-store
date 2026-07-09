@@ -36,23 +36,21 @@ public class UploadTaskSource implements TaskSource<Bucket> {
             return Optional.empty();
         }
         // 1. Check for interrupted buckets in UPLOADING state
-        var interruptedBuckets = bucketDao.findByStatus(BucketStatus.UPLOADING);
+        var interruptedBuckets = bucketDao.findByStatus(BucketStatus.UPLOADING, 10);
         for (var bucket : interruptedBuckets) {
-            if (!activeTaskRegistry.contains(bucket.getId())) {
+            if (activeTaskRegistry.add(bucket.getId())) {
                 log.info("Restarting interrupted upload task for bucket {}", bucket.getId());
-                activeTaskRegistry.add(bucket.getId());
                 return Optional.of(bucket);
             }
         }
 
         // 2. Check for buckets in PACKAGED state (ready for first-time upload)
-        var packagedBuckets = bucketDao.findByStatus(BucketStatus.PACKAGED);
+        var packagedBuckets = bucketDao.findByStatus(BucketStatus.PACKAGED, 10);
         for (var bucket : packagedBuckets) {
-            if (!activeTaskRegistry.contains(bucket.getId())) {
+            if (activeTaskRegistry.add(bucket.getId())) {
                 log.info("Starting upload task for bucket {}", bucket.getId());
                 bucket.setStatus(BucketStatus.UPLOADING);
                 bucketDao.save(bucket);
-                activeTaskRegistry.add(bucket.getId());
                 return Optional.of(bucket);
             }
         }

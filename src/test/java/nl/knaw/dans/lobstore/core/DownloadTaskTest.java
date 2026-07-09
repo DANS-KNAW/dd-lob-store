@@ -53,7 +53,6 @@ class DownloadTaskTest {
     private final BasicFileAccessApi basicFileAccessApi = mock(BasicFileAccessApi.class);
     private final DownloadConfig downloadConfig = new DownloadConfig();
     private final QuotaManager quotaManager = mock(QuotaManager.class);
-    private final ActiveTaskRegistry activeTaskRegistry = new ActiveTaskRegistry();
     private final ExecutorService executorService = Executors.newFixedThreadPool(4);
 
     @TempDir
@@ -89,7 +88,7 @@ class DownloadTaskTest {
             return handler.handleResponse(response);
         });
 
-        DownloadTask task = new DownloadTask(id, dao, dataverseClient, downloadConfig, quotaManager, activeTaskRegistry, executorService);
+        DownloadTask task = new DownloadTask(id, dao, dataverseClient, downloadConfig, quotaManager, executorService);
         task.run();
 
         verify(dao, atLeast(1)).save(request);
@@ -128,7 +127,7 @@ class DownloadTaskTest {
             return handler.handleResponse(response);
         });
 
-        DownloadTask task = new DownloadTask(id, dao, dataverseClient, downloadConfig, quotaManager, activeTaskRegistry, executorService);
+        DownloadTask task = new DownloadTask(id, dao, dataverseClient, downloadConfig, quotaManager, executorService);
         task.run();
 
         verify(dao, atLeast(1)).save(request);
@@ -177,7 +176,7 @@ class DownloadTaskTest {
             return handler.handleResponse(response);
         });
 
-        DownloadTask task = new DownloadTask(id, dao, dataverseClient, downloadConfig, quotaManager, activeTaskRegistry, executorService);
+        DownloadTask task = new DownloadTask(id, dao, dataverseClient, downloadConfig, quotaManager, executorService);
         task.run();
 
         verify(dao, atLeast(1)).save(request);
@@ -211,7 +210,7 @@ class DownloadTaskTest {
             return handler.handleResponse(response);
         });
 
-        DownloadTask task = new DownloadTask(id, dao, dataverseClient, downloadConfig, quotaManager, activeTaskRegistry, executorService);
+        DownloadTask task = new DownloadTask(id, dao, dataverseClient, downloadConfig, quotaManager, executorService);
         try {
             task.run();
         } catch (RuntimeException e) {
@@ -236,7 +235,7 @@ class DownloadTaskTest {
         when(dao.findById(id)).thenReturn(Optional.of(request));
         when(basicFileAccessApi.getFile(any(GetFileOptions.class), any(HttpClientResponseHandler.class))).thenThrow(new RuntimeException("Download failed"));
 
-        DownloadTask task = new DownloadTask(id, dao, dataverseClient, downloadConfig, quotaManager, activeTaskRegistry, executorService);
+        DownloadTask task = new DownloadTask(id, dao, dataverseClient, downloadConfig, quotaManager, executorService);
         try {
             task.run();
         } catch (RuntimeException e) {
