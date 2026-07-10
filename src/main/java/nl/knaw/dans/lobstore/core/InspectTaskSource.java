@@ -31,9 +31,8 @@ public class InspectTaskSource implements TaskSource<TransferRequest> {
 
     @Override
     public Optional<TransferRequest> nextInput() {
-        var optItem = transferRequestDao.findNextInspectableItem();
-        if (optItem.isPresent()) {
-            var item = optItem.get();
+        var items = transferRequestDao.findInspectableItems(10);
+        for (var item : items) {
             if (activeTaskRegistry.add(item.getId())) {
                 return Optional.of(item);
             }

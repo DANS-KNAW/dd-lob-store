@@ -54,7 +54,6 @@ public class DownloadTask implements Runnable {
     private final DataverseClient dataverseClient;
     private final DownloadConfig downloadConfig;
     private final QuotaManager quotaManager;
-    private final ActiveTaskRegistry activeTaskRegistry;
     private final ExecutorService chunkDownloadExecutor;
 
     @Override
@@ -126,9 +125,6 @@ public class DownloadTask implements Runnable {
                 handleFailure(e);
                 // Do not rethrow to avoid the database transaction from being rolled back.
             }
-        }
-        finally {
-            activeTaskRegistry.remove(transferRequestId);
         }
     }
 

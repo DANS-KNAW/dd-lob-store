@@ -38,14 +38,22 @@ public class PackagingTaskFactory implements TaskFactory<Bucket> {
 
     @Override
     public Runnable create(Bucket bucket) {
-        return createUnitOfWorkAwareTask(bucket.getId(), bucketDao,
+        var proxiedTask = createUnitOfWorkAwareTask(bucket.getId(), bucketDao,
             downloadConfig.getDownloadDirectory(), packageConfig.getUploadDirectory(),
-            packageConfig.getCommand(), quotaManager, activeTaskRegistry);
+            packageConfig.getCommand(), quotaManager);
+        return () -> {
+            try {
+                proxiedTask.run();
+            }
+            finally {
+                activeTaskRegistry.remove(bucket.getId());
+            }
+        };
     }
 
-    private Runnable createUnitOfWorkAwareTask(UUID bucketId, BucketDao bucketDao, Path downloadDir, Path uploadDir, ExternalCommandConfig packagingCommand, QuotaManager quotaManager, ActiveTaskRegistry activeTaskRegistry) {
+    private Runnable createUnitOfWorkAwareTask(UUID bucketId, BucketDao bucketDao, Path downloadDir, Path uploadDir, ExternalCommandConfig packagingCommand, QuotaManager quotaManager) {
         return unitOfWorkAwareProxyFactory.create(PackagingTask.class,
-            new Class[] { UUID.class, BucketDao.class, Path.class, Path.class, ExternalCommandConfig.class, QuotaManager.class, ActiveTaskRegistry.class },
-            new Object[] { bucketId, bucketDao, downloadDir, uploadDir, packagingCommand, quotaManager, activeTaskRegistry });
+            new Class[] { UUID.class, BucketDao.class, Path.class, Path.class, ExternalCommandConfig.class, QuotaManager.class },
+            new Object[] { bucketId, bucketDao, downloadDir, uploadDir, packagingCommand, quotaManager });
     }
 }

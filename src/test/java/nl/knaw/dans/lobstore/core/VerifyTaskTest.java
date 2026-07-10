@@ -92,7 +92,7 @@ class VerifyTaskTest {
         ExternalCommandConfig verifyCommand = new ExternalCommandConfig();
         verifyCommand.setExecutable("echo");
         verifyCommand.setArgs(List.of("${bucketname}", "${datastation}", "${user}", "${host}", "${path}"));
-        VerifyTask task = new VerifyTask(bucketId, bucketDao, locationDao, verifyCommand, null, datastations, uploadDir, quotaManager, activeTaskRegistry, moratoriumManager, "Connection refused", Duration.ofMinutes(15));
+        VerifyTask task = new VerifyTask(bucketId, bucketDao, locationDao, verifyCommand, null, datastations, uploadDir, quotaManager, moratoriumManager, "Connection refused", Duration.ofMinutes(15));
 
         task.run();
 
@@ -103,7 +103,6 @@ class VerifyTaskTest {
             .sha1Sum("sha1-1")
             .bucketName(bucketId.toString())
             .build());
-        verify(activeTaskRegistry).remove(bucketId);
         verify(quotaManager).release(bucketId + "/base", "upload");
         assertThat(Files.exists(bucketFile)).isFalse();
     }
@@ -136,13 +135,12 @@ class VerifyTaskTest {
         // Command that fails
         ExternalCommandConfig verifyCommand = new ExternalCommandConfig();
         verifyCommand.setExecutable("false");
-        VerifyTask task = new VerifyTask(bucketId, bucketDao, locationDao, verifyCommand, null, datastations, uploadDir, quotaManager, activeTaskRegistry, moratoriumManager, "Connection refused", Duration.ofMinutes(15));
+        VerifyTask task = new VerifyTask(bucketId, bucketDao, locationDao, verifyCommand, null, datastations, uploadDir, quotaManager, moratoriumManager, "Connection refused", Duration.ofMinutes(15));
 
         task.run();
 
         assertThat(bucket.getStatus()).isEqualTo(BucketStatus.VERIFYING);
         verify(bucketDao, never()).save(any());
-        verify(activeTaskRegistry).remove(bucketId);
         assertThat(Files.exists(bucketFile)).isTrue();
     }
 
@@ -176,13 +174,12 @@ class VerifyTaskTest {
         verifyCommand.setExecutable("bash");
         verifyCommand.setArgs(List.of("-c", "echo 'checksum failure' >&2; exit 1"));
         
-        VerifyTask task = new VerifyTask(bucketId, bucketDao, locationDao, verifyCommand, "checksum failure", datastations, uploadDir, quotaManager, activeTaskRegistry, moratoriumManager, "Connection refused", Duration.ofMinutes(15));
+        VerifyTask task = new VerifyTask(bucketId, bucketDao, locationDao, verifyCommand, "checksum failure", datastations, uploadDir, quotaManager, moratoriumManager, "Connection refused", Duration.ofMinutes(15));
 
         task.run();
 
         assertThat(bucket.getStatus()).isEqualTo(BucketStatus.FAILED);
         verify(bucketDao).save(bucket);
-        verify(activeTaskRegistry).remove(bucketId);
         assertThat(Files.exists(bucketFile)).isTrue();
     }
 
@@ -216,13 +213,12 @@ class VerifyTaskTest {
         verifyCommand.setExecutable("sh");
         verifyCommand.setArgs(List.of("-c", "echo 'Connection refused' >&2; exit 1"));
         Duration duration = Duration.ofMinutes(15);
-        VerifyTask task = new VerifyTask(bucketId, bucketDao, locationDao, verifyCommand, "checksum failure", datastations, uploadDir, quotaManager, activeTaskRegistry, moratoriumManager, "Connection refused", duration);
+        VerifyTask task = new VerifyTask(bucketId, bucketDao, locationDao, verifyCommand, "checksum failure", datastations, uploadDir, quotaManager, moratoriumManager, "Connection refused", duration);
 
         task.run();
 
         assertThat(bucket.getStatus()).isEqualTo(BucketStatus.VERIFYING);
         verify(moratoriumManager).setMoratorium(duration);
-        verify(activeTaskRegistry).remove(bucketId);
         assertThat(Files.exists(bucketFile)).isTrue();
     }
 }

@@ -58,22 +58,17 @@ public class TransferRequestDao extends AbstractDAO<TransferRequest> {
         return currentSession().createQuery(cq).getResultList();
     }
 
-    public List<TransferRequest> findInspectableItems() {
+    public List<TransferRequest> findInspectableItems(int maxResults) {
         CriteriaBuilder cb = currentSession().getCriteriaBuilder();
         CriteriaQuery<TransferRequest> cq = cb.createQuery(TransferRequest.class);
         Root<TransferRequest> root = cq.from(TransferRequest.class);
         cq.where(cb.equal(root.get("status"), TransferRequestStatus.PENDING));
         cq.orderBy(cb.asc(root.get("created")));
-        return currentSession().createQuery(cq).getResultList();
+        return currentSession().createQuery(cq).setMaxResults(maxResults).getResultList();
     }
 
-    public Optional<TransferRequest> findNextInspectableItem() {
-        CriteriaBuilder cb = currentSession().getCriteriaBuilder();
-        CriteriaQuery<TransferRequest> cq = cb.createQuery(TransferRequest.class);
-        Root<TransferRequest> root = cq.from(TransferRequest.class);
-        cq.where(root.get("status").in(TransferRequestStatus.PENDING));
-        cq.orderBy(cb.asc(root.get("created")));
-        return currentSession().createQuery(cq).setMaxResults(1).uniqueResultOptional();
+    public List<TransferRequest> findInspectableItems() {
+        return findInspectableItems(Integer.MAX_VALUE);
     }
 
     public Optional<TransferRequest> findNextDownloadableItem() {

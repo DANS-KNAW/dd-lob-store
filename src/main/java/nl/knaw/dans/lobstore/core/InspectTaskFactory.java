@@ -33,12 +33,20 @@ public class InspectTaskFactory implements TaskFactory<TransferRequest> {
 
     @Override
     public Runnable create(TransferRequest transferRequest) {
-        return createUnitOfWorkAwareTask(transferRequest.getId(), transferRequestDao, dataverseClients.get(transferRequest.getDatastation()));
+        var proxiedTask = createUnitOfWorkAwareTask(transferRequest.getId(), transferRequestDao, dataverseClients.get(transferRequest.getDatastation()));
+        return () -> {
+            try {
+                proxiedTask.run();
+            }
+            finally {
+                activeTaskRegistry.remove(transferRequest.getId());
+            }
+        };
     }
 
     private Runnable createUnitOfWorkAwareTask(UUID id, TransferRequestDao transferRequestDao, DataverseClient dataverseClient) {
         return unitOfWorkAwareProxyFactory.create(InspectTask.class,
-            new Class[] { UUID.class, TransferRequestDao.class, DataverseClient.class, ActiveTaskRegistry.class },
-            new Object[] { id, transferRequestDao, dataverseClient, activeTaskRegistry });
+            new Class[] { UUID.class, TransferRequestDao.class, DataverseClient.class },
+            new Object[] { id, transferRequestDao, dataverseClient });
     }
 }

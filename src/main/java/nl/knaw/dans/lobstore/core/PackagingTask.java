@@ -45,7 +45,6 @@ public class PackagingTask implements Runnable {
     private final Path uploadDir;
     private final ExternalCommandConfig packagingCommand;
     private final QuotaManager quotaManager;
-    private final ActiveTaskRegistry activeTaskRegistry;
 
     @Override
     @UnitOfWork
@@ -127,9 +126,6 @@ public class PackagingTask implements Runnable {
                 bucket.setStatus(BucketStatus.FAILED);
                 bucketDao.save(bucket);
             });
-        }
-        finally {
-            activeTaskRegistry.remove(bucketId);
         }
     }
 

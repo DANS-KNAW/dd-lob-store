@@ -63,13 +63,12 @@ class UploadTaskTest {
         ExternalCommandConfig uploadCommand = new ExternalCommandConfig();
         uploadCommand.setExecutable("echo");
         uploadCommand.setArgs(List.of("${bucketname}", "${datastation}", "${user}", "${host}", "${path}"));
-        UploadTask task = new UploadTask(bucketId, bucketDao, uploadCommand, datastations, activeTaskRegistry, moratoriumManager, "Connection refused", Duration.ofMinutes(15));
+        UploadTask task = new UploadTask(bucketId, bucketDao, uploadCommand, datastations, moratoriumManager, "Connection refused", Duration.ofMinutes(15));
 
         task.run();
 
         assertThat(bucket.getStatus()).isEqualTo(BucketStatus.UPLOADED);
         verify(bucketDao).save(bucket);
-        verify(activeTaskRegistry).remove(bucketId);
     }
 
     @Test
@@ -97,13 +96,12 @@ class UploadTaskTest {
         // Command that fails
         ExternalCommandConfig uploadCommand = new ExternalCommandConfig();
         uploadCommand.setExecutable("false");
-        UploadTask task = new UploadTask(bucketId, bucketDao, uploadCommand, datastations, activeTaskRegistry, moratoriumManager, "Connection refused", Duration.ofMinutes(15));
+        UploadTask task = new UploadTask(bucketId, bucketDao, uploadCommand, datastations, moratoriumManager, "Connection refused", Duration.ofMinutes(15));
 
         task.run();
 
         assertThat(bucket.getStatus()).isEqualTo(BucketStatus.UPLOADING);
         verify(bucketDao, never()).save(any());
-        verify(activeTaskRegistry).remove(bucketId);
     }
 
     @Test
@@ -133,12 +131,11 @@ class UploadTaskTest {
         uploadCommand.setExecutable("sh");
         uploadCommand.setArgs(List.of("-c", "echo 'Connection refused' >&2; exit 1"));
         Duration duration = Duration.ofMinutes(15);
-        UploadTask task = new UploadTask(bucketId, bucketDao, uploadCommand, datastations, activeTaskRegistry, moratoriumManager, "Connection refused", duration);
+        UploadTask task = new UploadTask(bucketId, bucketDao, uploadCommand, datastations, moratoriumManager, "Connection refused", duration);
 
         task.run();
 
         assertThat(bucket.getStatus()).isEqualTo(BucketStatus.UPLOADING);
         verify(moratoriumManager).setMoratorium(duration);
-        verify(activeTaskRegistry).remove(bucketId);
     }
 }

@@ -54,7 +54,6 @@ public class VerifyTask implements Runnable {
     private final Map<String, DataStationConfig> datastations;
     private final Path uploadDir;
     private final QuotaManager quotaManager;
-    private final ActiveTaskRegistry activeTaskRegistry;
     private final MoratoriumManager moratoriumManager;
     private final String moratoriumTrigger;
     private final Duration moratoriumDuration;
@@ -131,9 +130,6 @@ public class VerifyTask implements Runnable {
             log.error("Error during verify for bucket {}", bucketId, e);
             // If interrupted the task should not remove anything but just leave the bucket in verifying state,
             // so that a next try will execute the same command.
-        }
-        finally {
-            activeTaskRegistry.remove(bucketId);
         }
     }
 

@@ -41,7 +41,6 @@ public class UploadTask implements Runnable {
     private final BucketDao bucketDao;
     private final ExternalCommandConfig uploadCommand;
     private final Map<String, DataStationConfig> datastations;
-    private final ActiveTaskRegistry activeTaskRegistry;
     private final MoratoriumManager moratoriumManager;
     private final String moratoriumTrigger;
     private final Duration moratoriumDuration;
@@ -69,9 +68,6 @@ public class UploadTask implements Runnable {
         catch (Exception e) {
             log.error("Error during upload for bucket {}", bucketId, e);
             // Leaves the bucket in UPLOADING state, so it will be retried next polling round.
-        }
-        finally {
-            activeTaskRegistry.remove(bucketId);
         }
     }
 

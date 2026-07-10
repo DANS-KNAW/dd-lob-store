@@ -33,13 +33,17 @@ public class BucketDao extends AbstractDAO<Bucket> {
         super(sessionFactory);
     }
 
-    public List<Bucket> findByStatus(BucketStatus status) {
+    public List<Bucket> findByStatus(BucketStatus status, int maxResults) {
         CriteriaBuilder cb = currentSession().getCriteriaBuilder();
         CriteriaQuery<Bucket> cq = cb.createQuery(Bucket.class);
         Root<Bucket> root = cq.from(Bucket.class);
         cq.where(cb.equal(root.get("status"), status));
         cq.orderBy(cb.asc(root.get("id")));
-        return currentSession().createQuery(cq).getResultList();
+        return currentSession().createQuery(cq).setMaxResults(maxResults).getResultList();
+    }
+
+    public List<Bucket> findByStatus(BucketStatus status) {
+        return findByStatus(status, Integer.MAX_VALUE);
     }
 
     public Bucket save(Bucket bucket) {
