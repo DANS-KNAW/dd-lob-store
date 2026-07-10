@@ -22,9 +22,11 @@ import java.util.List;
 import java.util.UUID;
 
 import static org.assertj.core.api.Assertions.assertThat;
+import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static org.mockito.ArgumentMatchers.anyLong;
 import static org.mockito.ArgumentMatchers.anyString;
 import static org.mockito.ArgumentMatchers.eq;
+import static org.mockito.Mockito.doThrow;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
@@ -92,6 +94,37 @@ class DownloadTaskSourceTest {
         assertThat(a.getStatus()).isNull();
         // Removed from the registry so it can be retried on a later poll.
         assertThat(activeTaskRegistry.contains(a.getId())).isFalse();
+    }
+
+    @Test
+    void nextInputs_should_release_registry_entry_when_save_throws() {
+        TransferRequest a = item();
+        when(transferRequestDao.findDownloadableItems(MAX_CONCURRENT)).thenReturn(List.of(a));
+        when(quotaManager.ensureClaimed(anyString(), eq("download"), anyLong())).thenReturn(true);
+        doThrow(new RuntimeException("save failed")).when(transferRequestDao).save(a);
+
+        var source = source();
+        assertThatThrownBy(source::nextInputs).isInstanceOf(RuntimeException.class);
+
+        // Released so it can be retried on the next poll.
+        assertThat(activeTaskRegistry.contains(a.getId())).isFalse();
+    }
+
+    @Test
+    void nextInputs_should_release_previously_claimed_items_when_a_later_item_throws() {
+        TransferRequest a = item();
+        TransferRequest b = item();
+        when(transferRequestDao.findDownloadableItems(MAX_CONCURRENT)).thenReturn(List.of(a, b));
+        when(quotaManager.ensureClaimed(anyString(), eq("download"), anyLong())).thenReturn(true);
+        // 'a' is claimed and saved successfully; 'b' fails on save, aborting the batch.
+        doThrow(new RuntimeException("save failed")).when(transferRequestDao).save(b);
+
+        var source = source();
+        assertThatThrownBy(source::nextInputs).isInstanceOf(RuntimeException.class);
+
+        // The batch's @UnitOfWork rolls back; neither item must remain "active" in the registry.
+        assertThat(activeTaskRegistry.contains(a.getId())).isFalse();
+        assertThat(activeTaskRegistry.contains(b.getId())).isFalse();
     }
 
     @Test

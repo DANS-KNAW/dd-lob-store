@@ -23,6 +23,7 @@ import java.util.Optional;
 import java.util.UUID;
 
 import static org.assertj.core.api.Assertions.assertThat;
+import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static org.mockito.Mockito.*;
 
 class VerifyTaskSourceTest {
@@ -61,6 +62,22 @@ class VerifyTaskSourceTest {
         assertThat(bucket.getStatus()).isEqualTo(BucketStatus.VERIFYING);
         verify(bucketDao).save(bucket);
         verify(activeTaskRegistry).add(bucketId);
+    }
+
+    @Test
+    void nextInput_should_release_registry_entry_if_save_throws() {
+        UUID bucketId = UUID.randomUUID();
+        Bucket bucket = Bucket.builder().id(bucketId).status(BucketStatus.UPLOADED).build();
+
+        when(bucketDao.findByStatus(eq(BucketStatus.VERIFYING), anyInt())).thenReturn(List.of());
+        when(bucketDao.findByStatus(eq(BucketStatus.UPLOADED), anyInt())).thenReturn(List.of(bucket));
+        when(activeTaskRegistry.add(bucketId)).thenReturn(true);
+        doThrow(new RuntimeException("save failed")).when(bucketDao).save(bucket);
+
+        assertThatThrownBy(source::nextInput).isInstanceOf(RuntimeException.class);
+
+        // The bucket must be released from the registry so it can be picked up again on the next poll.
+        verify(activeTaskRegistry).remove(bucketId);
     }
 
     @Test

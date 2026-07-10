@@ -48,10 +48,16 @@ public class UploadTaskSource implements TaskSource<Bucket> {
         var packagedBuckets = bucketDao.findByStatus(BucketStatus.PACKAGED, 10);
         for (var bucket : packagedBuckets) {
             if (activeTaskRegistry.add(bucket.getId())) {
-                log.info("Starting upload task for bucket {}", bucket.getId());
-                bucket.setStatus(BucketStatus.UPLOADING);
-                bucketDao.save(bucket);
-                return Optional.of(bucket);
+                try {
+                    log.info("Starting upload task for bucket {}", bucket.getId());
+                    bucket.setStatus(BucketStatus.UPLOADING);
+                    bucketDao.save(bucket);
+                    return Optional.of(bucket);
+                }
+                catch (Exception e) {
+                    activeTaskRegistry.remove(bucket.getId());
+                    throw e;
+                }
             }
         }
 

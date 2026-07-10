@@ -48,10 +48,16 @@ public class VerifyTaskSource implements TaskSource<Bucket> {
         var uploadedBuckets = bucketDao.findByStatus(BucketStatus.UPLOADED, 10);
         for (var bucket : uploadedBuckets) {
             if (activeTaskRegistry.add(bucket.getId())) {
-                log.info("Starting verify task for bucket {}", bucket.getId());
-                bucket.setStatus(BucketStatus.VERIFYING);
-                bucketDao.save(bucket);
-                return Optional.of(bucket);
+                try {
+                    log.info("Starting verify task for bucket {}", bucket.getId());
+                    bucket.setStatus(BucketStatus.VERIFYING);
+                    bucketDao.save(bucket);
+                    return Optional.of(bucket);
+                }
+                catch (Exception e) {
+                    activeTaskRegistry.remove(bucket.getId());
+                    throw e;
+                }
             }
         }
 

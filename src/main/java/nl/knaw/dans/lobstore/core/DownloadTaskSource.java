@@ -42,10 +42,18 @@ public class DownloadTaskSource implements TaskSource<TransferRequest> {
         // Fetch a window of the oldest downloadable items (INSPECTED or already DOWNLOADING). Items that are already
         // being processed are skipped by the ActiveTaskRegistry, so the window naturally caps concurrency at
         // maxConcurrentDownloads while still resuming items left DOWNLOADING after a crash.
-        for (var item : transferRequestDao.findDownloadableItems(maxConcurrentDownloads)) {
-            claim(item).ifPresent(scheduled::add);
+        try {
+            for (var item : transferRequestDao.findDownloadableItems(maxConcurrentDownloads)) {
+                claim(item).ifPresent(scheduled::add);
+            }
+            return scheduled;
         }
-        return scheduled;
+        catch (Exception e) {
+            // The batch runs in one @UnitOfWork; on abort the DB rolls back but the in-memory registry does not.
+            // Release everything claimed in this batch so those items can be retried on the next poll.
+            scheduled.forEach(item -> activeTaskRegistry.remove(item.getId()));
+            throw e;
+        }
     }
 
     @Override
@@ -56,21 +64,29 @@ public class DownloadTaskSource implements TaskSource<TransferRequest> {
 
     private Optional<TransferRequest> claim(TransferRequest item) {
         if (activeTaskRegistry.add(item.getId())) {
-            if (quotaManager.ensureClaimed(item.getId() + "/base", TARGET_DOWNLOAD, item.getFileSize())) {
-                // TODO: the extra claim is only necessary if downloading in chunks, so if the filesize exceeds the chunk size.
-                if (quotaManager.ensureClaimed(item.getId() + "/extra", TARGET_DOWNLOAD, item.getFileSize() + margin)) {
-                    item.setStatus(TransferRequestStatus.DOWNLOADING);
-                    transferRequestDao.save(item);
-                    return Optional.of(item);
+            try {
+                if (quotaManager.ensureClaimed(item.getId() + "/base", TARGET_DOWNLOAD, item.getFileSize())) {
+                    // TODO: the extra claim is only necessary if downloading in chunks, so if the filesize exceeds the chunk size.
+                    if (quotaManager.ensureClaimed(item.getId() + "/extra", TARGET_DOWNLOAD, item.getFileSize() + margin)) {
+                        item.setStatus(TransferRequestStatus.DOWNLOADING);
+                        transferRequestDao.save(item);
+                        return Optional.of(item);
+                    }
+                    // DO NOT DELETE: IMPORTANT EXPLANATION FOR FUTURE MAINTENANCE.
+                    // else {
+                    // We DO NOT release the base claim because the same items will be selected in the next try. If the selection
+                    // were to become non-deterministic, we would need to release the base claim here to prevent a leak
+                    // }
                 }
-                // DO NOT DELETE: IMPORTANT EXPLANATION FOR FUTURE MAINTENANCE.
-                // else {
-                // We DO NOT release the base claim because the same items will be selected in the next try. If the selection
-                // were to become non-deterministic, we would need to release the base claim here to prevent a leak
-                // }
+                // If we couldn't proceed (e.g., quota check failed), we remove it from the registry so it can be picked up again.
+                activeTaskRegistry.remove(item.getId());
             }
-            // If we couldn't proceed (e.g., quota check failed), we remove it from the registry so it can be picked up again.
-            activeTaskRegistry.remove(item.getId());
+            catch (Exception e) {
+                // A failure after claiming (e.g. save throws) must also release the registry entry, otherwise the item
+                // stays "active" forever and is skipped on every future poll.
+                activeTaskRegistry.remove(item.getId());
+                throw e;
+            }
         }
         return Optional.empty();
     }
