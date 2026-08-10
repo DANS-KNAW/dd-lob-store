@@ -79,7 +79,7 @@ public class DownloadTask implements Runnable {
             Path outputFile = downloadDir.resolve(sha1);
 
             if (fileSize < chunkSize) {
-                downloadWholeFile(basicFileAccessApi, outputFile);
+                downloadWholeFile(basicFileAccessApi, outputFile, fileSize);
             }
             else {
                 downloadInChunks(basicFileAccessApi, downloadDir, fileSize, chunkSize, sha1);
@@ -155,11 +155,19 @@ public class DownloadTask implements Runnable {
         });
     }
 
-    private void downloadWholeFile(BasicFileAccessApi api, Path outputFile) throws IOException, DataverseException {
-        if (Files.exists(outputFile)) {
+    private void downloadWholeFile(BasicFileAccessApi api, Path outputFile, long fileSize) throws IOException, DataverseException {
+        if (Files.exists(outputFile) && Files.size(outputFile) == fileSize) {
             log.info("File {} already exists, skipping download", outputFile);
             return;
         }
+
+        try {
+            Files.deleteIfExists(outputFile);
+        }
+        catch (IOException e) {
+            log.warn("Could not delete partial file {}", outputFile, e);
+        }
+
         log.info("Downloading whole file to {}", outputFile);
         var options = new GetFileOptions();
         options.setGbrecs(true);
