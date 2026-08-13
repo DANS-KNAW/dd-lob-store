@@ -161,7 +161,7 @@ public class DdLobStoreApplication extends Application<DdLobStoreConfig> {
             "CleanupTaskExecutor",
             environment.lifecycle().scheduledExecutorService("cleanup-task-executor", true).build(),
             config.getTransfer().getCleanup().getPollingInterval().toJavaDuration(),
-            new CleanupTaskSource(bucketDao, cleanupActiveTaskRegistry),
+            new CleanupTaskSource(bucketDao, locationDao, cleanupActiveTaskRegistry),
             new CleanupTaskFactory(bucketDao, transferRequestDao, claimDao,
                 config.getTransfer().getPackageConfig().getUploadDirectory(),
                 config.getTransfer().getDownload().getDownloadDirectory(),

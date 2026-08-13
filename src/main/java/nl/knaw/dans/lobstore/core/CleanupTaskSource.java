@@ -19,6 +19,7 @@ import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import nl.knaw.dans.lib.util.pollingtaskexec.TaskSource;
 import nl.knaw.dans.lobstore.db.BucketDao;
+import nl.knaw.dans.lobstore.db.LocationDao;
 
 import java.util.Optional;
 
@@ -27,15 +28,21 @@ import java.util.Optional;
 public class CleanupTaskSource implements TaskSource<Bucket> {
 
     private final BucketDao bucketDao;
+    private final LocationDao locationDao;
     private final ActiveTaskRegistry activeTaskRegistry;
 
     @Override
     public Optional<Bucket> nextInput() {
         var doneBuckets = bucketDao.findByStatus(BucketStatus.DONE, 10);
         for (var bucket : doneBuckets) {
-            if (activeTaskRegistry.add(bucket.getId())) {
-                log.info("Starting cleanup task for bucket {}", bucket.getId());
-                return Optional.of(bucket);
+            long locationCount = locationDao.countByBucketName(bucket.getId().toString());
+            if (locationCount > 0) {
+                if (activeTaskRegistry.add(bucket.getId())) {
+                    log.info("Starting cleanup task for bucket {}", bucket.getId());
+                    return Optional.of(bucket);
+                }
+            } else {
+                log.warn("Bucket {} has status DONE but is not found in the location table. Skipping cleanup.", bucket.getId());
             }
         }
         return Optional.empty();
