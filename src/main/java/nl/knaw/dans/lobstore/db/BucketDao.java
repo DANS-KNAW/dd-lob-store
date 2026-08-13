@@ -53,4 +53,8 @@ public class BucketDao extends AbstractDAO<Bucket> {
     public Optional<Bucket> findById(UUID id) {
         return Optional.ofNullable(get(id));
     }
+
+    public void delete(Bucket bucket) {
+        currentSession().delete(bucket);
+    }
 }

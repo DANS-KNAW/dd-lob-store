@@ -44,4 +44,13 @@ public class LocationDao extends AbstractDAO<Location> {
         );
         return currentSession().createQuery(cq).setMaxResults(1).uniqueResultOptional();
     }
+
+    public long countByBucketName(String bucketName) {
+        CriteriaBuilder cb = currentSession().getCriteriaBuilder();
+        CriteriaQuery<Long> cq = cb.createQuery(Long.class);
+        Root<Location> root = cq.from(Location.class);
+        cq.select(cb.count(root));
+        cq.where(cb.equal(root.get("bucketName"), bucketName));
+        return currentSession().createQuery(cq).getSingleResult();
+    }
 }

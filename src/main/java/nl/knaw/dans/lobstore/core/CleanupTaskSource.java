@@ -1,0 +1,52 @@
+/*
+ * Copyright (C) 2026 DANS - Data Archiving and Networked Services (info@dans.knaw.nl)
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ * http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
+package nl.knaw.dans.lobstore.core;
+
+import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
+import nl.knaw.dans.lib.util.pollingtaskexec.TaskSource;
+import nl.knaw.dans.lobstore.db.BucketDao;
+import nl.knaw.dans.lobstore.db.LocationDao;
+
+import java.util.Optional;
+
+@Slf4j
+@RequiredArgsConstructor
+public class CleanupTaskSource implements TaskSource<Bucket> {
+
+    private final BucketDao bucketDao;
+    private final LocationDao locationDao;
+    private final ActiveTaskRegistry activeTaskRegistry;
+
+    @Override
+    public Optional<Bucket> nextInput() {
+        var doneBuckets = bucketDao.findByStatus(BucketStatus.DONE, 10);
+        for (var bucket : doneBuckets) {
+            long locationCount = locationDao.countByBucketName(bucket.getId().toString());
+            if (locationCount > 0) {
+                if (activeTaskRegistry.add(bucket.getId())) {
+                    log.info("Starting cleanup task for bucket {}", bucket.getId());
+                    return Optional.of(bucket);
+                }
+            } else {
+                log.error("Bucket {} has status DONE but is not found in the location table. Marking as FAILED.", bucket.getId());
+                bucket.setStatus(BucketStatus.FAILED);
+                bucketDao.save(bucket);
+            }
+        }
+        return Optional.empty();
+    }
+}
