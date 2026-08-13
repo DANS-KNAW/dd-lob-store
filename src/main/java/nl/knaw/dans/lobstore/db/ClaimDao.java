@@ -52,4 +52,10 @@ public class ClaimDao extends AbstractDAO<Claim> {
         Long result = currentSession().createQuery(cq).getSingleResult();
         return result == null ? 0L : result;
     }
+
+    public void deleteByIdStartingWith(String prefix) {
+        currentSession().createQuery("delete from Claim c where c.id like :prefix")
+            .setParameter("prefix", prefix + "%")
+            .executeUpdate();
+    }
 }

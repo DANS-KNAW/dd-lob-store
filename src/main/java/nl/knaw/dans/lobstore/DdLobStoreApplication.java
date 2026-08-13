@@ -27,6 +27,8 @@ import nl.knaw.dans.lib.util.pollingtaskexec.PollingTaskExecutor;
 import nl.knaw.dans.lobstore.config.DdLobStoreConfig;
 import nl.knaw.dans.lobstore.core.ActiveTaskRegistry;
 import nl.knaw.dans.lobstore.core.Bucket;
+import nl.knaw.dans.lobstore.core.CleanupTaskFactory;
+import nl.knaw.dans.lobstore.core.CleanupTaskSource;
 import nl.knaw.dans.lobstore.core.DownloadTaskFactory;
 import nl.knaw.dans.lobstore.core.DownloadTaskSource;
 import nl.knaw.dans.lobstore.core.InspectTaskFactory;
@@ -86,6 +88,7 @@ public class DdLobStoreApplication extends Application<DdLobStoreConfig> {
         final ActiveTaskRegistry packagingActiveTaskRegistry = new ActiveTaskRegistry();
         final ActiveTaskRegistry uploadActiveTaskRegistry = new ActiveTaskRegistry();
         final ActiveTaskRegistry verifyActiveTaskRegistry = new ActiveTaskRegistry();
+        final ActiveTaskRegistry cleanupActiveTaskRegistry = new ActiveTaskRegistry();
         final MoratoriumManager moratoriumManager = new MoratoriumManager();
 
         environment.jersey().register(new TransfersResource(transferRequestDao, locationDao));
@@ -154,11 +157,23 @@ public class DdLobStoreApplication extends Application<DdLobStoreConfig> {
                 config.getTransfer().getVerify().getMoratorium().getDuration().toJavaDuration(), uowProxyFactory),
             new ExecutorServiceTaskScheduler(config.getTransfer().getVerify().getTaskQueue().build(environment)));
 
+        final PollingTaskExecutor<Bucket> cleanupTaskExecutor = new PollingTaskExecutor<>(
+            "CleanupTaskExecutor",
+            environment.lifecycle().scheduledExecutorService("cleanup-task-executor", true).build(),
+            config.getTransfer().getCleanup().getPollingInterval().toJavaDuration(),
+            new CleanupTaskSource(bucketDao, cleanupActiveTaskRegistry),
+            new CleanupTaskFactory(bucketDao, transferRequestDao, claimDao,
+                config.getTransfer().getPackageConfig().getUploadDirectory(),
+                config.getTransfer().getDownload().getDownloadDirectory(),
+                cleanupActiveTaskRegistry, uowProxyFactory),
+            new ExecutorServiceTaskScheduler(config.getTransfer().getCleanup().getTaskQueue().build(environment)));
+
         environment.lifecycle().manage(createUnitOfWorkAwareProxy(uowProxyFactory, inspectTaskExecutor));
         environment.lifecycle().manage(createUnitOfWorkAwareProxy(uowProxyFactory, downloadTaskExecutor));
         environment.lifecycle().manage(createUnitOfWorkAwareProxy(uowProxyFactory, packagingTaskExecutor));
         environment.lifecycle().manage(createUnitOfWorkAwareProxy(uowProxyFactory, uploadTaskExecutor));
         environment.lifecycle().manage(createUnitOfWorkAwareProxy(uowProxyFactory, verifyTaskExecutor));
+        environment.lifecycle().manage(createUnitOfWorkAwareProxy(uowProxyFactory, cleanupTaskExecutor));
     }
 
     private <R> PollingTaskExecutor<R> createUnitOfWorkAwareProxy(UnitOfWorkAwareProxyFactory uowFactory, PollingTaskExecutor<R> executor) {

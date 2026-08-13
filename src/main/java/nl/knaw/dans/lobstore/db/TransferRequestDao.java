@@ -148,4 +148,7 @@ public class TransferRequestDao extends AbstractDAO<TransferRequest> {
         return currentSession().createQuery(cq).setMaxResults(1).uniqueResultOptional();
     }
 
+    public void delete(TransferRequest transferRequest) {
+        currentSession().delete(transferRequest);
+    }
 }

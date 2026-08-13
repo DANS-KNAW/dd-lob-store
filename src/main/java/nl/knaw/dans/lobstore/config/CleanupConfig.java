@@ -13,37 +13,18 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-
 package nl.knaw.dans.lobstore.config;
 
-import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
-import com.fasterxml.jackson.annotation.JsonProperty;
+import io.dropwizard.util.Duration;
 import lombok.Data;
+import nl.knaw.dans.lib.util.ExecutorServiceFactory;
 
-import javax.validation.Valid;
 import javax.validation.constraints.NotNull;
 
 @Data
-@JsonIgnoreProperties(ignoreUnknown = true)
-public class TransferConfig {
+public class CleanupConfig {
     @NotNull
-    @Valid
-    private InspectConfig inspect;
+    private Duration pollingInterval;
     @NotNull
-    @Valid
-    private DownloadConfig download;
-    @NotNull
-    @Valid
-    @JsonProperty("package")
-    private PackageConfig packageConfig;
-    @NotNull
-    @Valid
-    private UploadConfig upload;
-    @NotNull
-    @Valid
-    private VerifyConfig verify;
-    @NotNull
-    @Valid
-    private CleanupConfig cleanup;
-
+    private ExecutorServiceFactory taskQueue;
 }

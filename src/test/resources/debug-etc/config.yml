@@ -152,6 +152,15 @@ transfer:
     moratorium:
       triggerOn: "Connection refused"
       duration: 15m
+  # Cleans up files after successful upload and verification.
+  cleanup:
+    pollingInterval: 5s
+    taskQueue:
+      nameFormat: "cleanup-worker-%d"
+      maxQueueSize: 5000
+      minThreads: 1
+      maxThreads: 1
+      keepAliveTime: 60 seconds
 
 #
 # See https://www.dropwizard.io/en/latest/manual/configuration.html#logging
