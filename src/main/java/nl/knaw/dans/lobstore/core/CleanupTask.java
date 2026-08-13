@@ -76,7 +76,7 @@ public class CleanupTask implements Runnable {
                         try {
                             Files.setPosixFilePermissions(path, deletePermissions);
                         }
-                        catch (IOException e) {
+catch (IOException | UnsupportedOperationException e) {
                             log.warn("Failed to set delete permissions for {}: {}", path, e.getMessage());
                         }
                     });
