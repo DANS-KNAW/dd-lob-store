@@ -42,7 +42,9 @@ public class CleanupTaskSource implements TaskSource<Bucket> {
                     return Optional.of(bucket);
                 }
             } else {
-                log.warn("Bucket {} has status DONE but is not found in the location table. Skipping cleanup.", bucket.getId());
+                log.error("Bucket {} has status DONE but is not found in the location table. Marking as FAILED.", bucket.getId());
+                bucket.setStatus(BucketStatus.FAILED);
+                bucketDao.save(bucket);
             }
         }
         return Optional.empty();
