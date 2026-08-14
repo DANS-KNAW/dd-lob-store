@@ -22,7 +22,6 @@ import nl.knaw.dans.lobstore.config.DownloadConfig;
 import nl.knaw.dans.lobstore.config.ExternalCommandConfig;
 import nl.knaw.dans.lobstore.config.PackageConfig;
 import nl.knaw.dans.lobstore.db.BucketDao;
-import nl.knaw.dans.lobstore.db.TransferRequestDao;
 
 import java.nio.file.Path;
 import java.util.UUID;
@@ -40,7 +39,7 @@ public class PackagingTaskFactory implements TaskFactory<Bucket> {
     public Runnable create(Bucket bucket) {
         var proxiedTask = createUnitOfWorkAwareTask(bucket.getId(), bucketDao,
             downloadConfig.getDownloadDirectory(), packageConfig.getUploadDirectory(),
-            packageConfig.getCommand(), quotaManager);
+            packageConfig.getCommand(), quotaManager, packageConfig.getMinimalBucketSize().toBytes());
         return () -> {
             try {
                 proxiedTask.run();
@@ -51,9 +50,10 @@ public class PackagingTaskFactory implements TaskFactory<Bucket> {
         };
     }
 
-    private Runnable createUnitOfWorkAwareTask(UUID bucketId, BucketDao bucketDao, Path downloadDir, Path uploadDir, ExternalCommandConfig packagingCommand, QuotaManager quotaManager) {
+    private Runnable createUnitOfWorkAwareTask(UUID bucketId, BucketDao bucketDao, Path downloadDir, Path uploadDir, ExternalCommandConfig packagingCommand, QuotaManager quotaManager,
+        long minimalBucketSize) {
         return unitOfWorkAwareProxyFactory.create(PackagingTask.class,
-            new Class[] { UUID.class, BucketDao.class, Path.class, Path.class, ExternalCommandConfig.class, QuotaManager.class },
-            new Object[] { bucketId, bucketDao, downloadDir, uploadDir, packagingCommand, quotaManager });
+            new Class[] { UUID.class, BucketDao.class, Path.class, Path.class, ExternalCommandConfig.class, QuotaManager.class, long.class },
+            new Object[] { bucketId, bucketDao, downloadDir, uploadDir, packagingCommand, quotaManager, minimalBucketSize });
     }
 }

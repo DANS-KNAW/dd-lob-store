@@ -30,7 +30,7 @@ import javax.persistence.UniqueConstraint;
 
 @Entity
 @Table(name = "location", uniqueConstraints = {
-    @UniqueConstraint(columnNames = {"datastation", "sha1_sum"})
+    @UniqueConstraint(columnNames = { "datastation", "sha1_sum" })
 })
 @Data
 @Builder

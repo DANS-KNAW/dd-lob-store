@@ -131,6 +131,7 @@ class TransferRequestDaoTest {
         assertThat(result).hasSize(2);
         assertThat(result).extracting(TransferRequest::getId).containsExactly(id1, id2);
     }
+
     @Test
     void findNextDownloadableItem_should_return_inspected_request() {
         UUID id1 = UUID.randomUUID();

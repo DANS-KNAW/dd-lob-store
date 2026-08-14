@@ -28,6 +28,8 @@ import org.apache.commons.io.FileUtils;
 
 import java.io.File;
 import java.io.IOException;
+import java.io.OutputStream;
+import java.nio.charset.StandardCharsets;
 import java.nio.file.DirectoryNotEmptyException;
 import java.nio.file.Files;
 import java.nio.file.Path;
@@ -45,6 +47,7 @@ public class PackagingTask implements Runnable {
     private final Path uploadDir;
     private final ExternalCommandConfig packagingCommand;
     private final QuotaManager quotaManager;
+    private final long minimalBucketSize;
 
     @Override
     @UnitOfWork
@@ -94,6 +97,28 @@ public class PackagingTask implements Runnable {
 
                 // Release base-claim for each of those files. Target was "download" in DownloadTaskSource.
                 quotaManager.release(tr.getId() + "/base", TARGET_DOWNLOAD);
+            }
+
+            long currentTotalSize = bucket.getTransferRequests().stream().mapToLong(TransferRequest::getFileSize).sum();
+            if (currentTotalSize < minimalBucketSize) {
+                long paddingSize = minimalBucketSize - currentTotalSize;
+                Path paddingFile = bucketFolder.resolve(".padding.bin");
+                log.info("Total size is less than minimal bucket size. Adding padding file of size {}", paddingSize);
+
+                String header = "This file exists only to pad the archive to at least " + minimalBucketSize + "\n";
+                byte[] headerBytes = header.getBytes(StandardCharsets.UTF_8);
+
+                try (OutputStream os = Files.newOutputStream(paddingFile)) {
+                    os.write(headerBytes);
+                    // Write NUL bytes in chunks
+                    byte[] zeros = new byte[8192];
+                    long remaining = paddingSize;
+                    while (remaining > 0) {
+                        int toWrite = (int) Math.min(zeros.length, remaining);
+                        os.write(zeros, 0, toWrite);
+                        remaining -= toWrite;
+                    }
+                }
             }
 
             // Replace ${bucketname} and handle partial output deletion
