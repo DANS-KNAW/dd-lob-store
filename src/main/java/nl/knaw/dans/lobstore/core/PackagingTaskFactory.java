@@ -16,6 +16,7 @@
 package nl.knaw.dans.lobstore.core;
 
 import io.dropwizard.hibernate.UnitOfWorkAwareProxyFactory;
+import io.dropwizard.util.DataSize;
 import lombok.RequiredArgsConstructor;
 import nl.knaw.dans.lib.util.pollingtaskexec.TaskFactory;
 import nl.knaw.dans.lobstore.config.DownloadConfig;
@@ -39,7 +40,7 @@ public class PackagingTaskFactory implements TaskFactory<Bucket> {
     public Runnable create(Bucket bucket) {
         var proxiedTask = createUnitOfWorkAwareTask(bucket.getId(), bucketDao,
             downloadConfig.getDownloadDirectory(), packageConfig.getUploadDirectory(),
-            packageConfig.getCommand(), quotaManager, packageConfig.getMinimalBucketSize().toBytes());
+            packageConfig.getCommand(), quotaManager, packageConfig.getMinimalBucketSize());
         return () -> {
             try {
                 proxiedTask.run();
@@ -51,9 +52,9 @@ public class PackagingTaskFactory implements TaskFactory<Bucket> {
     }
 
     private Runnable createUnitOfWorkAwareTask(UUID bucketId, BucketDao bucketDao, Path downloadDir, Path uploadDir, ExternalCommandConfig packagingCommand, QuotaManager quotaManager,
-        long minimalBucketSize) {
+        DataSize minimalBucketSize) {
         return unitOfWorkAwareProxyFactory.create(PackagingTask.class,
-            new Class[] { UUID.class, BucketDao.class, Path.class, Path.class, ExternalCommandConfig.class, QuotaManager.class, long.class },
+            new Class[] { UUID.class, BucketDao.class, Path.class, Path.class, ExternalCommandConfig.class, QuotaManager.class, DataSize.class },
             new Object[] { bucketId, bucketDao, downloadDir, uploadDir, packagingCommand, quotaManager, minimalBucketSize });
     }
 }

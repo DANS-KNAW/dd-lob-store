@@ -94,7 +94,7 @@ public class DdLobStoreApplication extends Application<DdLobStoreConfig> {
 
         environment.jersey().register(new TransfersResource(transferRequestDao, locationDao));
         environment.jersey().register(new LocationsResource(locationDao));
-        environment.jersey().register(new DatastationsResource(transferRequestDao, bucketDao, quotaManager, packagingActiveTaskRegistry,
+        environment.jersey().register(new DatastationsResource(transferRequestDao, bucketDao, quotaManager,
             config.getTransfer().getPackageConfig().getMinimalBucketSize().toBytes(),
             config.getTransfer().getPackageConfig().getMargin().toBytes()));
         environment.jersey().register(new DefaultResource());

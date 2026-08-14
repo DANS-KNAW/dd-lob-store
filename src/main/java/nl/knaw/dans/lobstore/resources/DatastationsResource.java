@@ -39,7 +39,6 @@ public class DatastationsResource implements DatastationsApi {
     private final TransferRequestDao transferRequestDao;
     private final BucketDao bucketDao;
     private final QuotaManager quotaManager;
-    private final ActiveTaskRegistry packagingActiveTaskRegistry;
     private final long minimalBucketSize;
     private final long margin;
 
@@ -75,8 +74,6 @@ public class DatastationsResource implements DatastationsApi {
                     item.setBucket(bucket);
                     transferRequestDao.save(item);
                 }
-
-                packagingActiveTaskRegistry.add(bucketId);
 
                 log.info("Flushed {} transfers for datastation {} into new bucket {}", items.size(), datastation, bucketId);
                 return Response.accepted().build();

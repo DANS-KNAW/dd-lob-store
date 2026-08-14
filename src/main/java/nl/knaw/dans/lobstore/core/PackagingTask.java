@@ -16,6 +16,7 @@
 package nl.knaw.dans.lobstore.core;
 
 import io.dropwizard.hibernate.UnitOfWork;
+import io.dropwizard.util.DataSize;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import nl.knaw.dans.lobstore.config.ExternalCommandConfig;
@@ -47,7 +48,7 @@ public class PackagingTask implements Runnable {
     private final Path uploadDir;
     private final ExternalCommandConfig packagingCommand;
     private final QuotaManager quotaManager;
-    private final long minimalBucketSize;
+    private final DataSize minimalBucketSize;
 
     @Override
     @UnitOfWork
@@ -100,8 +101,8 @@ public class PackagingTask implements Runnable {
             }
 
             long currentTotalSize = bucket.getTransferRequests().stream().mapToLong(TransferRequest::getFileSize).sum();
-            if (currentTotalSize < minimalBucketSize) {
-                long paddingSize = minimalBucketSize - currentTotalSize;
+            if (currentTotalSize < minimalBucketSize.toBytes()) {
+                long paddingSize = minimalBucketSize.toBytes() - currentTotalSize;
                 Path paddingFile = bucketFolder.resolve(".padding.bin");
                 log.info("Total size is less than minimal bucket size. Adding padding file of size {}", paddingSize);
 

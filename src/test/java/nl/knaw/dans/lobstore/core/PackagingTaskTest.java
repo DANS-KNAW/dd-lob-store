@@ -15,6 +15,7 @@
  */
 package nl.knaw.dans.lobstore.core;
 
+import io.dropwizard.util.DataSize;
 import nl.knaw.dans.lobstore.config.ExternalCommandConfig;
 import nl.knaw.dans.lobstore.db.BucketDao;
 import org.apache.commons.io.FileUtils;
@@ -75,7 +76,7 @@ class PackagingTaskTest {
 
         ExternalCommandConfig packagingCommand = new ExternalCommandConfig();
         packagingCommand.setExecutable("true");
-        PackagingTask task = new PackagingTask(bucketId, bucketDao, downloadDir, uploadDir, packagingCommand, quotaManager, 1024);
+        PackagingTask task = new PackagingTask(bucketId, bucketDao, downloadDir, uploadDir, packagingCommand, quotaManager, DataSize.bytes(1024));
 
         task.run();
 
@@ -112,7 +113,7 @@ class PackagingTaskTest {
 
         ExternalCommandConfig packagingCommand = new ExternalCommandConfig();
         packagingCommand.setExecutable("true");
-        PackagingTask task = new PackagingTask(bucketId, bucketDao, downloadDir, uploadDir, packagingCommand, quotaManager, 1024);
+        PackagingTask task = new PackagingTask(bucketId, bucketDao, downloadDir, uploadDir, packagingCommand, quotaManager, DataSize.bytes(1024));
 
         task.run();
 
@@ -155,7 +156,7 @@ class PackagingTaskTest {
 
         var packagingCommand = new ExternalCommandConfig();
         packagingCommand.setExecutable("true");
-        var task = new PackagingTask(bucketId, bucketDao, downloadDir, uploadDir, packagingCommand, quotaManager, 1024);
+        var task = new PackagingTask(bucketId, bucketDao, downloadDir, uploadDir, packagingCommand, quotaManager, DataSize.bytes(1024));
 
         task.run();
 
@@ -192,7 +193,7 @@ class PackagingTaskTest {
         var packagingCommand = new ExternalCommandConfig();
         packagingCommand.setExecutable("false"); // Makes the command fail and skip folder cleanup
         // Use a minimalBucketSize larger than "small file"
-        var task = new PackagingTask(bucketId, bucketDao, downloadDir, uploadDir, packagingCommand, quotaManager, 1024);
+        var task = new PackagingTask(bucketId, bucketDao, downloadDir, uploadDir, packagingCommand, quotaManager, DataSize.bytes(1024));
 
         task.run();
 
@@ -204,8 +205,8 @@ class PackagingTaskTest {
         byte[] paddingContent = Files.readAllBytes(expectedPaddingFile);
         String paddingString = new String(paddingContent, java.nio.charset.StandardCharsets.UTF_8);
 
-        assertThat(paddingString).startsWith("This file exists only to pad the archive to at least 1024\n");
-        assertThat(paddingContent.length).isEqualTo("This file exists only to pad the archive to at least 1024\n".length() + (1024 - "small file".length()));
+        assertThat(paddingString).startsWith("This file exists only to pad the archive to at least 1024 bytes\n");
+        assertThat(paddingContent.length).isEqualTo("This file exists only to pad the archive to at least 1024 bytes\n".length() + (1024 - "small file".length()));
     }
 
     @Test
@@ -237,7 +238,7 @@ class PackagingTaskTest {
         var packagingCommand = new ExternalCommandConfig();
         packagingCommand.setExecutable("false"); // Fails command to skip cleanup
         // Use a minimalBucketSize smaller than the file content
-        var task = new PackagingTask(bucketId, bucketDao, downloadDir, uploadDir, packagingCommand, quotaManager, 5);
+        var task = new PackagingTask(bucketId, bucketDao, downloadDir, uploadDir, packagingCommand, quotaManager, DataSize.bytes(5));
 
         task.run();
 

@@ -45,16 +45,14 @@ class DatastationsResourceTest {
     private final TransferRequestDao transferRequestDao = mock(TransferRequestDao.class);
     private final BucketDao bucketDao = mock(BucketDao.class);
     private final QuotaManager quotaManager = mock(QuotaManager.class);
-    private final ActiveTaskRegistry activeTaskRegistry = mock(ActiveTaskRegistry.class);
-
-    private final long minimalBucketSize = 1000L;
-    private final long margin = 100L;
 
     private DatastationsResource resource;
 
     @BeforeEach
     void setUp() {
-        resource = new DatastationsResource(transferRequestDao, bucketDao, quotaManager, activeTaskRegistry, minimalBucketSize, margin);
+        long minimalBucketSize = 1000L;
+        long margin = 100L;
+        resource = new DatastationsResource(transferRequestDao, bucketDao, quotaManager, minimalBucketSize, margin);
     }
 
     @Test
@@ -84,7 +82,6 @@ class DatastationsResourceTest {
         verify(bucketDao).save(any(Bucket.class));
         verify(transferRequestDao).save(item1);
         verify(transferRequestDao).save(item2);
-        verify(activeTaskRegistry).add(any(UUID.class));
 
         assertThat(item1.getBucket().getStatus()).isEqualTo(BucketStatus.PACKAGING);
     }

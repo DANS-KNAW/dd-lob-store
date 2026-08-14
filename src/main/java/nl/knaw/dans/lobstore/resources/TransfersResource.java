@@ -70,6 +70,8 @@ public class TransfersResource implements TransfersApi {
             .filter(request -> request.getDatastation().equals(datastation))
             .anyMatch(TransferRequest::isInProgress)) {
             return new TransferResponseItemDto()
+                .dataverseFileId(fileId)
+                .sha1Sum(sha1)
                 .status(Response.Status.CONFLICT.getStatusCode())
                 .message("Transfer already in progress for the given SHA-1");
         }
@@ -79,6 +81,8 @@ public class TransfersResource implements TransfersApi {
             .filter(request -> request.getDatastation().equals(datastation))
             .anyMatch(TransferRequest::isInProgress)) {
             return new TransferResponseItemDto()
+                .dataverseFileId(fileId)
+                .sha1Sum(sha1)
                 .status(Response.Status.CONFLICT.getStatusCode())
                 .message("Transfer already in progress for the given Dataverse file ID");
         }
@@ -87,6 +91,8 @@ public class TransfersResource implements TransfersApi {
 
         if (existingLocation.isPresent()) {
             return new TransferResponseItemDto()
+                .dataverseFileId(fileId)
+                .sha1Sum(sha1)
                 .status(Response.Status.SEE_OTHER.getStatusCode())
                 .location(String.format("/locations/%s/%s", datastation, sha1));
         }
@@ -104,6 +110,8 @@ public class TransfersResource implements TransfersApi {
 
         return new TransferResponseItemDto()
             .id(newRequest.getId())
+            .dataverseFileId(fileId)
+            .sha1Sum(sha1)
             .status(Response.Status.CREATED.getStatusCode());
     }
 
