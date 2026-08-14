@@ -72,7 +72,7 @@ class PackagingTaskTest {
 
         ExternalCommandConfig packagingCommand = new ExternalCommandConfig();
         packagingCommand.setExecutable("true");
-        PackagingTask task = new PackagingTask(bucketId, bucketDao, downloadDir, uploadDir, packagingCommand, quotaManager);
+        PackagingTask task = new PackagingTask(bucketId, bucketDao, downloadDir, uploadDir, packagingCommand, quotaManager, 1024);
         
         task.run();
 
@@ -109,7 +109,7 @@ class PackagingTaskTest {
         
         ExternalCommandConfig packagingCommand = new ExternalCommandConfig();
         packagingCommand.setExecutable("true");
-        PackagingTask task = new PackagingTask(bucketId, bucketDao, downloadDir, uploadDir, packagingCommand, quotaManager);
+        PackagingTask task = new PackagingTask(bucketId, bucketDao, downloadDir, uploadDir, packagingCommand, quotaManager, 1024);
         
         task.run();
 
@@ -138,6 +138,7 @@ class PackagingTaskTest {
             .id(trId)
             .datastation("station1")
             .sha1Sum(sha1)
+            .fileSize((long) "test content".length())
             .build();
 
         var bucket = Bucket.builder()
@@ -151,7 +152,7 @@ class PackagingTaskTest {
 
         var packagingCommand = new ExternalCommandConfig();
         packagingCommand.setExecutable("true");
-        var task = new PackagingTask(bucketId, bucketDao, downloadDir, uploadDir, packagingCommand, quotaManager);
+        var task = new PackagingTask(bucketId, bucketDao, downloadDir, uploadDir, packagingCommand, quotaManager, 1024);
 
         task.run();
 
