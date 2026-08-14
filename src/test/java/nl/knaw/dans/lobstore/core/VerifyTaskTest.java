@@ -226,4 +226,107 @@ class VerifyTaskTest {
         verify(moratoriumManager).setMoratorium(duration);
         assertThat(Files.exists(bucketFile)).isTrue();
     }
+
+    @Test
+    void run_should_not_save_location_if_it_already_exists() throws IOException {
+        UUID bucketId = UUID.randomUUID();
+        String datastationName = "station1";
+
+        UUID tr1Id = UUID.randomUUID();
+        TransferRequest tr1 = new TransferRequest();
+        tr1.setId(tr1Id);
+        tr1.setSha1Sum("sha1-1");
+
+        Bucket bucket = Bucket.builder()
+            .id(bucketId)
+            .status(BucketStatus.VERIFYING)
+            .datastation(datastationName)
+            .transferRequests(List.of(tr1))
+            .build();
+
+        when(bucketDao.findById(bucketId)).thenReturn(Optional.of(bucket));
+
+        when(locationDao.findByDatastationAndSha1Sum(datastationName, "sha1-1"))
+            .thenReturn(Optional.of(new Location()));
+
+        LobStoreConfig lobstoreConfig = new LobStoreConfig();
+        lobstoreConfig.setUser("testuser");
+        lobstoreConfig.setHost("testhost");
+        lobstoreConfig.setPath(Path.of("/test/path"));
+
+        DataStationConfig dsConfig = new DataStationConfig();
+        dsConfig.setLobstore(lobstoreConfig);
+
+        Map<String, DataStationConfig> datastations = Map.of(datastationName, dsConfig);
+
+        Path bucketFile = uploadDir.resolve(bucketId + ".dmftar");
+        Files.createDirectory(bucketFile);
+
+        ExternalCommandConfig verifyCommand = new ExternalCommandConfig();
+        verifyCommand.setExecutable("echo");
+        verifyCommand.setArgs(List.of("${bucketname}", "${datastation}", "${user}", "${host}", "${path}"));
+        VerifyTask task = new VerifyTask(bucketId, bucketDao, locationDao, verifyCommand, null, datastations, uploadDir, quotaManager, moratoriumManager, "Connection refused", Duration.ofMinutes(15));
+
+        task.run();
+
+        assertThat(bucket.getStatus()).isEqualTo(BucketStatus.DONE);
+        verify(bucketDao).save(bucket);
+        verify(locationDao, never()).save(any());
+        verify(quotaManager).release(bucketId + "/base", "upload");
+        assertThat(Files.exists(bucketFile)).isFalse();
+    }
+
+    @Test
+    void run_should_deduplicate_sha1sums_within_the_same_bucket() throws IOException {
+        UUID bucketId = UUID.randomUUID();
+        String datastationName = "station1";
+
+        TransferRequest tr1 = new TransferRequest();
+        tr1.setId(UUID.randomUUID());
+        tr1.setSha1Sum("sha1-duplicate");
+
+        TransferRequest tr2 = new TransferRequest();
+        tr2.setId(UUID.randomUUID());
+        tr2.setSha1Sum("sha1-duplicate");
+
+        Bucket bucket = Bucket.builder()
+            .id(bucketId)
+            .status(BucketStatus.VERIFYING)
+            .datastation(datastationName)
+            .transferRequests(List.of(tr1, tr2))
+            .build();
+
+        when(bucketDao.findById(bucketId)).thenReturn(Optional.of(bucket));
+
+        when(locationDao.findByDatastationAndSha1Sum(datastationName, "sha1-duplicate"))
+            .thenReturn(Optional.empty());
+
+        LobStoreConfig lobstoreConfig = new LobStoreConfig();
+        lobstoreConfig.setUser("testuser");
+        lobstoreConfig.setHost("testhost");
+        lobstoreConfig.setPath(Path.of("/test/path"));
+
+        DataStationConfig dsConfig = new DataStationConfig();
+        dsConfig.setLobstore(lobstoreConfig);
+
+        Map<String, DataStationConfig> datastations = Map.of(datastationName, dsConfig);
+
+        Path bucketFile = uploadDir.resolve(bucketId + ".dmftar");
+        Files.createDirectory(bucketFile);
+
+        ExternalCommandConfig verifyCommand = new ExternalCommandConfig();
+        verifyCommand.setExecutable("echo");
+        verifyCommand.setArgs(List.of("${bucketname}", "${datastation}", "${user}", "${host}", "${path}"));
+        VerifyTask task = new VerifyTask(bucketId, bucketDao, locationDao, verifyCommand, null, datastations, uploadDir, quotaManager, moratoriumManager, "Connection refused", Duration.ofMinutes(15));
+
+        task.run();
+
+        assertThat(bucket.getStatus()).isEqualTo(BucketStatus.DONE);
+        verify(bucketDao).save(bucket);
+        verify(locationDao).save(Location.builder()
+            .datastation(datastationName)
+            .sha1Sum("sha1-duplicate")
+            .bucketName(bucketId.toString())
+            .build());
+    }
 }

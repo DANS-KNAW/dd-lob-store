@@ -40,6 +40,7 @@ import java.time.Duration;
 import java.util.Map;
 import java.util.Set;
 import java.util.UUID;
+import java.util.stream.Collectors;
 
 @Slf4j
 @RequiredArgsConstructor
@@ -75,12 +76,21 @@ public class VerifyTask implements Runnable {
             int exitCode = executeVerifyCommand(bucketId.toString(), datastationName, dsConfig, outputStream);
 
             if (exitCode == 0) {
-                for (var tr : bucket.getTransferRequests()) {
-                    locationDao.save(Location.builder()
-                        .datastation(datastationName)
-                        .sha1Sum(tr.getSha1Sum())
-                        .bucketName(bucketId.toString())
-                        .build());
+                var uniqueSha1Sums = bucket.getTransferRequests().stream()
+                    .map(TransferRequest::getSha1Sum)
+                    .collect(Collectors.toSet());
+
+                for (var sha1Sum : uniqueSha1Sums) {
+                    var existingLocation = locationDao.findByDatastationAndSha1Sum(datastationName, sha1Sum);
+                    if (existingLocation.isEmpty()) {
+                        locationDao.save(Location.builder()
+                            .datastation(datastationName)
+                            .sha1Sum(sha1Sum)
+                            .bucketName(bucketId.toString())
+                            .build());
+                    } else {
+                        log.info("Location for datastation {} and sha1Sum {} already exists. Ignoring.", datastationName, sha1Sum);
+                    }
                 }
 
                 // If the command exits with success the local bucket should be removed
