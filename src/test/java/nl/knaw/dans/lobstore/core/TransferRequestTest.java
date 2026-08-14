@@ -28,7 +28,7 @@ class TransferRequestTest {
         assertTrue(TransferRequest.builder().status(TransferRequestStatus.INSPECTED).build().isInProgress());
         assertTrue(TransferRequest.builder().status(TransferRequestStatus.DOWNLOADING).build().isInProgress());
         assertTrue(TransferRequest.builder().status(TransferRequestStatus.DOWNLOADED).build().isInProgress());
-        
+
         Bucket bucket = Bucket.builder().status(BucketStatus.PACKAGING).build();
         assertTrue(TransferRequest.builder().bucket(bucket).build().isInProgress());
     }

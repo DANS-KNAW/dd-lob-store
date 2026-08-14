@@ -23,7 +23,10 @@ import java.util.Optional;
 import java.util.UUID;
 
 import static org.assertj.core.api.Assertions.assertThat;
-import static org.mockito.Mockito.*;
+import static org.mockito.Mockito.anyInt;
+import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.verify;
+import static org.mockito.Mockito.when;
 
 class InspectTaskSourceTest {
 
@@ -35,7 +38,7 @@ class InspectTaskSourceTest {
     void nextInput_should_return_first_available_item() {
         UUID id1 = UUID.randomUUID();
         TransferRequest item1 = TransferRequest.builder().id(id1).build();
-        
+
         when(transferRequestDao.findInspectableItems(anyInt())).thenReturn(List.of(item1));
         when(activeTaskRegistry.add(id1)).thenReturn(true);
 

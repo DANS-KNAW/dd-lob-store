@@ -41,7 +41,8 @@ public class CleanupTaskSource implements TaskSource<Bucket> {
                     log.info("Starting cleanup task for bucket {}", bucket.getId());
                     return Optional.of(bucket);
                 }
-            } else {
+            }
+            else {
                 log.error("Bucket {} has status DONE but is not found in the location table. Marking as FAILED.", bucket.getId());
                 bucket.setStatus(BucketStatus.FAILED);
                 bucketDao.save(bucket);

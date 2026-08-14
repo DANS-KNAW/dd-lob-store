@@ -50,7 +50,8 @@ public class UploadTaskFactory implements TaskFactory<Bucket> {
         };
     }
 
-    private Runnable createUnitOfWorkAwareTask(UUID bucketId, BucketDao bucketDao, ExternalCommandConfig uploadCommand, Map<String, DataStationConfig> datastations, MoratoriumManager moratoriumManager, String connectionRefusedOn, Duration moratoriumDuration) {
+    private Runnable createUnitOfWorkAwareTask(UUID bucketId, BucketDao bucketDao, ExternalCommandConfig uploadCommand, Map<String, DataStationConfig> datastations,
+        MoratoriumManager moratoriumManager, String connectionRefusedOn, Duration moratoriumDuration) {
         return unitOfWorkAwareProxyFactory.create(UploadTask.class,
             new Class[] { UUID.class, BucketDao.class, ExternalCommandConfig.class, Map.class, MoratoriumManager.class, String.class, Duration.class },
             new Object[] { bucketId, bucketDao, uploadCommand, datastations, moratoriumManager, connectionRefusedOn, moratoriumDuration });

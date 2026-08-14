@@ -24,7 +24,11 @@ import org.junit.jupiter.api.Test;
 import java.nio.file.Path;
 import java.util.UUID;
 
-import static org.mockito.Mockito.*;
+import static org.mockito.Mockito.any;
+import static org.mockito.Mockito.eq;
+import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.verify;
+import static org.mockito.Mockito.when;
 
 class CleanupTaskFactoryTest {
 
@@ -35,18 +39,18 @@ class CleanupTaskFactoryTest {
         ClaimDao claimDao = mock(ClaimDao.class);
         ActiveTaskRegistry activeTaskRegistry = mock(ActiveTaskRegistry.class);
         UnitOfWorkAwareProxyFactory uowFactory = mock(UnitOfWorkAwareProxyFactory.class);
-        
+
         CleanupTask proxiedTask = mock(CleanupTask.class);
         when(uowFactory.create(eq(CleanupTask.class), any(Class[].class), any(Object[].class))).thenReturn(proxiedTask);
 
         CleanupTaskFactory factory = new CleanupTaskFactory(bucketDao, transferRequestDao, claimDao, Path.of("upload"), Path.of("download"), activeTaskRegistry, uowFactory);
-        
+
         UUID bucketId = UUID.randomUUID();
         Bucket bucket = Bucket.builder().id(bucketId).build();
-        
+
         Runnable task = factory.create(bucket);
         task.run();
-        
+
         verify(proxiedTask).run();
         verify(activeTaskRegistry).remove(bucketId);
     }

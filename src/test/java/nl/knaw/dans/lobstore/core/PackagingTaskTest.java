@@ -28,7 +28,10 @@ import java.util.Optional;
 import java.util.UUID;
 
 import static org.assertj.core.api.Assertions.assertThat;
-import static org.mockito.Mockito.*;
+import static org.mockito.Mockito.atLeastOnce;
+import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.verify;
+import static org.mockito.Mockito.when;
 
 class PackagingTaskTest {
 
@@ -50,12 +53,12 @@ class PackagingTaskTest {
     void run_should_fail_if_transfer_requests_have_different_datastations() {
         UUID bucketId = UUID.randomUUID();
         String bucketDatastation = "station1";
-        
+
         TransferRequest tr1 = TransferRequest.builder()
             .id(UUID.randomUUID())
             .datastation("station1")
             .build();
-            
+
         TransferRequest tr2 = TransferRequest.builder()
             .id(UUID.randomUUID())
             .datastation("station2") // Different datastation!
@@ -73,22 +76,22 @@ class PackagingTaskTest {
         ExternalCommandConfig packagingCommand = new ExternalCommandConfig();
         packagingCommand.setExecutable("true");
         PackagingTask task = new PackagingTask(bucketId, bucketDao, downloadDir, uploadDir, packagingCommand, quotaManager, 1024);
-        
+
         task.run();
 
         assertThat(bucket.getStatus()).isEqualTo(BucketStatus.FAILED);
         verify(bucketDao, atLeastOnce()).save(bucket);
     }
-    
+
     @Test
     void run_should_succeed_if_all_transfer_requests_have_same_datastation() throws Exception {
         // This test is more complex because it actually tries to move files and execute commands.
         // For the purpose of verifying the sanity check, the above test might be enough,
         // but let's see if we can at least verify it passes the check.
-        
+
         UUID bucketId = UUID.randomUUID();
         String bucketDatastation = "station1";
-        
+
         TransferRequest tr1 = TransferRequest.builder()
             .id(UUID.randomUUID())
             .datastation("station1")
@@ -103,14 +106,14 @@ class PackagingTaskTest {
             .build();
 
         when(bucketDao.findById(bucketId)).thenReturn(Optional.of(bucket));
-        
+
         // We'll probably hit an IOException later because the files don't exist, 
         // which is fine as long as it doesn't fail the sanity check.
-        
+
         ExternalCommandConfig packagingCommand = new ExternalCommandConfig();
         packagingCommand.setExecutable("true");
         PackagingTask task = new PackagingTask(bucketId, bucketDao, downloadDir, uploadDir, packagingCommand, quotaManager, 1024);
-        
+
         task.run();
 
         // If it passed the sanity check, it should have tried to resolve the bucket folder.
@@ -158,5 +161,89 @@ class PackagingTaskTest {
 
         assertThat(bucket.getStatus()).isEqualTo(BucketStatus.PACKAGED);
         assertThat(staleOutput).doesNotExist();
+    }
+
+    @Test
+    void run_should_create_padding_file_when_total_size_is_less_than_minimalBucketSize() throws Exception {
+        UUID bucketId = UUID.randomUUID();
+        UUID trId = UUID.randomUUID();
+        String sha1 = "abc123456";
+
+        var sourceFile = downloadDir.resolve(trId.toString()).resolve(sha1);
+        Files.createDirectories(sourceFile.getParent());
+        Files.writeString(sourceFile, "small file");
+
+        var tr = TransferRequest.builder()
+            .id(trId)
+            .datastation("station1")
+            .sha1Sum(sha1)
+            .fileSize((long) "small file".length())
+            .build();
+
+        var bucket = Bucket.builder()
+            .id(bucketId)
+            .status(BucketStatus.PACKAGING)
+            .datastation("station1")
+            .transferRequests(List.of(tr))
+            .build();
+
+        when(bucketDao.findById(bucketId)).thenReturn(Optional.of(bucket));
+
+        var packagingCommand = new ExternalCommandConfig();
+        packagingCommand.setExecutable("false"); // Makes the command fail and skip folder cleanup
+        // Use a minimalBucketSize larger than "small file"
+        var task = new PackagingTask(bucketId, bucketDao, downloadDir, uploadDir, packagingCommand, quotaManager, 1024);
+
+        task.run();
+
+        assertThat(bucket.getStatus()).isEqualTo(BucketStatus.FAILED);
+
+        Path expectedPaddingFile = uploadDir.resolve(bucketId.toString()).resolve(".padding.bin");
+        assertThat(expectedPaddingFile).exists();
+
+        byte[] paddingContent = Files.readAllBytes(expectedPaddingFile);
+        String paddingString = new String(paddingContent, java.nio.charset.StandardCharsets.UTF_8);
+
+        assertThat(paddingString).startsWith("This file exists only to pad the archive to at least 1024\n");
+        assertThat(paddingContent.length).isEqualTo("This file exists only to pad the archive to at least 1024\n".length() + (1024 - "small file".length()));
+    }
+
+    @Test
+    void run_should_not_create_padding_file_when_total_size_is_greater_than_or_equal_to_minimalBucketSize() throws Exception {
+        UUID bucketId = UUID.randomUUID();
+        UUID trId = UUID.randomUUID();
+        String sha1 = "abc123456";
+
+        var sourceFile = downloadDir.resolve(trId.toString()).resolve(sha1);
+        Files.createDirectories(sourceFile.getParent());
+        Files.writeString(sourceFile, "large enough file");
+
+        var tr = TransferRequest.builder()
+            .id(trId)
+            .datastation("station1")
+            .sha1Sum(sha1)
+            .fileSize((long) "large enough file".length())
+            .build();
+
+        var bucket = Bucket.builder()
+            .id(bucketId)
+            .status(BucketStatus.PACKAGING)
+            .datastation("station1")
+            .transferRequests(List.of(tr))
+            .build();
+
+        when(bucketDao.findById(bucketId)).thenReturn(Optional.of(bucket));
+
+        var packagingCommand = new ExternalCommandConfig();
+        packagingCommand.setExecutable("false"); // Fails command to skip cleanup
+        // Use a minimalBucketSize smaller than the file content
+        var task = new PackagingTask(bucketId, bucketDao, downloadDir, uploadDir, packagingCommand, quotaManager, 5);
+
+        task.run();
+
+        assertThat(bucket.getStatus()).isEqualTo(BucketStatus.FAILED);
+
+        Path notExpectedPaddingFile = uploadDir.resolve(bucketId.toString()).resolve(".padding.bin");
+        assertThat(notExpectedPaddingFile).doesNotExist();
     }
 }

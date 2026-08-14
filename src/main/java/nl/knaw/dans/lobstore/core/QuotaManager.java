@@ -33,7 +33,7 @@ public class QuotaManager {
     @UnitOfWork
     public boolean claim(String id, String target, long size) {
         log.debug("Attempting to claim {} bytes for target '{}' with id '{}'", size, target, id);
-        
+
         Optional<Claim> existingClaim = claimDao.findById(id);
         if (existingClaim.isPresent()) {
             log.warn("Claim with id '{}' already exists", id);
@@ -47,7 +47,7 @@ public class QuotaManager {
 
         long claimedSize = claimDao.sumSizeByTarget(target);
         if (claimedSize + size > quota.toBytes()) {
-            log.warn("Not enough unclaimed space for target '{}'. Quota: {}, Claimed: {}, Requested: {}", 
+            log.warn("Not enough unclaimed space for target '{}'. Quota: {}, Claimed: {}, Requested: {}",
                 target, quota.toBytes(), claimedSize, size);
             return false;
         }
@@ -57,7 +57,7 @@ public class QuotaManager {
             .target(target)
             .size(size)
             .build();
-        
+
         claimDao.save(claim);
         log.info("Successfully claimed {} bytes for target '{}' with id '{}'", size, target, id);
         return true;
@@ -90,7 +90,8 @@ public class QuotaManager {
             if (claim.getTarget().equals(target)) {
                 claimDao.delete(claim);
                 log.info("Released claim with id '{}' for target '{}'", id, target);
-            } else {
+            }
+            else {
                 log.warn("Claim with id '{}' exists but target '{}' does not match '{}'", id, target, claim.getTarget());
             }
         });

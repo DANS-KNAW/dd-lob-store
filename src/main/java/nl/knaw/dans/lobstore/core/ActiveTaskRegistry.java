@@ -21,8 +21,7 @@ import java.util.UUID;
 import java.util.concurrent.ConcurrentHashMap;
 
 /**
- * A registry of active transfer IDs that are currently being processed.
- * This is used to prevent multiple concurrent tasks from being created for the same transfer request.
+ * A registry of active transfer IDs that are currently being processed. This is used to prevent multiple concurrent tasks from being created for the same transfer request.
  */
 public class ActiveTaskRegistry {
     private final Set<UUID> activeIds = Collections.newSetFromMap(new ConcurrentHashMap<>());
@@ -31,8 +30,7 @@ public class ActiveTaskRegistry {
      * Adds a UUID to the registry of active IDs.
      *
      * @param id the identifier of the transfer request to be added to the active registry
-     * @return {@code true} if the ID was successfully added to the registry,
-     *         {@code false} if the ID is already present
+     * @return {@code true} if the ID was successfully added to the registry, {@code false} if the ID is already present
      */
     public boolean add(UUID id) {
         return activeIds.add(id);

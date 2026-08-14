@@ -21,14 +21,11 @@ import nl.knaw.dans.lobstore.api.TransferRequestDto;
 import nl.knaw.dans.lobstore.api.TransferResponseItemDto;
 import nl.knaw.dans.lobstore.api.TransferStatusDto;
 import nl.knaw.dans.lobstore.api.TransferStatusInfoDto;
-import nl.knaw.dans.lobstore.core.Bucket;
-import nl.knaw.dans.lobstore.core.BucketStatus;
 import nl.knaw.dans.lobstore.core.Location;
 import nl.knaw.dans.lobstore.core.TransferRequest;
 import nl.knaw.dans.lobstore.core.TransferRequestStatus;
 import nl.knaw.dans.lobstore.db.LocationDao;
 import nl.knaw.dans.lobstore.db.TransferRequestDao;
-import org.glassfish.jersey.client.ClientProperties;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
@@ -84,7 +81,9 @@ class TransfersResourceTest {
             .post(Entity.entity(List.of(dto), MediaType.APPLICATION_JSON));
 
         assertThat(response.getStatus()).isEqualTo(207);
-        List<TransferResponseItemDto> result = response.readEntity(new GenericType<List<TransferResponseItemDto>>() {});
+        List<TransferResponseItemDto> result = response.readEntity(new GenericType<List<TransferResponseItemDto>>() {
+
+        });
         assertThat(result).hasSize(1);
         assertThat(result.get(0).getStatus()).isEqualTo(201);
         assertThat(result.get(0).getId()).isNotNull();
@@ -115,7 +114,9 @@ class TransfersResourceTest {
             .post(Entity.entity(List.of(dto), MediaType.APPLICATION_JSON));
 
         assertThat(response.getStatus()).isEqualTo(207);
-        List<TransferResponseItemDto> result = response.readEntity(new GenericType<List<TransferResponseItemDto>>() {});
+        List<TransferResponseItemDto> result = response.readEntity(new GenericType<List<TransferResponseItemDto>>() {
+
+        });
         assertThat(result).hasSize(1);
         assertThat(result.get(0).getStatus()).isEqualTo(409);
     }
@@ -140,7 +141,9 @@ class TransfersResourceTest {
             .post(Entity.entity(List.of(dto), MediaType.APPLICATION_JSON));
 
         assertThat(response.getStatus()).isEqualTo(207);
-        List<TransferResponseItemDto> result = response.readEntity(new GenericType<List<TransferResponseItemDto>>() {});
+        List<TransferResponseItemDto> result = response.readEntity(new GenericType<List<TransferResponseItemDto>>() {
+
+        });
         assertThat(result).hasSize(1);
         assertThat(result.get(0).getStatus()).isEqualTo(201);
     }
@@ -166,7 +169,9 @@ class TransfersResourceTest {
             .post(Entity.entity(List.of(dto), MediaType.APPLICATION_JSON));
 
         assertThat(response.getStatus()).isEqualTo(207);
-        List<TransferResponseItemDto> result = response.readEntity(new GenericType<List<TransferResponseItemDto>>() {});
+        List<TransferResponseItemDto> result = response.readEntity(new GenericType<List<TransferResponseItemDto>>() {
+
+        });
         assertThat(result).hasSize(1);
         assertThat(result.get(0).getStatus()).isEqualTo(303);
         assertThat(result.get(0).getLocation()).endsWith("/locations/station1/abc");
@@ -190,7 +195,9 @@ class TransfersResourceTest {
             .post(Entity.entity(List.of(dto), MediaType.APPLICATION_JSON));
 
         assertThat(response.getStatus()).isEqualTo(207);
-        List<TransferResponseItemDto> result = response.readEntity(new GenericType<List<TransferResponseItemDto>>() {});
+        List<TransferResponseItemDto> result = response.readEntity(new GenericType<List<TransferResponseItemDto>>() {
+
+        });
         assertThat(result).hasSize(1);
         assertThat(result.get(0).getStatus()).isEqualTo(201);
     }
@@ -215,7 +222,9 @@ class TransfersResourceTest {
             .get();
 
         assertThat(response.getStatus()).isEqualTo(200);
-        List<TransferStatusInfoDto> result = response.readEntity(new GenericType<List<TransferStatusInfoDto>>() {});
+        List<TransferStatusInfoDto> result = response.readEntity(new GenericType<List<TransferStatusInfoDto>>() {
+
+        });
         assertThat(result).hasSize(2);
     }
 
@@ -241,7 +250,9 @@ class TransfersResourceTest {
             .get();
 
         assertThat(response.getStatus()).isEqualTo(200);
-        List<TransferStatusInfoDto> result = response.readEntity(new GenericType<List<TransferStatusInfoDto>>() {});
+        List<TransferStatusInfoDto> result = response.readEntity(new GenericType<List<TransferStatusInfoDto>>() {
+
+        });
         assertThat(result).hasSize(1);
         assertThat(result.get(0).getStatus()).isEqualTo(TransferStatusDto.PENDING);
 
@@ -252,7 +263,9 @@ class TransfersResourceTest {
             .get();
 
         assertThat(response.getStatus()).isEqualTo(200);
-        result = response.readEntity(new GenericType<List<TransferStatusInfoDto>>() {});
+        result = response.readEntity(new GenericType<List<TransferStatusInfoDto>>() {
+
+        });
         assertThat(result).hasSize(1);
         assertThat(result.get(0).getStatus()).isEqualTo(TransferStatusDto.DOWNLOADED);
     }

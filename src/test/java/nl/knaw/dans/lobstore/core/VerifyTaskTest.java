@@ -35,7 +35,11 @@ import java.util.Optional;
 import java.util.UUID;
 
 import static org.assertj.core.api.Assertions.assertThat;
-import static org.mockito.Mockito.*;
+import static org.mockito.Mockito.any;
+import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.never;
+import static org.mockito.Mockito.verify;
+import static org.mockito.Mockito.when;
 
 class VerifyTaskTest {
 
@@ -61,12 +65,12 @@ class VerifyTaskTest {
     void run_should_substitute_variables_and_execute_command_and_cleanup() throws IOException {
         UUID bucketId = UUID.randomUUID();
         String datastationName = "station1";
-        
+
         UUID tr1Id = UUID.randomUUID();
         TransferRequest tr1 = new TransferRequest();
         tr1.setId(tr1Id);
         tr1.setSha1Sum("sha1-1");
-        
+
         Bucket bucket = Bucket.builder()
             .id(bucketId)
             .status(BucketStatus.VERIFYING)
@@ -173,8 +177,9 @@ class VerifyTaskTest {
         ExternalCommandConfig verifyCommand = new ExternalCommandConfig();
         verifyCommand.setExecutable("bash");
         verifyCommand.setArgs(List.of("-c", "echo 'checksum failure' >&2; exit 1"));
-        
-        VerifyTask task = new VerifyTask(bucketId, bucketDao, locationDao, verifyCommand, "checksum failure", datastations, uploadDir, quotaManager, moratoriumManager, "Connection refused", Duration.ofMinutes(15));
+
+        VerifyTask task = new VerifyTask(bucketId, bucketDao, locationDao, verifyCommand, "checksum failure", datastations, uploadDir, quotaManager, moratoriumManager, "Connection refused",
+            Duration.ofMinutes(15));
 
         task.run();
 

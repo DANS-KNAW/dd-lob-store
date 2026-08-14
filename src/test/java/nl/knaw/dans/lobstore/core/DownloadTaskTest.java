@@ -213,7 +213,8 @@ class DownloadTaskTest {
         DownloadTask task = new DownloadTask(id, dao, dataverseClient, downloadConfig, quotaManager, executorService);
         try {
             task.run();
-        } catch (RuntimeException e) {
+        }
+        catch (RuntimeException e) {
             // expected
         }
 
@@ -238,7 +239,8 @@ class DownloadTaskTest {
         DownloadTask task = new DownloadTask(id, dao, dataverseClient, downloadConfig, quotaManager, executorService);
         try {
             task.run();
-        } catch (RuntimeException e) {
+        }
+        catch (RuntimeException e) {
             // expected
         }
 

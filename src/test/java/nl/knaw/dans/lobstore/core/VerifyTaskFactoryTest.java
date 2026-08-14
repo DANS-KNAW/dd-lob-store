@@ -26,7 +26,11 @@ import java.time.Duration;
 import java.util.Map;
 import java.util.UUID;
 
-import static org.mockito.Mockito.*;
+import static org.mockito.Mockito.any;
+import static org.mockito.Mockito.eq;
+import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.verify;
+import static org.mockito.Mockito.when;
 
 class VerifyTaskFactoryTest {
 
@@ -38,18 +42,19 @@ class VerifyTaskFactoryTest {
         ActiveTaskRegistry activeTaskRegistry = mock(ActiveTaskRegistry.class);
         MoratoriumManager moratoriumManager = mock(MoratoriumManager.class);
         UnitOfWorkAwareProxyFactory uowFactory = mock(UnitOfWorkAwareProxyFactory.class);
-        
+
         VerifyTask proxiedTask = mock(VerifyTask.class);
         when(uowFactory.create(eq(VerifyTask.class), any(Class[].class), any(Object[].class))).thenReturn(proxiedTask);
 
-        VerifyTaskFactory factory = new VerifyTaskFactory(bucketDao, locationDao, verifyCommand, "invalid", Map.of(), Path.of("upload"), mock(QuotaManager.class), activeTaskRegistry, moratoriumManager, "refused", Duration.ZERO, uowFactory);
-        
+        VerifyTaskFactory factory = new VerifyTaskFactory(bucketDao, locationDao, verifyCommand, "invalid", Map.of(), Path.of("upload"), mock(QuotaManager.class), activeTaskRegistry,
+            moratoriumManager, "refused", Duration.ZERO, uowFactory);
+
         UUID bucketId = UUID.randomUUID();
         Bucket bucket = Bucket.builder().id(bucketId).build();
-        
+
         Runnable task = factory.create(bucket);
         task.run();
-        
+
         verify(proxiedTask).run();
         verify(activeTaskRegistry).remove(bucketId);
     }

@@ -28,7 +28,12 @@ import java.util.Optional;
 import java.util.UUID;
 
 import static org.assertj.core.api.Assertions.assertThat;
-import static org.mockito.Mockito.*;
+import static org.mockito.Mockito.any;
+import static org.mockito.Mockito.anyString;
+import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.never;
+import static org.mockito.Mockito.verify;
+import static org.mockito.Mockito.when;
 
 class CleanupTaskTest {
 
@@ -47,54 +52,54 @@ class CleanupTaskTest {
         UUID bucketId = UUID.randomUUID();
         UUID trId1 = UUID.randomUUID();
         UUID trId2 = UUID.randomUUID();
-        
+
         TransferRequest tr1 = TransferRequest.builder().id(trId1).build();
         TransferRequest tr2 = TransferRequest.builder().id(trId2).build();
-        
+
         Bucket bucket = Bucket.builder()
             .id(bucketId)
             .transferRequests(List.of(tr1, tr2))
             .build();
-            
+
         when(bucketDao.findById(bucketId)).thenReturn(Optional.of(bucket));
-        
+
         // create dummy directories and files
         Path trDir1 = tempDownloadDir.resolve(trId1.toString());
         Files.createDirectories(trDir1);
         Files.writeString(trDir1.resolve("file.txt"), "data");
-        
+
         Path bucketFolder = tempUploadDir.resolve(bucketId.toString());
         Files.createDirectories(bucketFolder);
         Files.writeString(bucketFolder.resolve("test.txt"), "data");
-        
+
         Path bucketTar = tempUploadDir.resolve(bucketId.toString() + ".dmftar");
         Files.createDirectories(bucketTar);
         Files.writeString(bucketTar.resolve("content.txt"), "data");
-        
+
         CleanupTask task = new CleanupTask(bucketId, bucketDao, transferRequestDao, claimDao, tempUploadDir, tempDownloadDir);
         task.run();
-        
+
         assertThat(trDir1).doesNotExist();
         assertThat(bucketFolder).doesNotExist();
         assertThat(bucketTar).doesNotExist();
-        
+
         verify(claimDao).deleteByIdStartingWith(trId1.toString());
         verify(claimDao).deleteByIdStartingWith(trId2.toString());
         verify(transferRequestDao).delete(tr1);
         verify(transferRequestDao).delete(tr2);
-        
+
         verify(claimDao).deleteByIdStartingWith(bucketId.toString());
         verify(bucketDao).delete(bucket);
     }
-    
+
     @Test
     void run_should_do_nothing_if_bucket_not_found() throws Exception {
         UUID bucketId = UUID.randomUUID();
         when(bucketDao.findById(bucketId)).thenReturn(Optional.empty());
-        
+
         CleanupTask task = new CleanupTask(bucketId, bucketDao, transferRequestDao, claimDao, tempUploadDir, tempDownloadDir);
         task.run();
-        
+
         verify(claimDao, never()).deleteByIdStartingWith(anyString());
         verify(bucketDao, never()).delete(any());
     }

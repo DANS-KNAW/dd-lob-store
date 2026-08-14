@@ -24,7 +24,10 @@ import java.util.Optional;
 import java.util.UUID;
 
 import static org.assertj.core.api.Assertions.assertThat;
-import static org.mockito.Mockito.*;
+import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.never;
+import static org.mockito.Mockito.verify;
+import static org.mockito.Mockito.when;
 
 class CleanupTaskSourceTest {
 
@@ -37,7 +40,7 @@ class CleanupTaskSourceTest {
     void nextInput_should_return_first_available_item() {
         UUID id1 = UUID.randomUUID();
         Bucket bucket1 = Bucket.builder().id(id1).status(BucketStatus.DONE).build();
-        
+
         when(bucketDao.findByStatus(BucketStatus.DONE, 10)).thenReturn(List.of(bucket1));
         when(locationDao.countByBucketName(id1.toString())).thenReturn(1L);
         when(activeTaskRegistry.add(id1)).thenReturn(true);

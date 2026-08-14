@@ -16,8 +16,9 @@
 package nl.knaw.dans.lobstore.core;
 
 import lombok.extern.slf4j.Slf4j;
-import java.time.Instant;
+
 import java.time.Duration;
+import java.time.Instant;
 
 @Slf4j
 public class MoratoriumManager {

@@ -77,7 +77,7 @@ public class DatastationsResource implements DatastationsApi {
                 }
 
                 packagingActiveTaskRegistry.add(bucketId);
-                
+
                 log.info("Flushed {} transfers for datastation {} into new bucket {}", items.size(), datastation, bucketId);
                 return Response.accepted().build();
             }

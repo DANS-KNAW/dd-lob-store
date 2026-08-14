@@ -49,7 +49,7 @@ public class CleanupTask implements Runnable {
         try {
             log.info("Starting CLEANUP task for bucket {}", bucketId);
             Bucket bucket = bucketDao.findById(bucketId).orElse(null);
-            
+
             if (bucket == null) {
                 log.info("Bucket {} already removed.", bucketId);
                 return;
@@ -62,7 +62,7 @@ public class CleanupTask implements Runnable {
                     log.debug("Removing transfer request directory: {}", trDir);
                     FileUtils.deleteDirectory(trDir.toFile());
                 }
-                
+
                 claimDao.deleteByIdStartingWith(tr.getId().toString());
                 transferRequestDao.delete(tr);
                 log.debug("Removed transfer request {}", tr.getId());
@@ -76,7 +76,7 @@ public class CleanupTask implements Runnable {
                         try {
                             Files.setPosixFilePermissions(path, deletePermissions);
                         }
-catch (IOException | UnsupportedOperationException e) {
+                        catch (IOException | UnsupportedOperationException e) {
                             log.warn("Failed to set delete permissions for {}: {}", path, e.getMessage());
                         }
                     });
