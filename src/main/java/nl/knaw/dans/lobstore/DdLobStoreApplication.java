@@ -46,6 +46,7 @@ import nl.knaw.dans.lobstore.db.BucketDao;
 import nl.knaw.dans.lobstore.db.ClaimDao;
 import nl.knaw.dans.lobstore.db.LocationDao;
 import nl.knaw.dans.lobstore.db.TransferRequestDao;
+import nl.knaw.dans.lobstore.resources.DatastationsResource;
 import nl.knaw.dans.lobstore.resources.DefaultResource;
 import nl.knaw.dans.lobstore.resources.LocationsResource;
 import nl.knaw.dans.lobstore.resources.TransfersResource;
@@ -93,6 +94,9 @@ public class DdLobStoreApplication extends Application<DdLobStoreConfig> {
 
         environment.jersey().register(new TransfersResource(transferRequestDao, locationDao));
         environment.jersey().register(new LocationsResource(locationDao));
+        environment.jersey().register(new DatastationsResource(transferRequestDao, bucketDao, quotaManager, packagingActiveTaskRegistry,
+            config.getTransfer().getPackageConfig().getMinimalBucketSize().toBytes(),
+            config.getTransfer().getPackageConfig().getMargin().toBytes()));
         environment.jersey().register(new DefaultResource());
 
         Map<String, DataverseClient> dataverseClients = config.getDatastations().entrySet().stream()
