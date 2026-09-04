@@ -38,6 +38,7 @@
         <dd-lob-store-api.version>1.3.0</dd-lob-store-api.version>
         <dans-java-utils.version>4.1.0</dans-java-utils.version>
         <dans-dataverse-client-lib.version>2.2.0</dans-dataverse-client-lib.version>
+        <dans-nexus-maven-plugin.version>1.0.0</dans-nexus-maven-plugin.version>
     </properties>
 
     <scm>
