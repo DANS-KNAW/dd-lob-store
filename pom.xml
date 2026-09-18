@@ -34,7 +34,7 @@
     <inceptionYear>2026</inceptionYear>
 
     <scm>
-        <connection>scm:git:https://github.com/DANS-KNAW/dd-lob-store.git</connection>
+        <connection>scm:git:https://github.com/DANS-KNAW/dd-lob-store</connection>
         <developerConnection>scm:git:ssh://github.com/DANS-KNAW/dd-lob-store</developerConnection>
         <tag>HEAD</tag>
         <url>https://github.com/DANS-KNAW/${project.artifactId}</url>
