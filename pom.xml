@@ -37,7 +37,7 @@
         <connection>scm:git:https://github.com/DANS-KNAW/dd-lob-store</connection>
         <developerConnection>scm:git:ssh://github.com/DANS-KNAW/dd-lob-store</developerConnection>
         <tag>HEAD</tag>
-        <url>https://github.com/DANS-KNAW/${project.artifactId}</url>
+        <url>https://github.com/DANS-KNAW/dd-lob-store</url>
     </scm>
 
     <properties>
