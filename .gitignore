@@ -25,5 +25,4 @@
 /.venv-mkdocs
 /docs/swagger-ui/
 /docs/api.yml
-
-
+/__pycache__*
