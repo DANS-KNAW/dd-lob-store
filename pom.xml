@@ -26,7 +26,7 @@
     </parent>
 
     <artifactId>dd-lob-store</artifactId>
-    <version>1.2.3-SNAPSHOT</version>
+    <version>1.2.3</version>
 
     <name>DD LOB Store</name>
     <description>Manages DANS Data Vault Large Object Stores</description>
@@ -36,7 +36,7 @@
     <scm>
         <connection>scm:git:https://github.com/DANS-KNAW/dd-lob-store</connection>
         <developerConnection>scm:git:ssh://github.com/DANS-KNAW/dd-lob-store</developerConnection>
-        <tag>HEAD</tag>
+        <tag>v1.2.3</tag>
         <url>https://github.com/DANS-KNAW/dd-lob-store</url>
     </scm>
 
