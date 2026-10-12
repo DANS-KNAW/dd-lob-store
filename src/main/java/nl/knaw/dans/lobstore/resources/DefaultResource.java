@@ -15,12 +15,16 @@
  */
 package nl.knaw.dans.lobstore.resources;
 
+import nl.knaw.dans.lobstore.api.AppInfoDto;
+
 import javax.ws.rs.core.Response;
 
 public class DefaultResource implements DefaultApi {
 
     @Override
     public Response rootGet() {
-        return Response.ok("LOB Store Running").build();
+        return Response.ok(new AppInfoDto()
+            .name("dd-lob-store")
+            .version(this.getClass().getPackage().getImplementationVersion())).build();
     }
 }
