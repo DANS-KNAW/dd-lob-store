@@ -1,0 +1,264 @@
+<!DOCTYPE html>
+<html class="writer-html5" lang="en" >
+<head>
+    <meta charset="utf-8" />
+    <meta http-equiv="X-UA-Compatible" content="IE=edge" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+      <link rel="shortcut icon" href="img/favicon.ico" />
+    <title>Description - dd-lob-store</title>
+    <link rel="stylesheet" href="css/theme.css" />
+    <link rel="stylesheet" href="css/theme_extra.css" />
+        <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.8.0/styles/github.min.css" />
+    
+      <script>
+        // Current page data
+        var mkdocs_page_name = "Description";
+        var mkdocs_page_input_path = "index.md";
+        var mkdocs_page_url = null;
+      </script>
+    
+    <!--[if lt IE 9]>
+      <script src="js/html5shiv.min.js"></script>
+    <![endif]-->
+      <script src="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.8.0/highlight.min.js"></script>
+      <script>hljs.highlightAll();</script> 
+</head>
+
+<body class="wy-body-for-nav" role="document">
+
+  <div class="wy-grid-for-nav">
+    <nav data-toggle="wy-nav-shift" class="wy-nav-side stickynav">
+    <div class="wy-side-scroll">
+      <div class="wy-side-nav-search">
+          <a href="." class="icon icon-home"> dd-lob-store
+        </a><div role="search">
+  <form id ="rtd-search-form" class="wy-form" action="./search.html" method="get">
+      <input type="text" name="q" placeholder="Search docs" aria-label="Search docs" title="Type search term here" />
+  </form>
+</div>
+      </div>
+
+      <div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="Navigation menu">
+              <p class="caption"><span class="caption-text">Manual</span></p>
+              <ul class="current">
+                  <li class="toctree-l1 current"><a class="reference internal current" href="#">Description</a>
+    <ul class="current">
+    <li class="toctree-l2"><a class="reference internal" href="#purpose">Purpose</a>
+    </li>
+    <li class="toctree-l2"><a class="reference internal" href="#interfaces">Interfaces</a>
+        <ul>
+    <li class="toctree-l3"><a class="reference internal" href="#command-api">Command API</a>
+    </li>
+    <li class="toctree-l3"><a class="reference internal" href="#admin-console">Admin console</a>
+    </li>
+    <li class="toctree-l3"><a class="reference internal" href="#consumed-interfaces">Consumed interfaces</a>
+        <ul>
+    <li class="toctree-l4"><a class="reference internal" href="#dataverse">Dataverse</a>
+    </li>
+    <li class="toctree-l4"><a class="reference internal" href="#dmftar">DMFTAR</a>
+    </li>
+    <li class="toctree-l4"><a class="reference internal" href="#rsync">rsync</a>
+    </li>
+    <li class="toctree-l4"><a class="reference internal" href="#ssh">ssh</a>
+    </li>
+        </ul>
+    </li>
+        </ul>
+    </li>
+    <li class="toctree-l2"><a class="reference internal" href="#processing">Processing</a>
+        <ul>
+    <li class="toctree-l3"><a class="reference internal" href="#disk-quotas">Disk quotas</a>
+    </li>
+    <li class="toctree-l3"><a class="reference internal" href="#request">Request</a>
+    </li>
+    <li class="toctree-l3"><a class="reference internal" href="#inspect">Inspect</a>
+    </li>
+    <li class="toctree-l3"><a class="reference internal" href="#download">Download</a>
+    </li>
+    <li class="toctree-l3"><a class="reference internal" href="#package">Package</a>
+    </li>
+    <li class="toctree-l3"><a class="reference internal" href="#upload">Upload</a>
+    </li>
+    <li class="toctree-l3"><a class="reference internal" href="#verify">Verify</a>
+    </li>
+        </ul>
+    </li>
+    </ul>
+                  </li>
+                  <li class="toctree-l1"><a class="reference internal" href="installation/">Installation</a>
+                  </li>
+                  <li class="toctree-l1"><a class="reference internal" href="config/">Configuration</a>
+                  </li>
+                  <li class="toctree-l1"><a class="reference internal" href="to-api/">API</a>
+                  </li>
+                  <li class="toctree-l1"><a class="reference internal" href="context/">Context</a>
+                  </li>
+              </ul>
+              <p class="caption"><span class="caption-text">Development</span></p>
+              <ul>
+                  <li class="toctree-l1"><a class="reference internal" href="dev/">Overview</a>
+                  </li>
+              </ul>
+      </div>
+    </div>
+    </nav>
+
+    <section data-toggle="wy-nav-shift" class="wy-nav-content-wrap">
+      <nav class="wy-nav-top" role="navigation" aria-label="Mobile navigation menu">
+          <i data-toggle="wy-nav-top" class="fa fa-bars"></i>
+          <a href=".">dd-lob-store</a>
+        
+      </nav>
+      <div class="wy-nav-content">
+        <div class="rst-content"><div role="navigation" aria-label="breadcrumbs navigation">
+  <ul class="wy-breadcrumbs">
+    <li><a href="." class="icon icon-home" aria-label="Docs"></a></li>
+          <li class="breadcrumb-item">Manual</li>
+      <li class="breadcrumb-item active">Description</li>
+    <li class="wy-breadcrumbs-aside">
+          <a href="https://github.com/DANS-KNAW/dd-lob-store/edit/master/docs/index.md">Edit on DANS-KNAW/dd-lob-store</a>
+    </li>
+  </ul>
+  <hr/>
+</div>
+          <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
+            <div class="section" itemprop="articleBody">
+              
+                <h1 id="dd-lob-store">dd-lob-store<a class="headerlink" href="#dd-lob-store" title="Permanent link">&para;</a></h1>
+<p>Manages DANS Data Vault Large Object Stores</p>
+<h2 id="purpose">Purpose<a class="headerlink" href="#purpose" title="Permanent link">&para;</a></h2>
+<p>Transfers large files from Dataverse instances to a Data Vault Large Object Store.</p>
+<h2 id="interfaces">Interfaces<a class="headerlink" href="#interfaces" title="Permanent link">&para;</a></h2>
+<p>This service has the following interfaces:</p>
+<p><img alt="" src="img/overview.png" width="70%" /></p>
+<h4 id="command-api">Command API<a class="headerlink" href="#command-api" title="Permanent link">&para;</a></h4>
+<ul>
+<li><em>Protocol type</em>: HTTP</li>
+<li><em>Internal or external</em>: <strong>internal</strong></li>
+<li><em>Purpose</em>: to manage the service including starting transfers</li>
+</ul>
+<h4 id="admin-console">Admin console<a class="headerlink" href="#admin-console" title="Permanent link">&para;</a></h4>
+<ul>
+<li><em>Protocol type</em>: HTTP</li>
+<li><em>Internal or external</em>: <strong>internal</strong></li>
+<li><em>Purpose</em>: application monitoring and management</li>
+</ul>
+<h3 id="consumed-interfaces">Consumed interfaces<a class="headerlink" href="#consumed-interfaces" title="Permanent link">&para;</a></h3>
+<h4 id="dataverse">Dataverse<a class="headerlink" href="#dataverse" title="Permanent link">&para;</a></h4>
+<ul>
+<li><em>Protocol type</em>: HTTP</li>
+<li><em>Internal or external</em>: <strong>internal</strong></li>
+<li><em>Purpose</em>: to get metadata about files to be transferred and to get the file content.</li>
+</ul>
+<h4 id="dmftar">DMFTAR<a class="headerlink" href="#dmftar" title="Permanent link">&para;</a></h4>
+<ul>
+<li><em>Protocol type</em>: Local command invocation</li>
+<li><em>Internal or external</em>: <strong>internal</strong></li>
+<li><em>Purpose</em>: to create DMFTAR archives for buckets.</li>
+</ul>
+<h4 id="rsync">rsync<a class="headerlink" href="#rsync" title="Permanent link">&para;</a></h4>
+<ul>
+<li><em>Protocol type</em>: Local command invocation</li>
+<li><em>Internal or external</em>: <strong>external</strong></li>
+<li><em>Purpose</em>: to transfer files from the local upload directory to <a href="https://dans-knaw.github.io/dans-datastation-architecture/data-archive/" target="_blank">SURF Data Archive</a></li>
+</ul>
+<h4 id="ssh">ssh<a class="headerlink" href="#ssh" title="Permanent link">&para;</a></h4>
+<ul>
+<li><em>Protocol type</em>: Local command invocation</li>
+<li><em>Internal or external</em>: <strong>external</strong></li>
+<li><em>Purpose</em>: to call <code>dmftar</code> on the SURF Data Archive side for verification of the uploaded archive.</li>
+</ul>
+<h2 id="processing">Processing<a class="headerlink" href="#processing" title="Permanent link">&para;</a></h2>
+<h3 id="disk-quotas">Disk quotas<a class="headerlink" href="#disk-quotas" title="Permanent link">&para;</a></h3>
+<p>Before explaining the processing pipeline, note that the service manages limited disk space using quotas for the download and upload folders. A disk quota
+manager ensures that tasks claim enough space before starting. Tasks use a polling mechanism to check for new work. If a task needs disk space and not enough is
+available, it is not scheduled and will retry in the next polling cycle. This applies only to the <a href="#download">Download</a> and <a href="#package">Package</a> tasks.</p>
+<h3 id="request">Request<a class="headerlink" href="#request" title="Permanent link">&para;</a></h3>
+<p>The service receives requests for transfer via the API. It checks whether the SHA-1 checksum is already present in the targeted LOB-store. If so, the client
+is redirected to the location of the file in the LOB store. It also checks whether a transfer request for the same SHA-1 is already present with a status other
+than <code>FAILED</code>, <code>REJECTED</code>  or <code>DONE</code>. If so, the transfer request is not created and a 409 Conflict status is returned to the caller.</p>
+<p>Otherwise, the transfer request is created as <code>PENDING</code> in the database.</p>
+<h3 id="inspect">Inspect<a class="headerlink" href="#inspect" title="Permanent link">&para;</a></h3>
+<p>The Inspect step retrieves the file metadata from the Dataverse instance, including the size and the SHA1-checksum. The size is stored in the transfer request
+record. If the SHA-1 checksum from Dataverse does not match the one from the request, the transfer request is set to <code>REJECTED</code>. If the checksum is OK, the
+transfer request is set to <code>INSPECTED</code>.</p>
+<h3 id="download">Download<a class="headerlink" href="#download" title="Permanent link">&para;</a></h3>
+<p>The Download step is responsible for downloading a file. Before the task is scheduled, two disk quotas are claimed in the download folder:</p>
+<ol>
+<li>One for the size of the file (base)</li>
+<li>One for the size of the file plus a margin (extra).</li>
+</ol>
+<p>The task downloads chunks of a configurable size (1G by default) and concatenates them at the end. The second claim is necessary for the concatenation step. The
+task then computes the SHA-1 and verifies it. If it does not match the transfer request is set to <code>REJECTED</code>. If the checksum is OK, the transfer request status
+is set to <code>DOWNLOADED</code>. The second of the aforementioned claims is then released.</p>
+<h3 id="package">Package<a class="headerlink" href="#package" title="Permanent link">&para;</a></h3>
+<p>The Package step is responsible for packaging one or more files into an archive file using DMFTAR. It looks for <code>DOWNLOADED</code> files from older to newer adding
+files until the total size exceeds the minimal package threshold. It then claims two quotas in the upload folder:</p>
+<ol>
+<li>One for the combined sizes of the selected files (base);</li>
+<li>One for the combined sizes of the selected files plus a margin (extra).</li>
+</ol>
+<p>It then creates a bucket folder in the upload folder and moves the files into it. For each file the base claims on the download folder are now released.</p>
+<p>The task now runs the configured packaging command. If that succeeds, the source files are deleted and the extra claim on the upload folder is released. The
+status for the transfer requests is now set to <code>PACKAGED</code>.</p>
+<div class="admonition info">
+<p class="admonition-title">Technical note</p>
+<p>The status in the individual transfer request records stays on <code>DOWNLOADED</code>, but the API will return the status of the containing bucket for all its transfer
+requests from this point on.</p>
+</div>
+<h3 id="upload">Upload<a class="headerlink" href="#upload" title="Permanent link">&para;</a></h3>
+<p>The Upload step uploads the archive file to the SURF Data Archive using <code>rsync</code>. The command is retried if an interruption occurs, so providing the <code>--partial</code>
+option to <code>rsync</code> implements upload-resuming. On success, the status is changed to <code>UPLOADED</code>.</p>
+<h3 id="verify">Verify<a class="headerlink" href="#verify" title="Permanent link">&para;</a></h3>
+<p>Finally, on finishing the transfer, the archive package is verified by running <code>dmftar --verify</code> on the SURF Data Archive side via <code>ssh</code>. If the verification
+succeeds, the local copy is deleted and the transfer request is set to <code>DONE</code>. If it finds a checksum mismatch, the status is set to <code>FAILED</code>. If it fails
+because of some other error, the status is left unchanged so that the task can be retried.</p>
+              
+            </div>
+          </div><footer>
+    <div class="rst-footer-buttons" role="navigation" aria-label="Footer Navigation">
+        <a href="installation/" class="btn btn-neutral float-right" title="Installation">Next <span class="icon icon-circle-arrow-right"></span></a>
+    </div>
+
+  <hr/>
+
+  <div role="contentinfo">
+    <!-- Copyright etc -->
+  </div>
+
+  Built with <a href="https://www.mkdocs.org/">MkDocs</a> using a <a href="https://github.com/readthedocs/sphinx_rtd_theme">theme</a> provided by <a href="https://readthedocs.org">Read the Docs</a>.
+</footer>
+          
+        </div>
+      </div>
+
+    </section>
+
+  </div>
+
+  <div class="rst-versions" role="note" aria-label="Versions">
+  <span class="rst-current-version" data-toggle="rst-current-version">
+    
+        <span>
+          <a href="https://github.com/DANS-KNAW/dd-lob-store" class="fa fa-code-fork" style="color: #fcfcfc"> DANS-KNAW/dd-lob-store</a>
+        </span>
+    
+    
+    
+      <span><a href="installation/" style="color: #fcfcfc">Next &raquo;</a></span>
+    
+  </span>
+</div>
+    <script src="js/jquery-3.6.0.min.js"></script>
+    <script>var base_url = ".";</script>
+    <script src="js/theme_extra.js"></script>
+    <script src="js/theme.js"></script>
+      <script src="search/main.js"></script>
+    <script>
+        jQuery(function () {
+            SphinxRtdTheme.Navigation.enable(true);
+        });
+    </script>
+
+</body>
+</html>
